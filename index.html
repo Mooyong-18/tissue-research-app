@@ -1,749 +1,237 @@
-import React, { useEffect, useMemo, useState } from "react";
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tissue Research Notebook</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --soft: #f1f5f9;
+      --primary: #0f172a;
+      --danger: #dc2626;
+      --green-bg: #dcfce7;
+      --green: #047857;
+      --red-bg: #fee2e2;
+      --red: #b91c1c;
+      --grey-bg: #e2e8f0;
+      --grey: #334155;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, sans-serif;
+      padding: 16px;
+    }
+    .container { max-width: 1180px; margin: 0 auto; }
+    .header {
+      background: var(--card);
+      border-radius: 28px;
+      padding: 22px;
+      box-shadow: 0 4px 18px rgba(15,23,42,.08);
+      margin-bottom: 18px;
+    }
+    .header-row { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center; }
+    h1 { margin:0; font-size:28px; font-weight:900; line-height:1.2; }
+    h2 { margin:0; font-size:22px; font-weight:900; }
+    h3 { margin:0 0 10px; font-size:16px; font-weight:900; }
+    .muted { color:var(--muted); font-size:14px; }
+    .nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
+    @media (min-width: 900px) { .nav { grid-template-columns:repeat(7,minmax(0,1fr)); } }
+    .nav-btn {
+      border:0; border-radius:22px; padding:15px 12px; font-size:16px; font-weight:800; cursor:pointer;
+      box-shadow:0 2px 10px rgba(15,23,42,.04); background:white; color:#475569;
+    }
+    .nav-btn.active { background:var(--primary); color:white; }
+    .card { background:var(--card); border-radius:24px; padding:18px; box-shadow:0 4px 18px rgba(15,23,42,.07); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+    .compact-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .section { display:grid; gap:14px; }
+    .stat { background:white; border-radius:18px; padding:12px; min-height:86px; box-shadow:0 3px 12px rgba(15,23,42,.06); }
+    .stat-top { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .stat-label { color:var(--muted); font-size:12px; font-weight:700; }
+    .stat-value { font-size:24px; font-weight:900; margin-top:2px; line-height:1; }
+    .stat-sub { color:#94a3b8; font-size:11px; margin-top:4px; }
+    input, textarea, select {
+      width:100%; padding:11px 12px; border:1px solid #cbd5e1; border-radius:14px; font-size:14px; background:white;
+    }
+    textarea { min-height:82px; resize:vertical; }
+    label { font-weight:800; display:block; margin-bottom:6px; }
+    .btn { padding:11px 15px; border-radius:14px; border:0; background:var(--primary); color:white; font-weight:800; cursor:pointer; }
+    .btn-outline { background:white; color:var(--primary); border:1px solid #cbd5e1; }
+    .btn-danger { background:var(--danger); color:white; padding:9px 12px; border-radius:12px; }
+    .table-wrap { overflow-x:auto; border-radius:18px; border:1px solid var(--line); background:white; }
+    table { width:100%; min-width:780px; border-collapse:collapse; font-size:14px; }
+    th { text-align:left; background:var(--soft); padding:12px; border-bottom:1px solid var(--line); color:#475569; }
+    td { padding:10px; border-bottom:1px solid var(--line); vertical-align:top; }
+    .badge { border-radius:999px; padding:5px 10px; font-size:12px; font-weight:800; display:inline-block; }
+    .badge-green { background:var(--green-bg); color:var(--green); }
+    .badge-red { background:var(--red-bg); color:var(--red); }
+    .badge-grey { background:var(--grey-bg); color:var(--grey); }
+    .mini-row { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); }
+    .truncate { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+    .form-spacer { margin-top:10px; }
+    .top-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .hidden { display:none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-row">
+        <div>
+          <h1>🌱 Tissue Research Notebook</h1>
+          <p class="muted" style="margin:6px 0 0">Simple sections • HTML ready • Local storage</p>
+        </div>
+        <div class="top-actions">
+          <button class="btn" onclick="setTab('cultures')">+ New Record</button>
+          <button class="btn btn-outline" onclick="exportReport()">⬇️ Export</button>
+        </div>
+      </div>
+    </header>
 
-const STORAGE_KEY = "tissue_research_final_clean_v2";
+    <nav class="nav" id="nav"></nav>
+    <main id="app"></main>
+  </div>
+
+<script>
+const STORAGE_KEY = 'tissue_research_final_clean_html_v1';
+const STATUS_OPTIONS = ['Planning','Running','Active','Rooting','Contamination','Browning','Dead','Closed'];
+const UNIT_OPTIONS = ['g','ml'];
 
 const defaultData = {
   projects: [
-    {
-      id: "P-001",
-      name: "Low-cost Tissue Culture Medium",
-      type: "อาหารเพาะเลี้ยงต้นทุนต่ำ",
-      status: "Active",
-      goal: "ลดต้นทุนอาหารเพาะเลี้ยงโดยใช้ปุ๋ย 20-20-20+TE และสารที่หาได้ง่าย",
-      note: "โปรเจกต์หลักสำหรับทดลองสูตรอาหารต้นทุนต่ำ",
-    },
-    {
-      id: "P-002",
-      name: "Low-cost Filter Lid",
-      type: "ฝาเพาะเลี้ยงแบบมี filter",
-      status: "Active",
-      goal: "เพิ่มการแลกเปลี่ยนก๊าซ ลดอาการฉ่ำน้ำ และลดการปนเปื้อน",
-      note: "ใช้เปรียบเทียบภาชนะปกติกับฝา filter",
-    },
+    { id:'P-001', name:'Low-cost Tissue Culture Medium', type:'อาหารเพาะเลี้ยงต้นทุนต่ำ', status:'Active', goal:'ลดต้นทุนอาหารเพาะเลี้ยงโดยใช้ปุ๋ย 20-20-20+TE และสารที่หาได้ง่าย', note:'โปรเจกต์หลักสำหรับทดลองสูตรอาหารต้นทุนต่ำ' },
+    { id:'P-002', name:'Low-cost Filter Lid', type:'ฝาเพาะเลี้ยงแบบมี filter', status:'Active', goal:'เพิ่มการแลกเปลี่ยนก๊าซ ลดอาการฉ่ำน้ำ และลดการปนเปื้อน', note:'ใช้เปรียบเทียบภาชนะปกติกับฝา filter' }
   ],
   experiments: [
-    {
-      id: "EXP-001",
-      projectId: "P-001",
-      title: "เปรียบเทียบสูตร F1 กับ F2",
-      plant: "กล้วย",
-      formula: "F1 / F2",
-      startDate: "2026-04-20",
-      status: "Running",
-      objective: "เปรียบเทียบการเจริญเติบโตและการปนเปื้อนของสูตรอาหารต้นทุนต่ำ",
-      note: "ติดตามผลทุก 7 วัน",
-    },
+    { id:'EXP-001', projectId:'P-001', title:'เปรียบเทียบสูตร F1 กับ F2', plant:'กล้วย', formula:'F1 / F2', startDate:'2026-04-20', status:'Running', objective:'เปรียบเทียบการเจริญเติบโตและการปนเปื้อนของสูตรอาหารต้นทุนต่ำ', note:'ติดตามผลทุก 7 วัน' }
   ],
   cultures: [
-    {
-      id: "BAN-F1-001",
-      experimentId: "EXP-001",
-      plant: "กล้วย",
-      formula: "F1",
-      startDate: "2026-04-20",
-      status: "Active",
-      note: "ยอดเขียวดี ยังไม่พบเชื้อ",
-    },
-    {
-      id: "BAN-F1-002",
-      experimentId: "EXP-001",
-      plant: "กล้วย",
-      formula: "F1",
-      startDate: "2026-04-20",
-      status: "Contamination",
-      note: "พบฝ้าขาวบริเวณผิวอาหาร",
-    },
-    {
-      id: "LID-F1-001",
-      experimentId: "EXP-001",
-      plant: "กล้วย",
-      formula: "F1 + Filter Lid",
-      startDate: "2026-04-22",
-      status: "Active",
-      note: "ใบไม่ฉ่ำน้ำ ภาชนะไม่เกิดหยดน้ำมาก",
-    },
+    { id:'BAN-F1-001', experimentId:'EXP-001', plant:'กล้วย', formula:'F1', startDate:'2026-04-20', status:'Active', note:'ยอดเขียวดี ยังไม่พบเชื้อ' },
+    { id:'BAN-F1-002', experimentId:'EXP-001', plant:'กล้วย', formula:'F1', startDate:'2026-04-20', status:'Contamination', note:'พบฝ้าขาวบริเวณผิวอาหาร' },
+    { id:'LID-F1-001', experimentId:'EXP-001', plant:'กล้วย', formula:'F1 + Filter Lid', startDate:'2026-04-22', status:'Active', note:'ใบไม่ฉ่ำน้ำ ภาชนะไม่เกิดหยดน้ำมาก' }
   ],
   formulas: [
-    {
-      id: "F1",
-      name: "F1 Banana Growth Medium",
-      plant: "กล้วย",
-      detail: "20-20-20+TE 2g, 15-0-0+27CaO 10ml, MgSO4 10ml, Sugar 30g, Agar 7g ต่อ 1L",
-      note: "สูตรพื้นฐานสำหรับกล้วย",
-    },
-    {
-      id: "F2",
-      name: "F2 + BA/NAA Test",
-      plant: "กล้วย / ไม้ด่าง",
-      detail: "สูตร F1 + BA/NAA",
-      note: "ใช้ทดสอบผลของฮอร์โมน",
-    },
+    { id:'F1', name:'F1 Banana Growth Medium', plant:'กล้วย', detail:'20-20-20+TE 2g, 15-0-0+27CaO 10ml, MgSO4 10ml, Sugar 30g, Agar 7g ต่อ 1L', note:'สูตรพื้นฐานสำหรับกล้วย' },
+    { id:'F2', name:'F2 + BA/NAA Test', plant:'กล้วย / ไม้ด่าง', detail:'สูตร F1 + BA/NAA', note:'ใช้ทดสอบผลของฮอร์โมน' }
   ],
   costs: [
-    { id: "C-001", item: "20-20-20+TE", price: 35, volume: 100, used: 2, unit: "g", note: "ซื้อ 35 บาท ได้ 100 g / ใช้ 2 g/L" },
-    { id: "C-002", item: "Sugar", price: 30, volume: 1000, used: 30, unit: "g", note: "ซื้อ 30 บาท ได้ 1000 g / ใช้ 30 g/L" },
-    { id: "C-003", item: "Agar", price: 250, volume: 100, used: 7, unit: "g", note: "ซื้อ 250 บาท ได้ 100 g / ใช้ 7 g/L" },
-  ],
+    { id:'C-001', item:'20-20-20+TE', price:35, volume:100, used:2, unit:'g', note:'ซื้อ 35 บาท ได้ 100 g / ใช้ 2 g/L' },
+    { id:'C-002', item:'Sugar', price:30, volume:1000, used:30, unit:'g', note:'ซื้อ 30 บาท ได้ 1000 g / ใช้ 30 g/L' },
+    { id:'C-003', item:'Agar', price:250, volume:100, used:7, unit:'g', note:'ซื้อ 250 บาท ได้ 100 g / ใช้ 7 g/L' }
+  ]
 };
 
-const STATUS_OPTIONS = ["Planning", "Running", "Active", "Rooting", "Contamination", "Browning", "Dead", "Closed"];
-const UNIT_OPTIONS = ["g", "ml"];
+let state = loadData();
+let tab = 'dashboard';
 
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : defaultData;
-  } catch {
-    return defaultData;
-  }
+function loadData(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData; } catch { return defaultData; }
 }
+function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function newId(prefix){ return `${prefix}-${Date.now().toString().slice(-6)}`; }
+function money(v){ return Number(v||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function daysFrom(dateString){ const d=new Date(dateString); if(Number.isNaN(d.getTime())) return 0; return Math.max(0, Math.floor((Date.now()-d.getTime())/86400000)); }
+function costPerUnit(row){ const price=Number(row.price||0); const volume=Number(row.volume||0); return volume>0 ? price/volume : 0; }
+function usedCost(row){ return costPerUnit(row)*Number(row.used||0); }
+function totalUsedCost(){ return state.costs.reduce((s,row)=>s+usedCost(row),0); }
+function stats(){ const total=state.cultures.length; const contaminated=state.cultures.filter(c=>c.status==='Contamination').length; const active=state.cultures.filter(c=>['Active','Rooting','Running'].includes(c.status)).length; return {total,active,contaminated,survivalRate: total?Math.round(active/total*100):0,contamRate: total?Math.round(contaminated/total*100):0}; }
+function esc(v){ return String(v ?? '').replace(/[&<>"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+function setTab(next){ tab=next; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+function badge(status){ const cls = status==='Contamination'?'badge-red': status==='Closed'?'badge-grey':'badge-green'; return `<span class="badge ${cls}">${esc(status)}</span>`; }
+function input(path, value, placeholder='', type='text'){ return `<input type="${type}" value="${esc(value)}" placeholder="${esc(placeholder)}" onchange="updatePath('${path}', this.value)">`; }
+function textarea(path, value, placeholder=''){ return `<textarea placeholder="${esc(placeholder)}" onchange="updatePath('${path}', this.value)">${esc(value)}</textarea>`; }
+function statusSelect(path, value){ return `<select onchange="updatePath('${path}', this.value)">${STATUS_OPTIONS.map(s=>`<option ${s===value?'selected':''}>${s}</option>`).join('')}</select>`; }
+function unitSelect(path, value){ return `<select onchange="updatePath('${path}', this.value)">${UNIT_OPTIONS.map(s=>`<option value="${s}" ${s===value?'selected':''}>${s}</option>`).join('')}</select>`; }
+function sectionTitle(title, sub){ return `<div style="margin-bottom:14px"><h2>${title}</h2>${sub?`<p class="muted" style="margin:6px 0 0">${sub}</p>`:''}</div>`; }
+function statCard(label,value,sub){ return `<div class="card"><div class="muted" style="font-size:13px">${label}</div><div style="font-size:30px;font-weight:900;margin-top:4px">${value}</div><div style="color:#94a3b8;font-size:12px">${sub}</div></div>`; }
+function compactStat(icon,label,value,sub){ return `<div class="stat"><div class="stat-top"><div><div class="stat-label">${label}</div><div class="stat-value">${value}</div><div class="stat-sub">${sub}</div></div><div style="font-size:20px">${icon}</div></div></div>`; }
+function table(columns, rows){ return `<div class="table-wrap"><table><thead><tr>${columns.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`; }
 
-function saveData(data) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    // Do nothing. App should keep running even if localStorage is unavailable.
-  }
+function updatePath(path, value){
+  const parts = path.split('.');
+  let obj = state;
+  for(let i=0;i<parts.length-1;i++) obj = obj[parts[i]];
+  const key = parts[parts.length-1];
+  const numeric = ['price','volume','used'].includes(key);
+  obj[key] = numeric ? Number(value || 0) : value;
+  saveData(); render();
 }
+function del(collection, id){ state[collection]=state[collection].filter(x=>x.id!==id); saveData(); render(); }
+function add(collection, item){ state[collection]=[item,...state[collection]]; saveData(); render(); }
 
-function newId(prefix) {
-  return `${prefix}-${Date.now().toString().slice(-6)}`;
+function addProject(){ const item={ id:newId('P'), name:val('newProjectName'), type:val('newProjectType'), status:val('newProjectStatus'), goal:val('newProjectGoal'), note:''}; if(!item.name.trim()) return; add('projects',item); }
+function addExperiment(){ const item={ id:newId('EXP'), title:val('newExpTitle'), projectId:val('newExpProject'), plant:val('newExpPlant'), formula:val('newExpFormula'), startDate:val('newExpDate'), status:val('newExpStatus'), objective:val('newExpObjective'), note:val('newExpNote')}; if(!item.title.trim()) return; add('experiments',item); }
+function addCulture(){ const item={ id:newId('CUL'), experimentId:val('newCultureExp'), plant:val('newCulturePlant'), formula:val('newCultureFormula'), startDate:val('newCultureDate'), status:val('newCultureStatus'), note:val('newCultureNote')}; if(!item.plant.trim()) return; add('cultures',item); }
+function addFormula(){ const item={ id:newId('F'), name:val('newFormulaName'), plant:val('newFormulaPlant'), detail:val('newFormulaDetail'), note:val('newFormulaNote')}; if(!item.name.trim()) return; add('formulas',item); }
+function addCost(){ const item={ id:newId('C'), item:val('newCostItem'), price:Number(val('newCostPrice')||0), volume:Number(val('newCostVolume')||0), used:Number(val('newCostUsed')||0), unit:val('newCostUnit'), note:val('newCostNote')}; if(!item.item.trim()) return; add('costs',item); }
+function val(id){ const el=document.getElementById(id); return el ? el.value : ''; }
+
+function renderNav(){
+  const tabs=[['dashboard','📊 Dashboard'],['projects','📘 Projects'],['experiments','📋 Experiments'],['cultures','🌿 Culture Records'],['formulas','🧪 Formulas'],['costs','💰 Cost Analysis'],['reports','📄 Reports']];
+  document.getElementById('nav').innerHTML = tabs.map(([key,label])=>`<button class="nav-btn ${tab===key?'active':''}" onclick="setTab('${key}')">${label}</button>`).join('');
 }
+function render(){ renderNav(); const app=document.getElementById('app'); app.innerHTML = pages[tab](); }
 
-function daysFrom(dateString) {
-  const start = new Date(dateString);
-  if (Number.isNaN(start.getTime())) return 0;
-  return Math.max(0, Math.floor((Date.now() - start.getTime()) / 86400000));
-}
+const pages = {
+  dashboard(){ const s=stats(); return `<section class="section">
+    <div class="compact-grid">
+      ${compactStat('📘','Projects',state.projects.length,'โปรเจกต์')}
+      ${compactStat('📋','Experiments',state.experiments.length,'การทดลอง')}
+      ${compactStat('🌿','Cultures',s.total,'รายการเลี้ยง')}
+      ${compactStat('✅','Active',s.active,'รอด/กำลังโต')}
+      ${compactStat('⚠️','Contam',s.contamRate+'%',s.contaminated+' รายการ')}
+      ${compactStat('💰','Cost/L',money(totalUsedCost())+'฿','ต้นทุน 1 ลิตร')}
+    </div>
+    <div class="grid">
+      <div class="card"><h3>📌 Project ล่าสุด</h3>${state.projects.slice(0,3).map(p=>`<div class="mini-row"><div class="truncate"><b>${esc(p.name)}</b><div class="muted truncate" style="font-size:12px">${esc(p.type)}</div></div>${badge(p.status)}</div>`).join('')}</div>
+      <div class="card"><h3>🌿 Culture ล่าสุด</h3>${state.cultures.slice(0,3).map(c=>`<div class="mini-row"><div class="truncate"><b>${esc(c.id)}</b><div class="muted" style="font-size:12px">${esc(c.plant)} • ${esc(c.formula)} • ${daysFrom(c.startDate)} วัน</div></div>${badge(c.status)}</div>`).join('')}</div>
+    </div>
+    <div class="card"><h3>💰 ต้นทุนหลักต่อ 1 ลิตร</h3>${state.costs.slice(0,4).map(row=>`<div class="mini-row"><div class="truncate"><b>${esc(row.item)}</b><div class="muted" style="font-size:12px">${row.used} ${row.unit}/L • ${money(costPerUnit(row))} บาท/${row.unit}</div></div><b>${money(usedCost(row))}฿/L</b></div>`).join('')}</div>
+  </section>`; },
 
-function calculateStats(cultures) {
-  const total = cultures.length;
-  const contaminated = cultures.filter((item) => item.status === "Contamination").length;
-  const active = cultures.filter((item) => ["Active", "Rooting", "Running"].includes(item.status)).length;
+  projects(){ return `<section class="section"><div class="card">${sectionTitle('Projects','สร้าง แก้ไข และลบโปรเจกต์วิจัย')}
+    <div class="grid"><input id="newProjectName" placeholder="ชื่อโปรเจกต์"><input id="newProjectType" placeholder="ประเภท"><select id="newProjectStatus">${STATUS_OPTIONS.map(s=>`<option>${s}</option>`).join('')}</select><input id="newProjectGoal" placeholder="เป้าหมาย"><button class="btn" onclick="addProject()">เพิ่มโปรเจกต์</button></div></div>
+    ${table(['ID','Name','Type','Status','Goal','Actions'], state.projects.map((p,i)=>`<tr><td>${p.id}</td><td>${input(`projects.${i}.name`,p.name)}</td><td>${input(`projects.${i}.type`,p.type)}</td><td>${statusSelect(`projects.${i}.status`,p.status)}</td><td>${input(`projects.${i}.goal`,p.goal)}</td><td><button class="btn btn-danger" onclick="del('projects','${p.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
 
-  return {
-    total,
-    active,
-    contaminated,
-    survivalRate: total ? Math.round((active / total) * 100) : 0,
-    contamRate: total ? Math.round((contaminated / total) * 100) : 0,
-  };
-}
+  experiments(){ return `<section class="section"><div class="card">${sectionTitle('Experiments','บันทึกการทดลองปกติ')}
+    <div class="grid"><input id="newExpTitle" placeholder="ชื่อการทดลอง"><select id="newExpProject">${state.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><input id="newExpPlant" placeholder="ชนิดพืช"><input id="newExpFormula" placeholder="สูตรอาหาร"><input id="newExpDate" type="date" value="${new Date().toISOString().slice(0,10)}"><select id="newExpStatus">${STATUS_OPTIONS.map(s=>`<option>${s}</option>`).join('')}</select></div><div class="form-spacer"><textarea id="newExpObjective" placeholder="วัตถุประสงค์"></textarea></div><div class="form-spacer"><textarea id="newExpNote" placeholder="หมายเหตุ"></textarea></div><div class="form-spacer"><button class="btn" onclick="addExperiment()">เพิ่มการทดลอง</button></div></div>
+    ${table(['ID','Title','Plant','Formula','Age','Status','Note','Actions'], state.experiments.map((e,i)=>`<tr><td>${e.id}</td><td>${input(`experiments.${i}.title`,e.title)}</td><td>${input(`experiments.${i}.plant`,e.plant)}</td><td>${input(`experiments.${i}.formula`,e.formula)}</td><td>${daysFrom(e.startDate)} วัน</td><td>${statusSelect(`experiments.${i}.status`,e.status)}</td><td>${input(`experiments.${i}.note`,e.note)}</td><td><button class="btn btn-danger" onclick="del('experiments','${e.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
 
-function money(value) {
-  return Number(value || 0).toLocaleString("th-TH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
+  cultures(){ return `<section class="section"><div class="card">${sectionTitle('Culture Records','บันทึก culture แต่ละขวด/ถุง')}
+    <div class="grid"><select id="newCultureExp"><option value="">เลือกการทดลอง</option>${state.experiments.map(e=>`<option value="${e.id}">${esc(e.title)}</option>`).join('')}</select><input id="newCulturePlant" placeholder="ชนิดพืช"><input id="newCultureFormula" placeholder="สูตรอาหาร"><input id="newCultureDate" type="date" value="${new Date().toISOString().slice(0,10)}"><select id="newCultureStatus">${STATUS_OPTIONS.map(s=>`<option>${s}</option>`).join('')}</select><button class="btn" onclick="addCulture()">เพิ่ม Culture</button></div><div class="form-spacer"><textarea id="newCultureNote" placeholder="หมายเหตุ"></textarea></div></div>
+    ${table(['ID','Plant','Formula','Age','Status','Note','Actions'], state.cultures.map((c,i)=>`<tr><td>${c.id}</td><td>${input(`cultures.${i}.plant`,c.plant)}</td><td>${input(`cultures.${i}.formula`,c.formula)}</td><td>${daysFrom(c.startDate)} วัน</td><td>${statusSelect(`cultures.${i}.status`,c.status)}</td><td>${input(`cultures.${i}.note`,c.note)}</td><td><button class="btn btn-danger" onclick="del('cultures','${c.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
 
-function costPerUnit(row) {
-  const price = Number(row.price || 0);
-  const volume = Number(row.volume || 0);
-  return volume > 0 ? price / volume : 0;
-}
+  formulas(){ return `<section class="section"><div class="card">${sectionTitle('Formulas','บันทึกสูตรอาหาร')}
+    <div class="grid"><input id="newFormulaName" placeholder="ชื่อสูตร"><input id="newFormulaPlant" placeholder="พืชที่ใช้"><button class="btn" onclick="addFormula()">เพิ่มสูตร</button></div><div class="form-spacer"><textarea id="newFormulaDetail" placeholder="รายละเอียดสูตร"></textarea></div><div class="form-spacer"><textarea id="newFormulaNote" placeholder="หมายเหตุ"></textarea></div></div>
+    ${table(['ID','Name','Plant','Detail','Note','Actions'], state.formulas.map((f,i)=>`<tr><td>${f.id}</td><td>${input(`formulas.${i}.name`,f.name)}</td><td>${input(`formulas.${i}.plant`,f.plant)}</td><td>${textarea(`formulas.${i}.detail`,f.detail)}</td><td>${input(`formulas.${i}.note`,f.note)}</td><td><button class="btn btn-danger" onclick="del('formulas','${f.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
 
-function usedCost(row) {
-  return costPerUnit(row) * Number(row.used || 0);
-}
+  costs(){ return `<section class="section"><div class="card">${sectionTitle('Cost Analysis','กำหนดปริมาณที่ใช้ทุกอย่างเป็นหน่วยต่อลิตร เช่น g/L หรือ ml/L แล้วระบบคำนวณต้นทุนต่อ 1 ลิตรให้')}
+    <div class="grid"><div><label>รายการ</label><input id="newCostItem" placeholder="เช่น Agar, Sugar, 20-20-20+TE"></div><div><label>ราคา (บาท)</label><input id="newCostPrice" type="number" value="0"></div><div><label>ปริมาตรที่ซื้อ</label><input id="newCostVolume" type="number" value="0"></div><div><label>ปริมาณที่ใช้ต่อลิตร</label><input id="newCostUsed" type="number" value="0" placeholder="เช่น 2 = 2 g/L"></div><div><label>หน่วย</label><select id="newCostUnit"><option value="g">g</option><option value="ml">ml</option></select></div><button class="btn" onclick="addCost()">เพิ่มต้นทุน</button></div><div class="form-spacer"><textarea id="newCostNote" placeholder="หมายเหตุ"></textarea></div></div>
+    <div class="card"><b>ต้นทุนรวมต่อ 1 ลิตร: ${money(totalUsedCost())} บาท/L</b></div>
+    ${table(['ID','รายการ','ราคา','ปริมาตรที่ซื้อ','ใช้ต่อลิตร','หน่วย','ราคา/หน่วย','ต้นทุน/ลิตร','หมายเหตุ','Actions'], state.costs.map((r,i)=>`<tr><td>${r.id}</td><td>${input(`costs.${i}.item`,r.item)}</td><td>${input(`costs.${i}.price`,r.price,'','number')} บาท</td><td>${input(`costs.${i}.volume`,r.volume,'','number')}</td><td>${input(`costs.${i}.used`,r.used??0,'','number')}</td><td>${unitSelect(`costs.${i}.unit`,r.unit)}</td><td>${money(costPerUnit(r))} บาท/${r.unit}</td><td><b>${money(usedCost(r))}</b> บาท/L</td><td>${input(`costs.${i}.note`,r.note)}</td><td><button class="btn btn-danger" onclick="del('costs','${r.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
 
-function totalUsedCost(rows) {
-  return rows.reduce((sum, row) => sum + usedCost(row), 0);
-}
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f8fafc",
-    color: "#0f172a",
-    fontFamily: "Arial, sans-serif",
-    padding: 16,
-  },
-  container: {
-    maxWidth: 1180,
-    margin: "0 auto",
-  },
-  header: {
-    background: "white",
-    borderRadius: 28,
-    padding: 22,
-    boxShadow: "0 4px 18px rgba(15,23,42,0.08)",
-    marginBottom: 18,
-  },
-  headerTitle: {
-    margin: 0,
-    fontSize: 28,
-    fontWeight: 900,
-  },
-  muted: {
-    color: "#64748b",
-    fontSize: 14,
-  },
-  nav: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 10,
-    marginBottom: 18,
-  },
-  navBtn: {
-    border: "none",
-    borderRadius: 22,
-    padding: "15px 12px",
-    fontSize: 16,
-    fontWeight: 800,
-    cursor: "pointer",
-    boxShadow: "0 2px 10px rgba(15,23,42,0.04)",
-  },
-  card: {
-    background: "white",
-    borderRadius: 24,
-    padding: 18,
-    boxShadow: "0 4px 18px rgba(15,23,42,0.07)",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-    gap: 12,
-  },
-  input: {
-    width: "100%",
-    padding: "11px 12px",
-    border: "1px solid #cbd5e1",
-    borderRadius: 14,
-    fontSize: 14,
-    boxSizing: "border-box",
-    background: "white",
-  },
-  button: {
-    padding: "11px 15px",
-    borderRadius: 14,
-    border: "none",
-    background: "#0f172a",
-    color: "white",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-  outlineButton: {
-    padding: "11px 15px",
-    borderRadius: 14,
-    border: "1px solid #cbd5e1",
-    background: "white",
-    color: "#0f172a",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-  dangerButton: {
-    padding: "9px 12px",
-    borderRadius: 12,
-    border: "none",
-    background: "#dc2626",
-    color: "white",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-  tableWrap: {
-    overflowX: "auto",
-    borderRadius: 18,
-    border: "1px solid #e2e8f0",
-    background: "white",
-  },
-  table: {
-    width: "100%",
-    minWidth: 780,
-    borderCollapse: "collapse",
-    fontSize: 14,
-  },
-  th: {
-    textAlign: "left",
-    background: "#f1f5f9",
-    padding: 12,
-    borderBottom: "1px solid #e2e8f0",
-    color: "#475569",
-  },
-  td: {
-    padding: 10,
-    borderBottom: "1px solid #e2e8f0",
-    verticalAlign: "top",
-  },
+  reports(){ const s=stats(); return `<section class="section"><div class="card">${sectionTitle('Reports','สรุปรายงานแบบเรียบง่าย')}
+    <div class="grid">${statCard('Projects',state.projects.length,'ทั้งหมด')}${statCard('Experiments',state.experiments.length,'ทั้งหมด')}${statCard('Cultures',state.cultures.length,'ทั้งหมด')}${statCard('Survival',s.survivalRate+'%','อัตรารอด')}${statCard('Cost/L',money(totalUsedCost())+'฿','ต้นทุนต่อ 1 ลิตร')}</div><div style="margin-top:14px"><button class="btn" onclick="exportReport()">ดาวน์โหลดรายงาน TXT</button></div></div></section>`; }
 };
 
-function Button({ children, onClick, variant = "primary", disabled = false }) {
-  const style = variant === "danger" ? styles.dangerButton : variant === "outline" ? styles.outlineButton : styles.button;
-  return (
-    <button onClick={onClick} disabled={disabled} style={{ ...style, opacity: disabled ? 0.5 : 1 }}>
-      {children}
-    </button>
-  );
+function exportReport(){
+  const s=stats();
+  const report = ['Tissue Research Report','',`Projects: ${state.projects.length}`,`Experiments: ${state.experiments.length}`,`Cultures: ${s.total}`,`Survival Rate: ${s.survivalRate}%`,`Contamination Rate: ${s.contamRate}%`,`Cost per 1 Liter: ${money(totalUsedCost())} THB`].join('\n');
+  const blob = new Blob([report],{type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='tissue-research-report.txt'; a.click(); URL.revokeObjectURL(url);
 }
 
-function Card({ children }) {
-  return <div style={styles.card}>{children}</div>;
-}
-
-function TextInput({ value, onChange, placeholder, type = "text" }) {
-  return <input type={type} value={value ?? ""} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} style={styles.input} />;
-}
-
-function TextArea({ value, onChange, placeholder }) {
-  return <textarea value={value ?? ""} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} style={{ ...styles.input, minHeight: 82 }} />;
-}
-
-function StatusSelect({ value, onChange }) {
-  return (
-    <select value={value || "Active"} onChange={(event) => onChange(event.target.value)} style={styles.input}>
-      {STATUS_OPTIONS.map((status) => <option key={status}>{status}</option>)}
-    </select>
-  );
-}
-
-function UnitSelect({ value, onChange }) {
-  return (
-    <select value={value || "g"} onChange={(event) => onChange(event.target.value)} style={styles.input}>
-      {UNIT_OPTIONS.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
-    </select>
-  );
-}
-
-function SectionTitle({ title, subtitle }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>{title}</h2>
-      {subtitle ? <p style={{ margin: "6px 0 0", ...styles.muted }}>{subtitle}</p> : null}
-    </div>
-  );
-}
-
-function StatCard({ label, value, sub }) {
-  return (
-    <Card>
-      <div style={{ color: "#64748b", fontSize: 13 }}>{label}</div>
-      <div style={{ fontSize: 30, fontWeight: 900, marginTop: 4 }}>{value}</div>
-      <div style={{ color: "#94a3b8", fontSize: 12 }}>{sub}</div>
-    </Card>
-  );
-}
-
-function CompactStat({ label, value, sub, icon }) {
-  return (
-    <div style={{ background: "white", borderRadius: 18, padding: 12, boxShadow: "0 3px 12px rgba(15,23,42,0.06)", minHeight: 86 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-        <div>
-          <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700 }}>{label}</div>
-          <div style={{ fontSize: 24, fontWeight: 900, marginTop: 2, lineHeight: 1 }}>{value}</div>
-          <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>{sub}</div>
-        </div>
-        <div style={{ fontSize: 20 }}>{icon}</div>
-      </div>
-    </div>
-  );
-}
-
-function MiniList({ title, items, emptyText }) {
-  return (
-    <Card>
-      <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 900 }}>{title}</h3>
-      <div style={{ display: "grid", gap: 8 }}>
-        {items.length ? items.map((item) => item) : <div style={styles.muted}>{emptyText}</div>}
-      </div>
-    </Card>
-  );
-}
-
-function StatusBadge({ status }) {
-  const bg = status === "Contamination" ? "#fee2e2" : status === "Closed" ? "#e2e8f0" : "#dcfce7";
-  const color = status === "Contamination" ? "#b91c1c" : status === "Closed" ? "#334155" : "#047857";
-  return <span style={{ background: bg, color, borderRadius: 999, padding: "5px 10px", fontSize: 12, fontWeight: 800 }}>{status}</span>;
-}
-
-function DataTable({ columns, children }) {
-  return (
-    <div style={styles.tableWrap}>
-      <table style={styles.table}>
-        <thead>
-          <tr>{columns.map((col) => <th key={col} style={styles.th}>{col}</th>)}</tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
-    </div>
-  );
-}
-
-export default function TissueResearchNotebook() {
-  const [data, setData] = useState(loadData);
-  const [tab, setTab] = useState("dashboard");
-
-  const [newProject, setNewProject] = useState({ name: "", type: "", status: "Active", goal: "", note: "" });
-  const [newExperiment, setNewExperiment] = useState({ title: "", projectId: data.projects[0]?.id || "", plant: "", formula: "", startDate: new Date().toISOString().slice(0, 10), status: "Running", objective: "", note: "" });
-  const [newCulture, setNewCulture] = useState({ experimentId: data.experiments[0]?.id || "", plant: "", formula: "", startDate: new Date().toISOString().slice(0, 10), status: "Active", note: "" });
-  const [newFormula, setNewFormula] = useState({ name: "", plant: "", detail: "", note: "" });
-  const [newCost, setNewCost] = useState({ item: "", price: 0, volume: 0, used: 0, unit: "g", note: "" });
-
-  useEffect(() => saveData(data), [data]);
-
-  const summary = useMemo(() => calculateStats(data.cultures), [data.cultures]);
-  const totalCost = useMemo(() => totalUsedCost(data.costs), [data.costs]);
-
-  function updateCollection(collection, id, patch) {
-    setData((prev) => ({
-      ...prev,
-      [collection]: prev[collection].map((item) => item.id === id ? { ...item, ...patch } : item),
-    }));
-  }
-
-  function deleteFrom(collection, id) {
-    setData((prev) => ({ ...prev, [collection]: prev[collection].filter((item) => item.id !== id) }));
-  }
-
-  function addTo(collection, item) {
-    setData((prev) => ({ ...prev, [collection]: [item, ...prev[collection]] }));
-  }
-
-  function addProject() {
-    if (!newProject.name.trim()) return;
-    addTo("projects", { id: newId("P"), ...newProject });
-    setNewProject({ name: "", type: "", status: "Active", goal: "", note: "" });
-  }
-
-  function addExperiment() {
-    if (!newExperiment.title.trim()) return;
-    addTo("experiments", { id: newId("EXP"), ...newExperiment });
-    setNewExperiment({ title: "", projectId: data.projects[0]?.id || "", plant: "", formula: "", startDate: new Date().toISOString().slice(0, 10), status: "Running", objective: "", note: "" });
-  }
-
-  function addCulture() {
-    if (!newCulture.plant.trim()) return;
-    addTo("cultures", { id: newId("CUL"), ...newCulture });
-    setNewCulture({ experimentId: data.experiments[0]?.id || "", plant: "", formula: "", startDate: new Date().toISOString().slice(0, 10), status: "Active", note: "" });
-  }
-
-  function addFormula() {
-    if (!newFormula.name.trim()) return;
-    addTo("formulas", { id: newId("F"), ...newFormula });
-    setNewFormula({ name: "", plant: "", detail: "", note: "" });
-  }
-
-  function addCost() {
-    if (!newCost.item.trim()) return;
-    addTo("costs", { id: newId("C"), ...newCost, price: Number(newCost.price || 0), volume: Number(newCost.volume || 0), used: Number(newCost.used || 0) });
-    setNewCost({ item: "", price: 0, volume: 0, used: 0, unit: "g", note: "" });
-  }
-
-  function exportReport() {
-    const report = [
-      "Tissue Research Report",
-      "",
-      `Projects: ${data.projects.length}`,
-      `Experiments: ${data.experiments.length}`,
-      `Cultures: ${summary.total}`,
-      `Survival Rate: ${summary.survivalRate}%`,
-      `Contamination Rate: ${summary.contamRate}%`,
-      `Cost per 1 Liter: ${money(totalCost)} THB`
-    ].join("\n");
-
-    const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "tissue-research-report.txt";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  const tabs = [
-    ["dashboard", "📊 Dashboard"],
-    ["projects", "📘 Projects"],
-    ["experiments", "📋 Experiments"],
-    ["cultures", "🌿 Culture Records"],
-    ["formulas", "🧪 Formulas"],
-    ["costs", "💰 Cost Analysis"],
-    ["reports", "📄 Reports"],
-  ];
-
-  return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div>
-              <h1 style={styles.headerTitle}>🌱 Tissue Research Notebook</h1>
-              <p style={{ margin: "6px 0 0", ...styles.muted }}>Simple sections • Preview ready • Local storage</p>
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <Button onClick={() => setTab("cultures")}>+ New Record</Button>
-              <Button variant="outline" onClick={exportReport}>⬇️ Export</Button>
-            </div>
-          </div>
-        </header>
-
-        <nav style={styles.nav}>
-          {tabs.map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              style={{
-                ...styles.navBtn,
-                background: tab === key ? "#0f172a" : "white",
-                color: tab === key ? "white" : "#475569",
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-
-        {tab === "dashboard" && (
-          <section style={{ display: "grid", gap: 12 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
-              <CompactStat icon="📘" label="Projects" value={data.projects.length} sub="โปรเจกต์" />
-              <CompactStat icon="📋" label="Experiments" value={data.experiments.length} sub="การทดลอง" />
-              <CompactStat icon="🌿" label="Cultures" value={summary.total} sub="รายการเลี้ยง" />
-              <CompactStat icon="✅" label="Active" value={summary.active} sub="รอด/กำลังโต" />
-              <CompactStat icon="⚠️" label="Contam" value={`${summary.contamRate}%`} sub={`${summary.contaminated} รายการ`} />
-              <CompactStat icon="💰" label="Cost/L" value={`${money(totalCost)}฿`} sub="ต้นทุน 1 ลิตร" />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
-              <MiniList
-                title="📌 Project ล่าสุด"
-                emptyText="ยังไม่มีโปรเจกต์"
-                items={data.projects.slice(0, 3).map((project) => (
-                  <div key={project.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #e2e8f0" }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{project.name}</div>
-                      <div style={{ ...styles.muted, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{project.type}</div>
-                    </div>
-                    <StatusBadge status={project.status} />
-                  </div>
-                ))}
-              />
-
-              <MiniList
-                title="🌿 Culture ล่าสุด"
-                emptyText="ยังไม่มี Culture"
-                items={data.cultures.slice(0, 3).map((culture) => (
-                  <div key={culture.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #e2e8f0" }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{culture.id}</div>
-                      <div style={{ ...styles.muted, fontSize: 12 }}>{culture.plant} • {culture.formula} • {daysFrom(culture.startDate)} วัน</div>
-                    </div>
-                    <StatusBadge status={culture.status} />
-                  </div>
-                ))}
-              />
-            </div>
-
-            <Card>
-              <h3 style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 900 }}>💰 ต้นทุนหลักต่อ 1 ลิตร</h3>
-              <div style={{ display: "grid", gap: 8 }}>
-                {data.costs.slice(0, 4).map((row) => (
-                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #e2e8f0" }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.item}</div>
-                      <div style={{ ...styles.muted, fontSize: 12 }}>{row.used} {row.unit}/L • {money(costPerUnit(row))} บาท/{row.unit}</div>
-                    </div>
-                    <div style={{ fontWeight: 900 }}>{money(usedCost(row))}฿/L</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </section>
-        )}
-
-        {tab === "projects" && (
-          <section style={{ display: "grid", gap: 14 }}>
-            <Card>
-              <SectionTitle title="Projects" subtitle="สร้าง แก้ไข และลบโปรเจกต์วิจัย" />
-              <div style={styles.grid}>
-                <TextInput placeholder="ชื่อโปรเจกต์" value={newProject.name} onChange={(value) => setNewProject({ ...newProject, name: value })} />
-                <TextInput placeholder="ประเภท" value={newProject.type} onChange={(value) => setNewProject({ ...newProject, type: value })} />
-                <StatusSelect value={newProject.status} onChange={(value) => setNewProject({ ...newProject, status: value })} />
-                <TextInput placeholder="เป้าหมาย" value={newProject.goal} onChange={(value) => setNewProject({ ...newProject, goal: value })} />
-                <Button onClick={addProject}>เพิ่มโปรเจกต์</Button>
-              </div>
-            </Card>
-
-            <DataTable columns={["ID", "Name", "Type", "Status", "Goal", "Actions"]}>
-              {data.projects.map((project) => (
-                <tr key={project.id}>
-                  <td style={styles.td}>{project.id}</td>
-                  <td style={styles.td}><TextInput value={project.name} onChange={(value) => updateCollection("projects", project.id, { name: value })} /></td>
-                  <td style={styles.td}><TextInput value={project.type} onChange={(value) => updateCollection("projects", project.id, { type: value })} /></td>
-                  <td style={styles.td}><StatusSelect value={project.status} onChange={(value) => updateCollection("projects", project.id, { status: value })} /></td>
-                  <td style={styles.td}><TextInput value={project.goal} onChange={(value) => updateCollection("projects", project.id, { goal: value })} /></td>
-                  <td style={styles.td}><Button variant="danger" onClick={() => deleteFrom("projects", project.id)}>ลบ</Button></td>
-                </tr>
-              ))}
-            </DataTable>
-          </section>
-        )}
-
-        {tab === "experiments" && (
-          <section style={{ display: "grid", gap: 14 }}>
-            <Card>
-              <SectionTitle title="Experiments" subtitle="บันทึกการทดลองปกติ" />
-              <div style={styles.grid}>
-                <TextInput placeholder="ชื่อการทดลอง" value={newExperiment.title} onChange={(value) => setNewExperiment({ ...newExperiment, title: value })} />
-                <select value={newExperiment.projectId} onChange={(event) => setNewExperiment({ ...newExperiment, projectId: event.target.value })} style={styles.input}>
-                  {data.projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-                </select>
-                <TextInput placeholder="ชนิดพืช" value={newExperiment.plant} onChange={(value) => setNewExperiment({ ...newExperiment, plant: value })} />
-                <TextInput placeholder="สูตรอาหาร" value={newExperiment.formula} onChange={(value) => setNewExperiment({ ...newExperiment, formula: value })} />
-                <TextInput type="date" value={newExperiment.startDate} onChange={(value) => setNewExperiment({ ...newExperiment, startDate: value })} />
-                <StatusSelect value={newExperiment.status} onChange={(value) => setNewExperiment({ ...newExperiment, status: value })} />
-              </div>
-              <div style={{ marginTop: 10 }}><TextArea placeholder="วัตถุประสงค์" value={newExperiment.objective} onChange={(value) => setNewExperiment({ ...newExperiment, objective: value })} /></div>
-              <div style={{ marginTop: 10 }}><TextArea placeholder="หมายเหตุ" value={newExperiment.note} onChange={(value) => setNewExperiment({ ...newExperiment, note: value })} /></div>
-              <div style={{ marginTop: 10 }}><Button onClick={addExperiment}>เพิ่มการทดลอง</Button></div>
-            </Card>
-
-            <DataTable columns={["ID", "Title", "Plant", "Formula", "Age", "Status", "Note", "Actions"]}>
-              {data.experiments.map((experiment) => (
-                <tr key={experiment.id}>
-                  <td style={styles.td}>{experiment.id}</td>
-                  <td style={styles.td}><TextInput value={experiment.title} onChange={(value) => updateCollection("experiments", experiment.id, { title: value })} /></td>
-                  <td style={styles.td}><TextInput value={experiment.plant} onChange={(value) => updateCollection("experiments", experiment.id, { plant: value })} /></td>
-                  <td style={styles.td}><TextInput value={experiment.formula} onChange={(value) => updateCollection("experiments", experiment.id, { formula: value })} /></td>
-                  <td style={styles.td}>{daysFrom(experiment.startDate)} วัน</td>
-                  <td style={styles.td}><StatusSelect value={experiment.status} onChange={(value) => updateCollection("experiments", experiment.id, { status: value })} /></td>
-                  <td style={styles.td}><TextInput value={experiment.note} onChange={(value) => updateCollection("experiments", experiment.id, { note: value })} /></td>
-                  <td style={styles.td}><Button variant="danger" onClick={() => deleteFrom("experiments", experiment.id)}>ลบ</Button></td>
-                </tr>
-              ))}
-            </DataTable>
-          </section>
-        )}
-
-        {tab === "cultures" && (
-          <section style={{ display: "grid", gap: 14 }}>
-            <Card>
-              <SectionTitle title="Culture Records" subtitle="บันทึก culture แต่ละขวด/ถุง" />
-              <div style={styles.grid}>
-                <select value={newCulture.experimentId} onChange={(event) => setNewCulture({ ...newCulture, experimentId: event.target.value })} style={styles.input}>
-                  <option value="">เลือกการทดลอง</option>
-                  {data.experiments.map((experiment) => <option key={experiment.id} value={experiment.id}>{experiment.title}</option>)}
-                </select>
-                <TextInput placeholder="ชนิดพืช" value={newCulture.plant} onChange={(value) => setNewCulture({ ...newCulture, plant: value })} />
-                <TextInput placeholder="สูตรอาหาร" value={newCulture.formula} onChange={(value) => setNewCulture({ ...newCulture, formula: value })} />
-                <TextInput type="date" value={newCulture.startDate} onChange={(value) => setNewCulture({ ...newCulture, startDate: value })} />
-                <StatusSelect value={newCulture.status} onChange={(value) => setNewCulture({ ...newCulture, status: value })} />
-                <Button onClick={addCulture}>เพิ่ม Culture</Button>
-              </div>
-              <div style={{ marginTop: 10 }}><TextArea placeholder="หมายเหตุ" value={newCulture.note} onChange={(value) => setNewCulture({ ...newCulture, note: value })} /></div>
-            </Card>
-
-            <DataTable columns={["ID", "Plant", "Formula", "Age", "Status", "Note", "Actions"]}>
-              {data.cultures.map((culture) => (
-                <tr key={culture.id}>
-                  <td style={styles.td}>{culture.id}</td>
-                  <td style={styles.td}><TextInput value={culture.plant} onChange={(value) => updateCollection("cultures", culture.id, { plant: value })} /></td>
-                  <td style={styles.td}><TextInput value={culture.formula} onChange={(value) => updateCollection("cultures", culture.id, { formula: value })} /></td>
-                  <td style={styles.td}>{daysFrom(culture.startDate)} วัน</td>
-                  <td style={styles.td}><StatusSelect value={culture.status} onChange={(value) => updateCollection("cultures", culture.id, { status: value })} /></td>
-                  <td style={styles.td}><TextInput value={culture.note} onChange={(value) => updateCollection("cultures", culture.id, { note: value })} /></td>
-                  <td style={styles.td}><Button variant="danger" onClick={() => deleteFrom("cultures", culture.id)}>ลบ</Button></td>
-                </tr>
-              ))}
-            </DataTable>
-          </section>
-        )}
-
-        {tab === "formulas" && (
-          <section style={{ display: "grid", gap: 14 }}>
-            <Card>
-              <SectionTitle title="Formulas" subtitle="บันทึกสูตรอาหาร" />
-              <div style={styles.grid}>
-                <TextInput placeholder="ชื่อสูตร" value={newFormula.name} onChange={(value) => setNewFormula({ ...newFormula, name: value })} />
-                <TextInput placeholder="พืชที่ใช้" value={newFormula.plant} onChange={(value) => setNewFormula({ ...newFormula, plant: value })} />
-                <Button onClick={addFormula}>เพิ่มสูตร</Button>
-              </div>
-              <div style={{ marginTop: 10 }}><TextArea placeholder="รายละเอียดสูตร" value={newFormula.detail} onChange={(value) => setNewFormula({ ...newFormula, detail: value })} /></div>
-              <div style={{ marginTop: 10 }}><TextArea placeholder="หมายเหตุ" value={newFormula.note} onChange={(value) => setNewFormula({ ...newFormula, note: value })} /></div>
-            </Card>
-
-            <DataTable columns={["ID", "Name", "Plant", "Detail", "Note", "Actions"]}>
-              {data.formulas.map((formula) => (
-                <tr key={formula.id}>
-                  <td style={styles.td}>{formula.id}</td>
-                  <td style={styles.td}><TextInput value={formula.name} onChange={(value) => updateCollection("formulas", formula.id, { name: value })} /></td>
-                  <td style={styles.td}><TextInput value={formula.plant} onChange={(value) => updateCollection("formulas", formula.id, { plant: value })} /></td>
-                  <td style={styles.td}><TextArea value={formula.detail} onChange={(value) => updateCollection("formulas", formula.id, { detail: value })} /></td>
-                  <td style={styles.td}><TextInput value={formula.note} onChange={(value) => updateCollection("formulas", formula.id, { note: value })} /></td>
-                  <td style={styles.td}><Button variant="danger" onClick={() => deleteFrom("formulas", formula.id)}>ลบ</Button></td>
-                </tr>
-              ))}
-            </DataTable>
-          </section>
-        )}
-
-        {tab === "costs" && (
-          <section style={{ display: "grid", gap: 14 }}>
-            <Card>
-              <SectionTitle title="Cost Analysis" subtitle="กำหนดปริมาณที่ใช้ทุกอย่างเป็นหน่วยต่อลิตร เช่น g/L หรือ ml/L แล้วระบบคำนวณต้นทุนต่อ 1 ลิตรให้" />
-              <div style={styles.grid}>
-                <div>
-                  <label style={{ fontWeight: 800 }}>รายการ</label>
-                  <TextInput placeholder="เช่น Agar, Sugar, 20-20-20+TE" value={newCost.item} onChange={(value) => setNewCost({ ...newCost, item: value })} />
-                </div>
-                <div>
-                  <label style={{ fontWeight: 800 }}>ราคา (บาท)</label>
-                  <TextInput type="number" placeholder="ราคา ... บาท" value={newCost.price} onChange={(value) => setNewCost({ ...newCost, price: Number(value) })} />
-                </div>
-                <div>
-                  <label style={{ fontWeight: 800 }}>ปริมาตร</label>
-                  <TextInput type="number" placeholder="ปริมาตร" value={newCost.volume} onChange={(value) => setNewCost({ ...newCost, volume: Number(value) })} />
-                </div>
-                <div>
-                  <label style={{ fontWeight: 800 }}>ปริมาณที่ใช้ต่อลิตร</label>
-                  <TextInput type="number" placeholder="เช่น 2 = 2 g/L หรือ 2 ml/L" value={newCost.used} onChange={(value) => setNewCost({ ...newCost, used: Number(value) })} />
-                </div>
-                <div>
-                  <label style={{ fontWeight: 800 }}>หน่วย</label>
-                  <UnitSelect value={newCost.unit} onChange={(value) => setNewCost({ ...newCost, unit: value })} />
-                </div>
-                <Button onClick={addCost}>เพิ่มต้นทุน</Button>
-              </div>
-              <div style={{ marginTop: 10 }}><TextArea placeholder="หมายเหตุ" value={newCost.note} onChange={(value) => setNewCost({ ...newCost, note: value })} /></div>
-            </Card>
-
-            <Card>
-              <b>ต้นทุนรวมต่อ 1 ลิตร: {money(totalCost)} บาท/L</b>
-            </Card>
-
-            <DataTable columns={["ID", "รายการ", "ราคา", "ปริมาตรที่ซื้อ", "ใช้ต่อลิตร", "หน่วย", "ราคา/หน่วย", "ต้นทุน/ลิตร", "หมายเหตุ", "Actions"]}> 
-              {data.costs.map((row) => (
-                <tr key={row.id}>
-                  <td style={styles.td}>{row.id}</td>
-                  <td style={styles.td}><TextInput value={row.item} onChange={(value) => updateCollection("costs", row.id, { item: value })} /></td>
-                  <td style={styles.td}><TextInput type="number" value={row.price} onChange={(value) => updateCollection("costs", row.id, { price: Number(value) })} /> บาท</td>
-                  <td style={styles.td}><TextInput type="number" value={row.volume} onChange={(value) => updateCollection("costs", row.id, { volume: Number(value) })} /></td>
-                  <td style={styles.td}><TextInput type="number" value={row.used ?? 0} onChange={(value) => updateCollection("costs", row.id, { used: Number(value) })} /></td>
-                  <td style={styles.td}><UnitSelect value={row.unit} onChange={(value) => updateCollection("costs", row.id, { unit: value })} /></td>
-                  <td style={styles.td}>{money(costPerUnit(row))} บาท/{row.unit}</td>
-                  <td style={styles.td}><b>{money(usedCost(row))}</b> บาท/L</td>
-                  <td style={styles.td}><TextInput value={row.note} onChange={(value) => updateCollection("costs", row.id, { note: value })} /></td>
-                  <td style={styles.td}><Button variant="danger" onClick={() => deleteFrom("costs", row.id)}>ลบ</Button></td>
-                </tr>
-              ))}
-            </DataTable>
-          </section>
-        )}
-
-        {tab === "reports" && (
-          <section style={{ display: "grid", gap: 14 }}>
-            <Card>
-              <SectionTitle title="Reports" subtitle="สรุปรายงานแบบเรียบง่าย" />
-              <div style={styles.grid}>
-                <StatCard label="Projects" value={data.projects.length} sub="ทั้งหมด" />
-                <StatCard label="Experiments" value={data.experiments.length} sub="ทั้งหมด" />
-                <StatCard label="Cultures" value={data.cultures.length} sub="ทั้งหมด" />
-                <StatCard label="Survival" value={`${summary.survivalRate}%`} sub="อัตรารอด" />
-                <StatCard label="Cost / Liter" value={`${money(totalCost)}฿`} sub="ต้นทุนต่อ 1 ลิตร" />
-              </div>
-              <div style={{ marginTop: 14 }}><Button onClick={exportReport}>ดาวน์โหลดรายงาน TXT</Button></div>
-            </Card>
-          </section>
-        )}
-      </div>
-    </div>
-  );
-}
+render();
+</script>
+</body>
+</html>
