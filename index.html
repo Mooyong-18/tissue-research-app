@@ -1,237 +1,500 @@
-<!doctype html>
-<html lang="th">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tissue Research Notebook</title>
-  <style>
-    * { box-sizing: border-box; }
-    :root {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --ink: #0f172a;
-      --muted: #64748b;
-      --line: #e2e8f0;
-      --soft: #f1f5f9;
-      --primary: #0f172a;
-      --danger: #dc2626;
-      --green-bg: #dcfce7;
-      --green: #047857;
-      --red-bg: #fee2e2;
-      --red: #b91c1c;
-      --grey-bg: #e2e8f0;
-      --grey: #334155;
-    }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: Arial, sans-serif;
-      padding: 16px;
-    }
-    .container { max-width: 1180px; margin: 0 auto; }
-    .header {
-      background: var(--card);
-      border-radius: 28px;
-      padding: 22px;
-      box-shadow: 0 4px 18px rgba(15,23,42,.08);
-      margin-bottom: 18px;
-    }
-    .header-row { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center; }
-    h1 { margin:0; font-size:28px; font-weight:900; line-height:1.2; }
-    h2 { margin:0; font-size:22px; font-weight:900; }
-    h3 { margin:0 0 10px; font-size:16px; font-weight:900; }
-    .muted { color:var(--muted); font-size:14px; }
-    .nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
-    @media (min-width: 900px) { .nav { grid-template-columns:repeat(7,minmax(0,1fr)); } }
-    .nav-btn {
-      border:0; border-radius:22px; padding:15px 12px; font-size:16px; font-weight:800; cursor:pointer;
-      box-shadow:0 2px 10px rgba(15,23,42,.04); background:white; color:#475569;
-    }
-    .nav-btn.active { background:var(--primary); color:white; }
-    .card { background:var(--card); border-radius:24px; padding:18px; box-shadow:0 4px 18px rgba(15,23,42,.07); }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
-    .compact-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-    .section { display:grid; gap:14px; }
-    .stat { background:white; border-radius:18px; padding:12px; min-height:86px; box-shadow:0 3px 12px rgba(15,23,42,.06); }
-    .stat-top { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
-    .stat-label { color:var(--muted); font-size:12px; font-weight:700; }
-    .stat-value { font-size:24px; font-weight:900; margin-top:2px; line-height:1; }
-    .stat-sub { color:#94a3b8; font-size:11px; margin-top:4px; }
-    input, textarea, select {
-      width:100%; padding:11px 12px; border:1px solid #cbd5e1; border-radius:14px; font-size:14px; background:white;
-    }
-    textarea { min-height:82px; resize:vertical; }
-    label { font-weight:800; display:block; margin-bottom:6px; }
-    .btn { padding:11px 15px; border-radius:14px; border:0; background:var(--primary); color:white; font-weight:800; cursor:pointer; }
-    .btn-outline { background:white; color:var(--primary); border:1px solid #cbd5e1; }
-    .btn-danger { background:var(--danger); color:white; padding:9px 12px; border-radius:12px; }
-    .table-wrap { overflow-x:auto; border-radius:18px; border:1px solid var(--line); background:white; }
-    table { width:100%; min-width:780px; border-collapse:collapse; font-size:14px; }
-    th { text-align:left; background:var(--soft); padding:12px; border-bottom:1px solid var(--line); color:#475569; }
-    td { padding:10px; border-bottom:1px solid var(--line); vertical-align:top; }
-    .badge { border-radius:999px; padding:5px 10px; font-size:12px; font-weight:800; display:inline-block; }
-    .badge-green { background:var(--green-bg); color:var(--green); }
-    .badge-red { background:var(--red-bg); color:var(--red); }
-    .badge-grey { background:var(--grey-bg); color:var(--grey); }
-    .mini-row { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); }
-    .truncate { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
-    .form-spacer { margin-top:10px; }
-    .top-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .hidden { display:none !important; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header class="header">
-      <div class="header-row">
-        <div>
-          <h1>🌱 Tissue Research Notebook</h1>
-          <p class="muted" style="margin:6px 0 0">Simple sections • HTML ready • Local storage</p>
+import React, { useMemo, useState } from "react";
+
+const pages = [
+  { id: "dashboard", label: "ภาพรวม", title: "Dashboard", sub: "OVERVIEW / ภาพรวม", icon: "📊" },
+  { id: "cultures", label: "Culture", title: "Cultures", sub: "TRACKING / ติดตามขวด", icon: "🧪" },
+  { id: "experiments", label: "ทดลอง", title: "Experiments", sub: "RESEARCH / การทดลอง", icon: "🔬" },
+  { id: "formulas", label: "สูตร", title: "Formulas", sub: "MEDIA / สูตรอาหาร", icon: "⚗️" },
+  { id: "costs", label: "ต้นทุน", title: "Costs", sub: "ANALYSIS / ต้นทุน", icon: "💰" },
+  { id: "reports", label: "Report", title: "Reports", sub: "PDF / รายงาน", icon: "🖨" },
+  { id: "settings", label: "ตั้งค่า", title: "Settings", sub: "SYSTEM / ระบบ", icon: "⚙️" },
+];
+
+const cultures = [
+  { id: "C-001", plant: "กล้วยน้ำว้า", part: "ยอด", status: "Active", formula: "F1", exp: "EXP-001", day: 14, score: 91, note: "ใบเขียวดี ไม่มีเชื้อ", cost: 4.56 },
+  { id: "C-002", plant: "กล้วยน้ำว้า", part: "ยอด", status: "Shoot", formula: "F1", exp: "EXP-001", day: 21, score: 88, note: "เริ่มแตกยอดใหม่", cost: 4.56 },
+  { id: "C-003", plant: "กล้วยน้ำว้า", part: "ยอด", status: "Contamination", formula: "F2", exp: "EXP-001", day: 14, score: 22, note: "พบเชื้อ ควรแยกทิ้ง", cost: 8.82 },
+  { id: "C-004", plant: "เพชรสังฆาต", part: "ข้อ", status: "Browning", formula: "F4", exp: "EXP-002", day: 34, score: 61, note: "เริ่มแน่นขวด รอย้ายอาหาร", cost: 5.99 },
+  { id: "C-005", plant: "ว่านหางจระเข้", part: "หน่อ", status: "Rooting", formula: "F3", exp: "EXP-003", day: 28, score: 74, note: "รากเริ่มออกชัด", cost: 5.24 },
+];
+
+const experiments = [
+  { code: "EXP-001", name: "เปรียบเทียบสูตร F1 vs F2", project: "สูตรอาหารต้นทุนต่ำ", formula: "F1 / F2", samples: 80, survival: 82, contam: 3.2, goal: 80 },
+  { code: "EXP-002", name: "Charcoal ลด browning", project: "พืชเกิด browning", formula: "F4", samples: 40, survival: 61, contam: 5.1, goal: 70 },
+  { code: "EXP-003", name: "อาหารเปลี่ยนสี Indicator", project: "pH Indicator", formula: "F3", samples: 60, survival: 74, contam: 2.8, goal: 75 },
+];
+
+const formulas = [
+  { code: "F1", name: "Low-cost Medium", ph: 5.7, cost: 45.6, perBottle: 4.56, survival: 91, tag: "Recommended", items: "20-20-20 + TE, CaNO3, MgSO4, Sugar, Agar" },
+  { code: "F2", name: "Standard Medium", ph: 5.8, cost: 88.2, perBottle: 8.82, survival: 82, tag: "Control", items: "MS base, Sugar, Agar, Vitamins" },
+  { code: "F3", name: "Indicator Medium", ph: 5.6, cost: 52.4, perBottle: 5.24, survival: 74, tag: "Testing", items: "Low-cost base, Indicator, Sugar, Agar" },
+  { code: "F4", name: "Charcoal Medium", ph: 5.7, cost: 59.9, perBottle: 5.99, survival: 61, tag: "Browning", items: "Low-cost base, Activated Charcoal, Sugar, Agar" },
+];
+
+const materials = [
+  { name: "Agar", category: "วุ้น / Solidifying Agent", cost: 210, unit: "500 g", used: "7 g/L", calc: "2.94 ฿/L" },
+  { name: "Sugar", category: "Carbon Source", cost: 35, unit: "1 kg", used: "30 g/L", calc: "1.05 ฿/L" },
+  { name: "ขวดแก้ว", category: "ภาชนะ", cost: 420, unit: "60 ชิ้น", used: "1 ขวด", calc: "7.00 ฿/ขวด" },
+  { name: "ถุง PP", category: "ภาชนะ", cost: 180, unit: "100 ใบ", used: "1 ใบ", calc: "1.80 ฿/ใบ" },
+];
+
+const equipment = [
+  { name: "หม้อนึ่งฆ่าเชื้อ", category: "Sterilization", cost: 3500, unit: "1 เครื่อง", life: "36 เดือน", calc: "97.22 ฿/เดือน" },
+  { name: "ตู้ปลอดเชื้อ DIY", category: "Clean Bench", cost: 1800, unit: "1 ชุด", life: "24 เดือน", calc: "75.00 ฿/เดือน" },
+  { name: "LED Grow Light", category: "Lighting", cost: 650, unit: "1 ชุด", life: "18 เดือน", calc: "36.11 ฿/เดือน" },
+];
+
+const timeline = [
+  { day: "Day 0", title: "ลงอาหารสูตร F4", note: "ใช้ charcoal medium ลด browning", status: "Active" },
+  { day: "Day 7", title: "เริ่มแตกยอด", note: "เนื้อเยื่อยังเขียว ไม่มีเชื้อปนเปื้อน", status: "Shoot" },
+  { day: "Day 14", title: "เพิ่มรูปภาพ", note: "ใบเขียวดี ความชื้นในขวดปกติ", status: "Shoot" },
+  { day: "Day 28", title: "เริ่มแน่นขวด", note: "ควรวางแผนย้ายอาหาร", status: "Browning" },
+  { day: "Day 34", title: "ถึงกำหนด Subculture", note: "แนะนำย้ายอาหารภายใน 48 ชั่วโมง", status: "Browning" },
+];
+
+function runSmokeTests() {
+  const tests = [
+    { name: "has dashboard", pass: pages.some((p) => p.id === "dashboard") },
+    { name: "has bottom-tab pages", pass: ["cultures", "experiments", "formulas", "costs"].every((id) => pages.some((p) => p.id === id)) },
+    { name: "culture ids unique", pass: new Set(cultures.map((c) => c.id)).size === cultures.length },
+    { name: "formula costs positive", pass: formulas.every((f) => f.cost > 0 && f.perBottle > 0) },
+    { name: "experiment percent valid", pass: experiments.every((e) => e.survival >= 0 && e.survival <= 100 && e.contam >= 0) },
+    { name: "timeline has day zero", pass: timeline[0]?.day === "Day 0" },
+    { name: "material costs positive", pass: materials.every((m) => m.cost > 0) },
+    { name: "equipment costs positive", pass: equipment.every((e) => e.cost > 0) },
+  ];
+  if (typeof console !== "undefined") tests.forEach((t) => console.assert(t.pass, `Smoke test failed: ${t.name}`));
+  return tests;
+}
+runSmokeTests();
+
+function cls(...parts) {
+  return parts.filter(Boolean).join(" ");
+}
+
+function statusClass(status) {
+  if (["Active", "Shoot", "Rooting", "Recommended"].includes(status)) return "bg-emerald-50 text-emerald-700 border-emerald-100";
+  if (["Contamination", "Dead"].includes(status)) return "bg-red-50 text-red-700 border-red-100";
+  if (["Browning", "Testing", "Planning"].includes(status)) return "bg-amber-50 text-amber-700 border-amber-100";
+  return "bg-blue-50 text-blue-700 border-blue-100";
+}
+
+function Pill({ children }) {
+  return <span className={cls("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold", statusClass(String(children)))}>{children}</span>;
+}
+
+function Card({ title, right, children, className = "" }) {
+  return (
+    <section className={cls("mb-3 overflow-hidden rounded-[22px] border border-black/5 bg-white shadow-[0_1px_4px_rgba(0,0,0,.06)]", className)}>
+      {title && (
+        <div className="flex items-center justify-between px-[18px] pb-3 pt-4">
+          <h2 className="text-[13px] font-bold uppercase tracking-[.08em] text-slate-500">{title}</h2>
+          {right}
         </div>
-        <div class="top-actions">
-          <button class="btn" onclick="setTab('cultures')">+ New Record</button>
-          <button class="btn btn-outline" onclick="exportReport()">⬇️ Export</button>
-        </div>
+      )}
+      <div className={title ? "px-[18px] pb-4" : "p-[18px]"}>{children}</div>
+    </section>
+  );
+}
+
+function StatCard({ label, value, unit, tone = "bio", wide = false }) {
+  const tones = {
+    bio: "text-emerald-700 before:from-transparent before:via-emerald-200 before:to-transparent",
+    blue: "text-sky-700 before:from-transparent before:via-sky-200 before:to-transparent",
+    amber: "text-amber-700 before:from-transparent before:via-amber-200 before:to-transparent",
+    red: "text-red-700 before:from-transparent before:via-red-200 before:to-transparent",
+  };
+  return (
+    <div className={cls("relative overflow-hidden rounded-2xl border border-black/5 bg-white p-4 shadow-[0_1px_4px_rgba(0,0,0,.06)] before:absolute before:left-0 before:right-0 before:top-0 before:h-0.5 before:bg-gradient-to-r", tones[tone], wide && "col-span-2 bg-gradient-to-br from-emerald-50 to-sky-50")}>
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[.06em] text-slate-400">{label}</div>
+      <div className={cls("font-mono text-2xl font-black leading-none", wide && "text-[32px]")}>{value}<span className="ml-1 text-xs font-normal text-slate-400">{unit}</span></div>
+    </div>
+  );
+}
+
+function Row({ icon, title, sub, right, onClick }) {
+  return (
+    <button onClick={onClick} className="flex w-full items-center gap-3 border-b border-black/5 px-[18px] py-3 text-left last:border-b-0 active:bg-black/[.03]">
+      <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[15px] font-semibold text-slate-900">{title}</div>
+        <div className="truncate text-xs text-slate-400">{sub}</div>
       </div>
-    </header>
-
-    <nav class="nav" id="nav"></nav>
-    <main id="app"></main>
-  </div>
-
-<script>
-const STORAGE_KEY = 'tissue_research_final_clean_html_v1';
-const STATUS_OPTIONS = ['Planning','Running','Active','Rooting','Contamination','Browning','Dead','Closed'];
-const UNIT_OPTIONS = ['g','ml'];
-
-const defaultData = {
-  projects: [
-    { id:'P-001', name:'Low-cost Tissue Culture Medium', type:'อาหารเพาะเลี้ยงต้นทุนต่ำ', status:'Active', goal:'ลดต้นทุนอาหารเพาะเลี้ยงโดยใช้ปุ๋ย 20-20-20+TE และสารที่หาได้ง่าย', note:'โปรเจกต์หลักสำหรับทดลองสูตรอาหารต้นทุนต่ำ' },
-    { id:'P-002', name:'Low-cost Filter Lid', type:'ฝาเพาะเลี้ยงแบบมี filter', status:'Active', goal:'เพิ่มการแลกเปลี่ยนก๊าซ ลดอาการฉ่ำน้ำ และลดการปนเปื้อน', note:'ใช้เปรียบเทียบภาชนะปกติกับฝา filter' }
-  ],
-  experiments: [
-    { id:'EXP-001', projectId:'P-001', title:'เปรียบเทียบสูตร F1 กับ F2', plant:'กล้วย', formula:'F1 / F2', startDate:'2026-04-20', status:'Running', objective:'เปรียบเทียบการเจริญเติบโตและการปนเปื้อนของสูตรอาหารต้นทุนต่ำ', note:'ติดตามผลทุก 7 วัน' }
-  ],
-  cultures: [
-    { id:'BAN-F1-001', experimentId:'EXP-001', plant:'กล้วย', formula:'F1', startDate:'2026-04-20', status:'Active', note:'ยอดเขียวดี ยังไม่พบเชื้อ' },
-    { id:'BAN-F1-002', experimentId:'EXP-001', plant:'กล้วย', formula:'F1', startDate:'2026-04-20', status:'Contamination', note:'พบฝ้าขาวบริเวณผิวอาหาร' },
-    { id:'LID-F1-001', experimentId:'EXP-001', plant:'กล้วย', formula:'F1 + Filter Lid', startDate:'2026-04-22', status:'Active', note:'ใบไม่ฉ่ำน้ำ ภาชนะไม่เกิดหยดน้ำมาก' }
-  ],
-  formulas: [
-    { id:'F1', name:'F1 Banana Growth Medium', plant:'กล้วย', detail:'20-20-20+TE 2g, 15-0-0+27CaO 10ml, MgSO4 10ml, Sugar 30g, Agar 7g ต่อ 1L', note:'สูตรพื้นฐานสำหรับกล้วย' },
-    { id:'F2', name:'F2 + BA/NAA Test', plant:'กล้วย / ไม้ด่าง', detail:'สูตร F1 + BA/NAA', note:'ใช้ทดสอบผลของฮอร์โมน' }
-  ],
-  costs: [
-    { id:'C-001', item:'20-20-20+TE', price:35, volume:100, used:2, unit:'g', note:'ซื้อ 35 บาท ได้ 100 g / ใช้ 2 g/L' },
-    { id:'C-002', item:'Sugar', price:30, volume:1000, used:30, unit:'g', note:'ซื้อ 30 บาท ได้ 1000 g / ใช้ 30 g/L' },
-    { id:'C-003', item:'Agar', price:250, volume:100, used:7, unit:'g', note:'ซื้อ 250 บาท ได้ 100 g / ใช้ 7 g/L' }
-  ]
-};
-
-let state = loadData();
-let tab = 'dashboard';
-
-function loadData(){
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData; } catch { return defaultData; }
+      {right}
+    </button>
+  );
 }
-function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function newId(prefix){ return `${prefix}-${Date.now().toString().slice(-6)}`; }
-function money(v){ return Number(v||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function daysFrom(dateString){ const d=new Date(dateString); if(Number.isNaN(d.getTime())) return 0; return Math.max(0, Math.floor((Date.now()-d.getTime())/86400000)); }
-function costPerUnit(row){ const price=Number(row.price||0); const volume=Number(row.volume||0); return volume>0 ? price/volume : 0; }
-function usedCost(row){ return costPerUnit(row)*Number(row.used||0); }
-function totalUsedCost(){ return state.costs.reduce((s,row)=>s+usedCost(row),0); }
-function stats(){ const total=state.cultures.length; const contaminated=state.cultures.filter(c=>c.status==='Contamination').length; const active=state.cultures.filter(c=>['Active','Rooting','Running'].includes(c.status)).length; return {total,active,contaminated,survivalRate: total?Math.round(active/total*100):0,contamRate: total?Math.round(contaminated/total*100):0}; }
-function esc(v){ return String(v ?? '').replace(/[&<>"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
-function setTab(next){ tab=next; render(); window.scrollTo({top:0,behavior:'smooth'}); }
-function badge(status){ const cls = status==='Contamination'?'badge-red': status==='Closed'?'badge-grey':'badge-green'; return `<span class="badge ${cls}">${esc(status)}</span>`; }
-function input(path, value, placeholder='', type='text'){ return `<input type="${type}" value="${esc(value)}" placeholder="${esc(placeholder)}" onchange="updatePath('${path}', this.value)">`; }
-function textarea(path, value, placeholder=''){ return `<textarea placeholder="${esc(placeholder)}" onchange="updatePath('${path}', this.value)">${esc(value)}</textarea>`; }
-function statusSelect(path, value){ return `<select onchange="updatePath('${path}', this.value)">${STATUS_OPTIONS.map(s=>`<option ${s===value?'selected':''}>${s}</option>`).join('')}</select>`; }
-function unitSelect(path, value){ return `<select onchange="updatePath('${path}', this.value)">${UNIT_OPTIONS.map(s=>`<option value="${s}" ${s===value?'selected':''}>${s}</option>`).join('')}</select>`; }
-function sectionTitle(title, sub){ return `<div style="margin-bottom:14px"><h2>${title}</h2>${sub?`<p class="muted" style="margin:6px 0 0">${sub}</p>`:''}</div>`; }
-function statCard(label,value,sub){ return `<div class="card"><div class="muted" style="font-size:13px">${label}</div><div style="font-size:30px;font-weight:900;margin-top:4px">${value}</div><div style="color:#94a3b8;font-size:12px">${sub}</div></div>`; }
-function compactStat(icon,label,value,sub){ return `<div class="stat"><div class="stat-top"><div><div class="stat-label">${label}</div><div class="stat-value">${value}</div><div class="stat-sub">${sub}</div></div><div style="font-size:20px">${icon}</div></div></div>`; }
-function table(columns, rows){ return `<div class="table-wrap"><table><thead><tr>${columns.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`; }
 
-function updatePath(path, value){
-  const parts = path.split('.');
-  let obj = state;
-  for(let i=0;i<parts.length-1;i++) obj = obj[parts[i]];
-  const key = parts[parts.length-1];
-  const numeric = ['price','volume','used'].includes(key);
-  obj[key] = numeric ? Number(value || 0) : value;
-  saveData(); render();
+function Button({ children, onClick, ghost = false }) {
+  return <button onClick={onClick} className={cls("inline-flex items-center justify-center gap-1 rounded-xl px-4 py-2.5 text-sm font-bold active:scale-95", ghost ? "border border-black/5 bg-black/[.04] text-slate-600" : "bg-emerald-700 text-white")}>{children}</button>;
 }
-function del(collection, id){ state[collection]=state[collection].filter(x=>x.id!==id); saveData(); render(); }
-function add(collection, item){ state[collection]=[item,...state[collection]]; saveData(); render(); }
 
-function addProject(){ const item={ id:newId('P'), name:val('newProjectName'), type:val('newProjectType'), status:val('newProjectStatus'), goal:val('newProjectGoal'), note:''}; if(!item.name.trim()) return; add('projects',item); }
-function addExperiment(){ const item={ id:newId('EXP'), title:val('newExpTitle'), projectId:val('newExpProject'), plant:val('newExpPlant'), formula:val('newExpFormula'), startDate:val('newExpDate'), status:val('newExpStatus'), objective:val('newExpObjective'), note:val('newExpNote')}; if(!item.title.trim()) return; add('experiments',item); }
-function addCulture(){ const item={ id:newId('CUL'), experimentId:val('newCultureExp'), plant:val('newCulturePlant'), formula:val('newCultureFormula'), startDate:val('newCultureDate'), status:val('newCultureStatus'), note:val('newCultureNote')}; if(!item.plant.trim()) return; add('cultures',item); }
-function addFormula(){ const item={ id:newId('F'), name:val('newFormulaName'), plant:val('newFormulaPlant'), detail:val('newFormulaDetail'), note:val('newFormulaNote')}; if(!item.name.trim()) return; add('formulas',item); }
-function addCost(){ const item={ id:newId('C'), item:val('newCostItem'), price:Number(val('newCostPrice')||0), volume:Number(val('newCostVolume')||0), used:Number(val('newCostUsed')||0), unit:val('newCostUnit'), note:val('newCostNote')}; if(!item.item.trim()) return; add('costs',item); }
-function val(id){ const el=document.getElementById(id); return el ? el.value : ''; }
-
-function renderNav(){
-  const tabs=[['dashboard','📊 Dashboard'],['projects','📘 Projects'],['experiments','📋 Experiments'],['cultures','🌿 Culture Records'],['formulas','🧪 Formulas'],['costs','💰 Cost Analysis'],['reports','📄 Reports']];
-  document.getElementById('nav').innerHTML = tabs.map(([key,label])=>`<button class="nav-btn ${tab===key?'active':''}" onclick="setTab('${key}')">${label}</button>`).join('');
+function Progress({ value, tone = "bg-emerald-600" }) {
+  return <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cls("h-full rounded-full", tone)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} /></div>;
 }
-function render(){ renderNav(); const app=document.getElementById('app'); app.innerHTML = pages[tab](); }
 
-const pages = {
-  dashboard(){ const s=stats(); return `<section class="section">
-    <div class="compact-grid">
-      ${compactStat('📘','Projects',state.projects.length,'โปรเจกต์')}
-      ${compactStat('📋','Experiments',state.experiments.length,'การทดลอง')}
-      ${compactStat('🌿','Cultures',s.total,'รายการเลี้ยง')}
-      ${compactStat('✅','Active',s.active,'รอด/กำลังโต')}
-      ${compactStat('⚠️','Contam',s.contamRate+'%',s.contaminated+' รายการ')}
-      ${compactStat('💰','Cost/L',money(totalUsedCost())+'฿','ต้นทุน 1 ลิตร')}
+function ScoreRing({ value }) {
+  const tone = value >= 75 ? "text-emerald-700" : value >= 50 ? "text-amber-700" : "text-red-700";
+  return (
+    <div className={cls("relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 font-mono text-xs font-black", tone)} style={{ background: `conic-gradient(currentColor ${value}%, #e5e7eb 0)` }}>
+      <div className="absolute inset-1 rounded-full bg-white" />
+      <span className="relative">{value}</span>
     </div>
-    <div class="grid">
-      <div class="card"><h3>📌 Project ล่าสุด</h3>${state.projects.slice(0,3).map(p=>`<div class="mini-row"><div class="truncate"><b>${esc(p.name)}</b><div class="muted truncate" style="font-size:12px">${esc(p.type)}</div></div>${badge(p.status)}</div>`).join('')}</div>
-      <div class="card"><h3>🌿 Culture ล่าสุด</h3>${state.cultures.slice(0,3).map(c=>`<div class="mini-row"><div class="truncate"><b>${esc(c.id)}</b><div class="muted" style="font-size:12px">${esc(c.plant)} • ${esc(c.formula)} • ${daysFrom(c.startDate)} วัน</div></div>${badge(c.status)}</div>`).join('')}</div>
-    </div>
-    <div class="card"><h3>💰 ต้นทุนหลักต่อ 1 ลิตร</h3>${state.costs.slice(0,4).map(row=>`<div class="mini-row"><div class="truncate"><b>${esc(row.item)}</b><div class="muted" style="font-size:12px">${row.used} ${row.unit}/L • ${money(costPerUnit(row))} บาท/${row.unit}</div></div><b>${money(usedCost(row))}฿/L</b></div>`).join('')}</div>
-  </section>`; },
-
-  projects(){ return `<section class="section"><div class="card">${sectionTitle('Projects','สร้าง แก้ไข และลบโปรเจกต์วิจัย')}
-    <div class="grid"><input id="newProjectName" placeholder="ชื่อโปรเจกต์"><input id="newProjectType" placeholder="ประเภท"><select id="newProjectStatus">${STATUS_OPTIONS.map(s=>`<option>${s}</option>`).join('')}</select><input id="newProjectGoal" placeholder="เป้าหมาย"><button class="btn" onclick="addProject()">เพิ่มโปรเจกต์</button></div></div>
-    ${table(['ID','Name','Type','Status','Goal','Actions'], state.projects.map((p,i)=>`<tr><td>${p.id}</td><td>${input(`projects.${i}.name`,p.name)}</td><td>${input(`projects.${i}.type`,p.type)}</td><td>${statusSelect(`projects.${i}.status`,p.status)}</td><td>${input(`projects.${i}.goal`,p.goal)}</td><td><button class="btn btn-danger" onclick="del('projects','${p.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
-
-  experiments(){ return `<section class="section"><div class="card">${sectionTitle('Experiments','บันทึกการทดลองปกติ')}
-    <div class="grid"><input id="newExpTitle" placeholder="ชื่อการทดลอง"><select id="newExpProject">${state.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><input id="newExpPlant" placeholder="ชนิดพืช"><input id="newExpFormula" placeholder="สูตรอาหาร"><input id="newExpDate" type="date" value="${new Date().toISOString().slice(0,10)}"><select id="newExpStatus">${STATUS_OPTIONS.map(s=>`<option>${s}</option>`).join('')}</select></div><div class="form-spacer"><textarea id="newExpObjective" placeholder="วัตถุประสงค์"></textarea></div><div class="form-spacer"><textarea id="newExpNote" placeholder="หมายเหตุ"></textarea></div><div class="form-spacer"><button class="btn" onclick="addExperiment()">เพิ่มการทดลอง</button></div></div>
-    ${table(['ID','Title','Plant','Formula','Age','Status','Note','Actions'], state.experiments.map((e,i)=>`<tr><td>${e.id}</td><td>${input(`experiments.${i}.title`,e.title)}</td><td>${input(`experiments.${i}.plant`,e.plant)}</td><td>${input(`experiments.${i}.formula`,e.formula)}</td><td>${daysFrom(e.startDate)} วัน</td><td>${statusSelect(`experiments.${i}.status`,e.status)}</td><td>${input(`experiments.${i}.note`,e.note)}</td><td><button class="btn btn-danger" onclick="del('experiments','${e.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
-
-  cultures(){ return `<section class="section"><div class="card">${sectionTitle('Culture Records','บันทึก culture แต่ละขวด/ถุง')}
-    <div class="grid"><select id="newCultureExp"><option value="">เลือกการทดลอง</option>${state.experiments.map(e=>`<option value="${e.id}">${esc(e.title)}</option>`).join('')}</select><input id="newCulturePlant" placeholder="ชนิดพืช"><input id="newCultureFormula" placeholder="สูตรอาหาร"><input id="newCultureDate" type="date" value="${new Date().toISOString().slice(0,10)}"><select id="newCultureStatus">${STATUS_OPTIONS.map(s=>`<option>${s}</option>`).join('')}</select><button class="btn" onclick="addCulture()">เพิ่ม Culture</button></div><div class="form-spacer"><textarea id="newCultureNote" placeholder="หมายเหตุ"></textarea></div></div>
-    ${table(['ID','Plant','Formula','Age','Status','Note','Actions'], state.cultures.map((c,i)=>`<tr><td>${c.id}</td><td>${input(`cultures.${i}.plant`,c.plant)}</td><td>${input(`cultures.${i}.formula`,c.formula)}</td><td>${daysFrom(c.startDate)} วัน</td><td>${statusSelect(`cultures.${i}.status`,c.status)}</td><td>${input(`cultures.${i}.note`,c.note)}</td><td><button class="btn btn-danger" onclick="del('cultures','${c.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
-
-  formulas(){ return `<section class="section"><div class="card">${sectionTitle('Formulas','บันทึกสูตรอาหาร')}
-    <div class="grid"><input id="newFormulaName" placeholder="ชื่อสูตร"><input id="newFormulaPlant" placeholder="พืชที่ใช้"><button class="btn" onclick="addFormula()">เพิ่มสูตร</button></div><div class="form-spacer"><textarea id="newFormulaDetail" placeholder="รายละเอียดสูตร"></textarea></div><div class="form-spacer"><textarea id="newFormulaNote" placeholder="หมายเหตุ"></textarea></div></div>
-    ${table(['ID','Name','Plant','Detail','Note','Actions'], state.formulas.map((f,i)=>`<tr><td>${f.id}</td><td>${input(`formulas.${i}.name`,f.name)}</td><td>${input(`formulas.${i}.plant`,f.plant)}</td><td>${textarea(`formulas.${i}.detail`,f.detail)}</td><td>${input(`formulas.${i}.note`,f.note)}</td><td><button class="btn btn-danger" onclick="del('formulas','${f.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
-
-  costs(){ return `<section class="section"><div class="card">${sectionTitle('Cost Analysis','กำหนดปริมาณที่ใช้ทุกอย่างเป็นหน่วยต่อลิตร เช่น g/L หรือ ml/L แล้วระบบคำนวณต้นทุนต่อ 1 ลิตรให้')}
-    <div class="grid"><div><label>รายการ</label><input id="newCostItem" placeholder="เช่น Agar, Sugar, 20-20-20+TE"></div><div><label>ราคา (บาท)</label><input id="newCostPrice" type="number" value="0"></div><div><label>ปริมาตรที่ซื้อ</label><input id="newCostVolume" type="number" value="0"></div><div><label>ปริมาณที่ใช้ต่อลิตร</label><input id="newCostUsed" type="number" value="0" placeholder="เช่น 2 = 2 g/L"></div><div><label>หน่วย</label><select id="newCostUnit"><option value="g">g</option><option value="ml">ml</option></select></div><button class="btn" onclick="addCost()">เพิ่มต้นทุน</button></div><div class="form-spacer"><textarea id="newCostNote" placeholder="หมายเหตุ"></textarea></div></div>
-    <div class="card"><b>ต้นทุนรวมต่อ 1 ลิตร: ${money(totalUsedCost())} บาท/L</b></div>
-    ${table(['ID','รายการ','ราคา','ปริมาตรที่ซื้อ','ใช้ต่อลิตร','หน่วย','ราคา/หน่วย','ต้นทุน/ลิตร','หมายเหตุ','Actions'], state.costs.map((r,i)=>`<tr><td>${r.id}</td><td>${input(`costs.${i}.item`,r.item)}</td><td>${input(`costs.${i}.price`,r.price,'','number')} บาท</td><td>${input(`costs.${i}.volume`,r.volume,'','number')}</td><td>${input(`costs.${i}.used`,r.used??0,'','number')}</td><td>${unitSelect(`costs.${i}.unit`,r.unit)}</td><td>${money(costPerUnit(r))} บาท/${r.unit}</td><td><b>${money(usedCost(r))}</b> บาท/L</td><td>${input(`costs.${i}.note`,r.note)}</td><td><button class="btn btn-danger" onclick="del('costs','${r.id}')">ลบ</button></td></tr>`).join(''))}</section>`; },
-
-  reports(){ const s=stats(); return `<section class="section"><div class="card">${sectionTitle('Reports','สรุปรายงานแบบเรียบง่าย')}
-    <div class="grid">${statCard('Projects',state.projects.length,'ทั้งหมด')}${statCard('Experiments',state.experiments.length,'ทั้งหมด')}${statCard('Cultures',state.cultures.length,'ทั้งหมด')}${statCard('Survival',s.survivalRate+'%','อัตรารอด')}${statCard('Cost/L',money(totalUsedCost())+'฿','ต้นทุนต่อ 1 ลิตร')}</div><div style="margin-top:14px"><button class="btn" onclick="exportReport()">ดาวน์โหลดรายงาน TXT</button></div></div></section>`; }
-};
-
-function exportReport(){
-  const s=stats();
-  const report = ['Tissue Research Report','',`Projects: ${state.projects.length}`,`Experiments: ${state.experiments.length}`,`Cultures: ${s.total}`,`Survival Rate: ${s.survivalRate}%`,`Contamination Rate: ${s.contamRate}%`,`Cost per 1 Liter: ${money(totalUsedCost())} THB`].join('\n');
-  const blob = new Blob([report],{type:'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='tissue-research-report.txt'; a.click(); URL.revokeObjectURL(url);
+  );
 }
 
-render();
-</script>
-</body>
-</html>
+function AppHeader({ page, setPage, dark, setDark }) {
+  const meta = pages.find((p) => p.id === page) || pages[0];
+  return (
+    <>
+      <div className="h-[env(safe-area-inset-top,44px)] shrink-0" />
+      <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-2">
+        <div className="flex items-center gap-3">
+          <div className="flex h-[34px] w-[34px] items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-lg">🌱</div>
+          <div>
+            <div className="font-mono text-[13px] font-black uppercase tracking-wider text-emerald-700">Tissue Lab</div>
+            <div className="text-[10px] text-slate-400">Research System v2.0</div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setDark(!dark)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/5 bg-black/[.04]">{dark ? "☀️" : "🌓"}</button>
+          <button onClick={() => setPage("reports")} className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/5 bg-black/[.04]">🖨</button>
+        </div>
+      </header>
+      <div className="shrink-0 px-5 pb-4">
+        <h1 className="text-[28px] font-semibold tracking-[-.02em] text-slate-950">{meta.title}</h1>
+        <div className="mt-0.5 font-mono text-[13px] text-slate-400">{meta.sub}</div>
+      </div>
+    </>
+  );
+}
+
+function BottomTabs({ page, setPage }) {
+  const tabs = pages.slice(0, 5);
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-[calc(80px+env(safe-area-inset-bottom,0px))] items-start justify-around border-t border-black/5 bg-[#f4f6f5]/90 pt-2 backdrop-blur-2xl">
+      {tabs.map((tab) => (
+        <button key={tab.id} onClick={() => setPage(tab.id)} className="relative flex min-w-12 flex-col items-center gap-1 rounded-xl px-2.5 py-1.5 active:scale-90">
+          <span className={cls("absolute -top-2 h-0.5 rounded-full bg-emerald-700 transition-all", page === tab.id ? "w-5 opacity-100" : "w-0 opacity-0")} />
+          <span className={cls("text-xl transition-transform", page === tab.id && "scale-110")}>{tab.icon}</span>
+          <span className={cls("whitespace-nowrap text-[10px] font-semibold", page === tab.id ? "text-emerald-700" : "text-slate-400")}>{tab.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function Fab({ page, setShowModal }) {
+  if (["reports", "settings"].includes(page)) return null;
+  return <button onClick={() => setShowModal(true)} className="fixed bottom-[calc(80px+env(safe-area-inset-bottom,0px)+14px)] right-5 z-40 flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-emerald-700 text-3xl text-white shadow-[0_4px_20px_rgba(5,150,105,.25)] active:scale-90">+</button>;
+}
+
+function Dashboard({ setPage }) {
+  const active = cultures.filter((c) => c.status !== "Contamination").length;
+  const contam = Math.round((cultures.filter((c) => c.status === "Contamination").length / cultures.length) * 100);
+  const avgScore = Math.round(cultures.reduce((s, c) => s + c.score, 0) / cultures.length);
+  const avgCost = (cultures.reduce((s, c) => s + c.cost, 0) / cultures.length).toFixed(2);
+  return (
+    <>
+      <div className="mb-3 grid grid-cols-2 gap-2.5">
+        <StatCard wide label="Culture Active / กำลังทำ" value={active} unit="ขวด" />
+        <StatCard label="อัตรารอด" value={avgScore} unit="%" />
+        <StatCard label="ปนเปื้อน" value={contam} unit="%" tone="red" />
+        <StatCard label="โปรเจกต์" value={experiments.length} tone="blue" />
+        <StatCard label="ต้นทุน/ขวด" value={avgCost} unit="฿" tone="amber" />
+      </div>
+      <Card title="🎯 เป้าหมายการทดลอง" right={<Button ghost onClick={() => setPage("experiments")}>ตั้งเป้า</Button>}>
+        {experiments.map((e) => <GoalRow key={e.code} label={e.name} value={e.survival} goal={e.goal} />)}
+      </Card>
+      <Card title="📈 สถานะ Culture" right={<Pill>{cultures.length} ขวด</Pill>}>
+        {[
+          ["Active", cultures.filter((c) => c.status === "Active").length, "bg-emerald-600"],
+          ["Shoot", cultures.filter((c) => c.status === "Shoot").length, "bg-sky-600"],
+          ["Rooting", cultures.filter((c) => c.status === "Rooting").length, "bg-violet-600"],
+          ["Problem", cultures.filter((c) => ["Contamination", "Browning"].includes(c.status)).length, "bg-red-600"],
+        ].map(([name, count, tone]) => <BarRow key={name} label={name} count={count} total={cultures.length} tone={tone} />)}
+      </Card>
+      <Card title="⭐ Smart Lab Score">
+        {cultures.slice(0, 4).map((c) => <Row key={c.id} icon="🧪" title={`${c.id} · ${c.plant}`} sub={`${c.formula} · ${c.note}`} right={<ScoreRing value={c.score} />} onClick={() => setPage("cultures")} />)}
+      </Card>
+    </>
+  );
+}
+
+function GoalRow({ label, value, goal }) {
+  return (
+    <div className="mb-4 last:mb-0">
+      <div className="flex items-center justify-between text-xs font-bold text-slate-500"><span>{label}</span><span>{value}% / goal {goal}%</span></div>
+      <div className="relative mt-2 h-1.5 rounded-full bg-slate-100">
+        <div className="h-full rounded-full bg-emerald-700" style={{ width: `${value}%` }} />
+        <span className="absolute -top-1 h-3 w-0.5 rounded-full bg-red-500" style={{ left: `${goal}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function BarRow({ label, count, total, tone }) {
+  const pct = total ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="mb-3 grid grid-cols-[88px_1fr_34px] items-center gap-2 last:mb-0">
+      <div className="text-right text-xs font-semibold text-slate-500">{label}</div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cls("h-full rounded-full", tone)} style={{ width: `${pct}%` }} /></div>
+      <div className="text-right font-mono text-[11px] text-slate-400">{count}</div>
+    </div>
+  );
+}
+
+function Cultures({ setPage, setSelectedCulture }) {
+  const [filter, setFilter] = useState("all");
+  const items = filter === "all" ? cultures : cultures.filter((c) => c.status === filter);
+  return (
+    <>
+      <Segment options={["all", "Active", "Shoot", "Contamination"]} value={filter} onChange={setFilter} />
+      <div className="mb-3 flex gap-2">
+        <Button ghost>☑ เลือกหลายรายการ</Button>
+        <Button ghost>⬇ Export</Button>
+      </div>
+      <Card>
+        {items.map((c) => (
+          <Row key={c.id} icon="🧪" title={`${c.id} · ${c.plant}`} sub={`${c.part} · ${c.formula} · Day ${c.day}`} right={<div className="flex flex-col items-end gap-1"><Pill>{c.status}</Pill><span className="font-mono text-[11px] text-emerald-700">{c.cost}฿</span></div>} onClick={() => { setSelectedCulture(c.id); setPage("timeline"); }} />
+        ))}
+      </Card>
+    </>
+  );
+}
+
+function Segment({ options, value, onChange }) {
+  return (
+    <div className="mb-3 flex rounded-xl bg-black/[.06] p-1">
+      {options.map((op) => <button key={op} onClick={() => onChange(op)} className={cls("flex-1 rounded-lg px-2 py-2 text-xs font-bold", value === op ? "bg-white text-emerald-700 shadow-sm" : "text-slate-400")}>{op === "all" ? "ทั้งหมด" : op}</button>)}
+    </div>
+  );
+}
+
+function Experiments({ setPage }) {
+  return (
+    <Card>
+      {experiments.map((e) => (
+        <Row key={e.code} icon="🔬" title={`${e.code} · ${e.name}`} sub={`${e.project} · ${e.samples} samples · ${e.formula}`} right={<div className="w-16"><div className="text-right font-mono text-xs font-bold text-emerald-700">{e.survival}%</div><Progress value={e.survival} /></div>} onClick={() => setPage("reports")} />
+      ))}
+    </Card>
+  );
+}
+
+function Timeline({ selectedCulture }) {
+  const culture = cultures.find((c) => c.id === selectedCulture) || cultures[3];
+  return (
+    <>
+      <Card title={`${culture.id} · ${culture.plant}`} right={<Pill>{culture.status}</Pill>}>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <Info label="สูตร" value={culture.formula} />
+          <Info label="อายุ" value={`Day ${culture.day}`} />
+          <Info label="การทดลอง" value={culture.exp} />
+          <Info label="ต้นทุน" value={`${culture.cost} ฿/ขวด`} />
+        </div>
+      </Card>
+      <Card title="📷 รูปภาพตามเวลา">
+        <div className="grid grid-cols-3 gap-2">
+          {["Day 0", "Day 7", "Day 14"].map((d, i) => <div key={d}><div className="mb-1 text-center text-[11px] font-bold text-slate-400">{d}</div><div className="flex aspect-square items-center justify-center rounded-xl border border-black/5 bg-gradient-to-br from-emerald-50 to-lime-50 text-3xl">{i === 0 ? "🌱" : i === 1 ? "☘️" : "🌿"}</div></div>)}
+        </div>
+      </Card>
+      <Card title="📅 Timeline">
+        <div className="relative pl-6 before:absolute before:bottom-2 before:left-[5px] before:top-2 before:w-px before:bg-gradient-to-b before:from-emerald-200 before:to-transparent">
+          {timeline.map((t) => <div key={t.day} className="relative mb-4 last:mb-0"><span className="absolute -left-[23px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-700 shadow" /><div className="mb-1 flex items-center gap-2 font-mono text-[11px] font-bold text-emerald-700"><span>{t.day}</span><Pill>{t.status}</Pill></div><div className="rounded-xl border border-black/5 bg-[#f4f6f5] p-3"><div className="text-sm font-bold text-slate-800">{t.title}</div><div className="mt-1 text-xs leading-relaxed text-slate-500">{t.note}</div></div></div>)}
+        </div>
+      </Card>
+    </>
+  );
+}
+
+function Formulas() {
+  return (
+    <>
+      <div className="mb-3 grid grid-cols-2 gap-2.5">
+        {formulas.map((f) => <button key={f.code} className="rounded-2xl border border-black/5 bg-white p-3 text-left shadow-sm active:bg-slate-50"><div className="mb-1 text-sm font-black text-slate-900">{f.code} · {f.name}</div><div className="mb-2 font-mono text-[11px] text-amber-700">{f.cost}฿/L · {f.perBottle}฿/ขวด</div><div className="flex flex-wrap gap-1"><Pill>{f.tag}</Pill><Pill>{f.survival}%</Pill></div></button>)}
+      </div>
+      <Card title="ส่วนประกอบ F1">
+        {formulas[0].items.split(", ").map((item) => <Row key={item} icon="⚗️" title={item} sub="ส่วนประกอบต่อ 1 ลิตร" right={<span className="text-slate-300">›</span>} />)}
+      </Card>
+    </>
+  );
+}
+
+function Costs({ setShowModal, setModalMode }) {
+  const totalMaterials = materials.reduce((s, m) => s + m.cost, 0);
+  const totalEquipment = equipment.reduce((s, e) => s + e.cost, 0);
+  const totalFormula = formulas.reduce((s, f) => s + f.cost, 0);
+  const total = totalMaterials + totalEquipment + totalFormula;
+
+  function openCostModal(mode) {
+    setModalMode(mode);
+    setShowModal(true);
+  }
+
+  return (
+    <>
+      <div className="mb-3 grid grid-cols-2 gap-2.5">
+        <StatCard label="สารเคมี/วัสดุ" value={totalMaterials} unit="฿" />
+        <StatCard label="อุปกรณ์" value={totalEquipment} unit="฿" tone="blue" />
+        <StatCard wide label="ต้นทุนรวม / Grand Total" value={Math.round(total)} unit="฿" tone="amber" />
+        <StatCard label="จำนวน Culture" value={cultures.length} unit="ขวด" />
+        <StatCard label="ต้นทุน/ขวด" value={(total / cultures.length).toFixed(2)} unit="฿" tone="amber" />
+      </div>
+
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        <Button onClick={() => openCostModal("material")}>+ เพิ่มสารเคมี</Button>
+        <Button onClick={() => openCostModal("equipment")}>+ เพิ่มอุปกรณ์</Button>
+      </div>
+
+      <Card title="หมวดหมู่ต้นทุน">
+        <BarRow label="Materials" count={totalMaterials} total={total} tone="bg-emerald-600" />
+        <BarRow label="Equipment" count={totalEquipment} total={total} tone="bg-sky-600" />
+        <BarRow label="Formulas" count={totalFormula} total={total} tone="bg-amber-500" />
+      </Card>
+
+      <Card title="สารเคมี / วัสดุสิ้นเปลือง" right={<Button ghost onClick={() => openCostModal("material")}>+ เพิ่ม</Button>}>
+        {materials.map((m) => <Row key={m.name} icon="🧴" title={m.name} sub={`${m.category} · ${m.unit} · ใช้ ${m.used}`} right={<div className="text-right"><div className="font-mono text-xs font-bold text-amber-700">{m.cost}฿</div><div className="text-[10px] text-slate-400">{m.calc}</div></div>} />)}
+      </Card>
+
+      <Card title="อุปกรณ์ / ครุภัณฑ์" right={<Button ghost onClick={() => openCostModal("equipment")}>+ เพิ่ม</Button>}>
+        {equipment.map((e) => <Row key={e.name} icon="🔧" title={e.name} sub={`${e.category} · ${e.unit} · อายุใช้งาน ${e.life}`} right={<div className="text-right"><div className="font-mono text-xs font-bold text-sky-700">{e.cost}฿</div><div className="text-[10px] text-slate-400">{e.calc}</div></div>} />)}
+      </Card>
+    </>
+  );
+}
+
+function Reports() {
+  return (
+    <>
+      <Card title="⚙️ ตั้งค่ารายงาน">
+        <label className="mb-3 block"><div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">ชื่อรายงาน</div><input className="w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-100" defaultValue="รายงานผลการทดลองเพาะเลี้ยงเนื้อเยื่อ" /></label>
+        <label className="block"><div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">สรุปผล</div><textarea className="min-h-24 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-100" defaultValue="สูตร F1 ให้ผลดีที่สุดในชุดทดลอง โดยมีอัตรารอดสูงและต้นทุนต่อขวดต่ำ" /></label>
+        <Button>🔄 สร้างรายงาน</Button>
+      </Card>
+      <Card title="รายงาน Preview">
+        <ReportSection title="สรุปผลอัตโนมัติ" text="จากข้อมูลตัวอย่าง F1 มีอัตรารอด 91% และต้นทุน 4.56 บาท/ขวด เหมาะสำหรับใช้เป็นสูตรหลักในการทดลอง Low-cost Plant Tissue Culture" />
+        <ReportSection title="ข้อเสนอแนะ" text="ควรติดตาม C-003 ที่ปนเปื้อน และบันทึกรูป Day 7 / Day 14 ให้ครบทุก Culture เพื่อใช้ประกอบรายงาน PDF" />
+      </Card>
+    </>
+  );
+}
+
+function ReportSection({ title, text }) {
+  return <div className="mb-5 last:mb-0"><h3 className="mb-2 border-l-2 border-emerald-700 pl-2 text-[13px] font-bold uppercase tracking-wider text-emerald-700">{title}</h3><div className="rounded-xl bg-[#f4f6f5] p-3 text-sm leading-relaxed text-slate-600">{text}</div></div>;
+}
+
+function Settings({ dark, setDark }) {
+  return (
+    <Card>
+      <SettingsRow icon="🌓" title="Dark Mode" sub="เปลี่ยนธีมสีแอป" right={<Toggle on={dark} onClick={() => setDark(!dark)} />} />
+      <SettingsRow icon="⬇" title="Export ข้อมูล (JSON)" sub="บันทึกข้อมูลทั้งหมดเป็นไฟล์" right={<span className="text-slate-300">›</span>} />
+      <SettingsRow icon="⬆" title="Import ข้อมูล (JSON)" sub="โหลดข้อมูลจากไฟล์ที่ export ไว้" right={<span className="text-emerald-700 text-sm font-bold">เลือกไฟล์</span>} />
+      <SettingsRow icon="📊" title="Export ต้นทุน (CSV)" sub="นำออกเป็นไฟล์ Excel/Sheets" right={<span className="text-slate-300">›</span>} />
+      <SettingsRow icon="🗑" title="ลบข้อมูลทั้งหมด" sub="ไม่สามารถกู้คืนได้" right={<span className="text-slate-300">›</span>} danger />
+    </Card>
+  );
+}
+
+function SettingsRow({ icon, title, sub, right, danger }) {
+  return <div className="flex items-center gap-3 border-b border-black/5 px-[18px] py-3.5 last:border-b-0"><div className="flex h-[38px] w-[38px] items-center justify-center rounded-xl bg-emerald-50 text-lg">{icon}</div><div className="min-w-0 flex-1"><div className={cls("text-[15px] font-semibold", danger ? "text-red-600" : "text-slate-900")}>{title}</div><div className="text-xs text-slate-400">{sub}</div></div>{right}</div>;
+}
+
+function Toggle({ on, onClick }) {
+  return <button onClick={onClick} className={cls("relative h-7 w-12 rounded-full transition", on ? "bg-emerald-700" : "bg-black/10")}><span className={cls("absolute top-1/2 h-[22px] w-[22px] -translate-y-1/2 rounded-full bg-white shadow transition", on ? "left-[23px]" : "left-[3px]")} /></button>;
+}
+
+function Info({ label, value }) {
+  return <div><div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-semibold text-slate-700">{value}</div></div>;
+}
+
+function Modal({ page, mode, onClose }) {
+  const title = mode === "material" ? "🧴 เพิ่มสารเคมี / วัสดุ" : mode === "equipment" ? "🔧 เพิ่มอุปกรณ์" : page === "cultures" ? "🧪 บันทึก Culture" : page === "experiments" ? "🔬 บันทึกการทดลอง" : page === "formulas" ? "⚗️ สูตรอาหาร" : page === "costs" ? "🧴 วัสดุ / สารเคมี" : "เพิ่มข้อมูล";
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end bg-black/30 backdrop-blur-sm">
+      <div className="max-h-[92vh] w-full overflow-hidden rounded-t-[28px] border border-black/5 bg-white shadow-2xl">
+        <div className="mx-auto mt-3 h-1 w-9 rounded-full bg-black/10" />
+        <div className="flex items-center justify-between border-b border-black/5 px-5 py-4"><h2 className="text-[17px] font-bold">{title}</h2><Button ghost onClick={onClose}>ยกเลิก</Button></div>
+        <div className="max-h-[65vh] overflow-y-auto bg-[#f8faf9] p-5">
+          {mode === "material" ? <MaterialForm /> : mode === "equipment" ? <EquipmentForm /> : <DefaultForm />}
+        </div>
+        <div className="border-t border-black/5 bg-white p-5"><Button onClick={onClose}>💾 บันทึก</Button></div>
+      </div>
+    </div>
+  );
+}
+
+function DefaultForm() {
+  return (
+    <>
+      <FormField label="รหัส / ชื่อ"><input className="field" placeholder="เช่น C-006 หรือ EXP-004" /></FormField>
+      <FormField label="ชนิดพืช / โปรเจกต์"><input className="field" placeholder="กรอกข้อมูล" /></FormField>
+      <div className="grid grid-cols-2 gap-3"><FormField label="สูตร"><select className="field"><option>F1</option><option>F2</option><option>F3</option><option>F4</option></select></FormField><FormField label="สถานะ"><select className="field"><option>Active</option><option>Shoot</option><option>Rooting</option><option>Contamination</option></select></FormField></div>
+      <FormField label="หมายเหตุ"><textarea className="field min-h-24" placeholder="บันทึกเพิ่มเติม" /></FormField>
+    </>
+  );
+}
+
+function MaterialForm() {
+  return (
+    <>
+      <FormField label="ชื่อสารเคมี / วัสดุ"><input className="field" placeholder="เช่น Agar, Sugar, NaOCl, ขวดแก้ว" /></FormField>
+      <FormField label="หมวดหมู่"><select className="field"><option>วุ้น / Solidifying Agent</option><option>น้ำตาล / Carbon Source</option><option>สารฆ่าเชื้อ / Sterilant</option><option>ฮอร์โมนพืช</option><option>ภาชนะ</option><option>วัสดุสิ้นเปลือง</option></select></FormField>
+      <div className="grid grid-cols-2 gap-3"><FormField label="ราคาที่ซื้อ (฿)"><input className="field" type="number" placeholder="210" /></FormField><FormField label="หน่วยซื้อ"><input className="field" placeholder="500 g" /></FormField></div>
+      <div className="grid grid-cols-2 gap-3"><FormField label="หน่วยใช้จริง"><input className="field" placeholder="g, ml, ชิ้น" /></FormField><FormField label="ใช้ต่อล็อต"><input className="field" type="number" placeholder="7" /></FormField></div>
+      <FormField label="สูตรคำนวณต้นทุน"><div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">ต้นทุน = ราคาซื้อ ÷ ปริมาณรวม × ปริมาณที่ใช้</div></FormField>
+      <FormField label="หมายเหตุ / แหล่งซื้อ"><textarea className="field min-h-20" placeholder="ร้าน, วันที่ซื้อ, lot no." /></FormField>
+    </>
+  );
+}
+
+function EquipmentForm() {
+  return (
+    <>
+      <FormField label="ชื่ออุปกรณ์"><input className="field" placeholder="เช่น Autoclave, Clean Bench, LED Grow Light" /></FormField>
+      <FormField label="หมวดหมู่"><select className="field"><option>Sterilization</option><option>Clean Bench</option><option>Lighting</option><option>Temperature Control</option><option>Measurement</option><option>Other</option></select></FormField>
+      <div className="grid grid-cols-2 gap-3"><FormField label="ราคาอุปกรณ์ (฿)"><input className="field" type="number" placeholder="3500" /></FormField><FormField label="จำนวน"><input className="field" type="number" placeholder="1" /></FormField></div>
+      <div className="grid grid-cols-2 gap-3"><FormField label="อายุใช้งาน"><input className="field" type="number" placeholder="36" /></FormField><FormField label="หน่วย"><select className="field"><option>เดือน</option><option>ปี</option></select></FormField></div>
+      <FormField label="ค่าเสื่อมโดยประมาณ"><div className="rounded-xl border border-sky-100 bg-sky-50 p-3 text-sm font-bold text-sky-700">ค่าเสื่อม/เดือน = ราคา ÷ อายุใช้งาน</div></FormField>
+      <FormField label="หมายเหตุ"><textarea className="field min-h-20" placeholder="รุ่น, วันที่ซื้อ, การใช้งานต่อเดือน" /></FormField>
+    </>
+  );
+}
+
+function FormField({ label, children }) {
+  return <label className="mb-3 block"><div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">{label}</div>{children}</label>;
+}
+
+export default function App() {
+  const [page, setPage] = useState("dashboard");
+  const [selectedCulture, setSelectedCulture] = useState("C-004");
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState("default");
+  const [dark, setDark] = useState(false);
+
+  const content = useMemo(() => {
+    if (page === "dashboard") return <Dashboard setPage={setPage} />;
+    if (page === "cultures") return <Cultures setPage={setPage} setSelectedCulture={setSelectedCulture} />;
+    if (page === "experiments") return <Experiments setPage={setPage} />;
+    if (page === "timeline") return <Timeline selectedCulture={selectedCulture} />;
+    if (page === "formulas") return <Formulas />;
+    if (page === "costs") return <Costs setShowModal={setShowModal} setModalMode={setModalMode} />;
+    if (page === "reports") return <Reports />;
+    if (page === "settings") return <Settings dark={dark} setDark={setDark} />;
+    return <Dashboard setPage={setPage} />;
+  }, [page, selectedCulture, dark]);
+
+  return (
+    <div className={cls("min-h-screen overflow-hidden font-sans", dark ? "bg-slate-950" : "bg-[#f4f6f5]") }>
+      <style>{`.field{width:100%;border-radius:12px;border:1px solid rgba(0,0,0,.10);background:white;padding:12px 14px;font-size:15px;outline:none}.field:focus{border-color:#047857;box-shadow:0 0 0 3px rgba(5,150,105,.08)}`}</style>
+      <div className={cls("mx-auto flex h-screen max-w-md flex-col overflow-hidden shadow-sm", dark ? "bg-slate-900" : "bg-[#f4f6f5]") }>
+        <AppHeader page={page} setPage={setPage} dark={dark} setDark={setDark} />
+        <main className="flex-1 overflow-y-auto px-4 pb-[calc(80px+env(safe-area-inset-bottom,0px)+16px)] [scrollbar-width:none]">
+          {content}
+        </main>
+        <BottomTabs page={page} setPage={setPage} />
+        <Fab page={page} setShowModal={(open) => { setModalMode(page === "costs" ? "material" : "default"); setShowModal(open); }} />
+        {showModal && <Modal page={page} mode={modalMode} onClose={() => setShowModal(false)} />}
+      </div>
+    </div>
+  );
+}
