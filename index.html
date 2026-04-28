@@ -272,13 +272,69 @@ body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-fa
   }
 }
 
+
+/* Experiment image XY table */
+.xy-toolbar{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:10px;
+}
+.xy-grid{
+  display:grid;
+  gap:10px;
+}
+.xy-card{
+  border:1px solid var(--line);
+  background:var(--card);
+  border-radius:16px;
+  padding:10px;
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.xy-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+.xy-title{
+  font-size:12px;
+  font-weight:900;
+  color:var(--green);
+}
+.xy-fields{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:8px;
+}
+.xy-img{
+  width:100%;
+  max-height:120px;
+  object-fit:cover;
+  border-radius:12px;
+  border:1px solid var(--line);
+  margin-top:8px;
+  display:none;
+}
+.xy-img.show{
+  display:block;
+}
+.xy-note{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.35;
+  margin-top:6px;
+}
+
 </style>
 </head>
 
 <body>
 <div class="app">
   <div class="header">
-    <div class="logo"><div class="logo-icon">🌱</div><div><div class="logo-title">TISSUE LAB</div><div class="logo-sub">Research System v4.4</div></div></div>
+    <div class="logo"><div class="logo-icon">🌱</div><div><div class="logo-title">TISSUE LAB</div><div class="logo-sub">Research System v4.5</div></div></div>
     <div style="display:flex;gap:8px"><button class="icon-btn" onclick="showPage('settings')">⚙️</button><button class="icon-btn" onclick="showPage('reports')">🖨</button></div>
   </div>
 
@@ -389,7 +445,22 @@ function bar(label,count,total){let pct=total?Math.round(count/total*100):0;retu
 function render(){renderDashboard();renderCultures();renderExperiments();renderFormulas();renderCosts();renderReports()}
 function renderDashboard(){let active=db.cultures.filter(c=>!['Contamination','Closed','Dead'].includes(c.status)).length,cont=Math.round(db.cultures.filter(c=>c.status==='Contamination').length/(db.cultures.length||1)*100),avg=Math.round(db.cultures.reduce((s,c)=>s+Number(c.score||0),0)/(db.cultures.length||1)),avgCost=(db.cultures.reduce((s,c)=>s+Number(c.cost||0),0)/(db.cultures.length||1)).toFixed(2);sActive.textContent=active;sSurv.textContent=avg;sCont.textContent=cont;sExp.textContent=db.experiments.length;sCost.textContent=avgCost;totalCult.textContent=db.cultures.length+' ขวด';goalList.innerHTML=db.goals.map((g,i)=>{let pct=goalPct(g);let tasks=(g.tasks||[]).map((t,ti)=>`<label style="display:flex;gap:8px;align-items:center;margin-top:7px;font-size:12px;color:var(--muted)"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i},${ti},this.checked)"><span style="text-decoration:${t.done?'line-through':'none'}">${t.text}</span></label>`).join('');return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;color:var(--muted)"><span>${g.name}</span><span>${pct}% / goal ${g.target}%</span></div><div class="bar" style="margin-top:7px"><div class="fill" style="width:${pct}%"></div></div><div style="font-size:11px;color:var(--muted);margin-top:5px">${g.note||''}</div>${tasks}${actions('goal',i)}</div>`}).join('')||'<div style="color:var(--muted)">ยังไม่มีเป้าหมาย</div>';statusChart.innerHTML=['Active','Shoot','Rooting','Browning','Contamination','Closed'].map(x=>bar(x,db.cultures.filter(c=>c.status===x).length,db.cultures.length)).join('');recentList.innerHTML=db.cultures.slice(0,4).map((c,i)=>row('🧪',`${c.id} · ${c.plant}`,`${c.formula} · Day ${cultureDay(c)} · Lot ${c.mediaLot||'-'}`,`<div class="mono">${c.score}</div>${actions('culture',i)}`)).join('')}
 function renderCultures(){let items=filter==='all'?db.cultures:db.cultures.filter(c=>c.status===filter);cultureList.innerHTML=items.map(c=>{let i=db.cultures.indexOf(c);let tl=db.timelines.filter(t=>t.cultureId===c.id).map(t=>`<div class="tl"><div class="tl-day">${t.dayLabel} · ${t.date}</div><div class="tl-title">${t.title} ${pill(t.status)}</div><div class="tl-note">${t.note||''}</div>${t.image?`<img class="tl-img" src="${t.image}">`:''}${actions('timeline',db.timelines.indexOf(t))}</div>`).join('');return `<div>${row('🧪',`${c.id} · ${c.plant}`,`${c.part||'ยอด'} · ${c.formula} · Day ${cultureDay(c)} · MediaLot ${c.mediaLot||'-'}`,`${pill(c.status)}<div class="mono cost">${c.cost}฿</div>${actions('culture',i)}`)}<div class="timeline">${tl||'<div class="tl-note">ยังไม่มี Timeline</div>'}</div></div>`}).join('')||'<div class="card-body">ไม่มีข้อมูล</div>'}
-function renderExperiments(){experimentList.innerHTML=db.experiments.map((e,i)=>{let img=e.image?`<div class="preview"><img src="${e.image}"></div>`:'';return row('🔬',`${e.code||'EXP'} · ${e.name}`,`อาหาร: ${e.media||'-'} · ชุด: ${e.sets||'-'} · เกณฑ์: ${e.criteria||'-'}`,`<div class="mono">${e.survival||0}%</div>${img}${actions('experiment',i)}`)}).join('')||'<div class="card-body">ยังไม่มีการทดลอง</div>'}
+function renderExperiments(){
+  experimentList.innerHTML=db.experiments.map((e,i)=>{
+    let imgs=normalizeExpImages(e);
+    let first=imgs.find(x=>x.src)?.src||'';
+    let img=first?`<div class="preview"><img src="${first}"></div>`:'';
+    let imgCount=imgs.length?` · รูป ${imgs.length} รายการ`:'';
+
+    return row(
+      '🔬',
+      `${e.code||'EXP'} · ${e.name}`,
+      `อาหาร: ${e.media||'-'} · ชุด: ${e.sets||'-'}${imgCount}`,
+      `<div class="mono">${e.survival||0}%</div>${img}${actions('experiment',i)}`
+    );
+  }).join('')||'<div class="card-body">ยังไม่มีการทดลอง</div>';
+}
+
 function renderFormulas(){
   formulaGrid.innerHTML=db.formulas.map((f,i)=>{
     let mediaBottle=formulaMediaBottle(f);
@@ -441,8 +512,53 @@ function showPage(p){page=p;document.querySelectorAll('.page').forEach(x=>x.clas
 function filterCulture(f,el){filter=f;document.querySelectorAll('#segCult .seg').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderCultures()}
 function fabAction(){if(page==='costs')openModal('material');else if(page==='formulas')openModal('formula');else if(page==='experiments')openModal('experiment');else openModal('culture')}
 const titles={goal:'🎯 เพิ่มเป้าหมาย',culture:'🧪 บันทึก Culture',timeline:'📅 เพิ่ม Timeline',experiment:'🔬 เพิ่มการทดลอง',formula:'⚗️ สูตรอาหาร',material:'🧴 เพิ่มสารเคมี / วัสดุ',equipment:'🔧 เพิ่มอุปกรณ์'};
-function openModal(type){modalType=type;editType=null;editIndex=null;tempImage='';modalTitle.textContent=titles[type]||'เพิ่มข้อมูล';modalBody.innerHTML=form(type,{});modal.classList.add('show')}
-function editItem(type,i){modalType=type;editType=type;editIndex=i;tempImage='';let d=list(type)[i]||{};modalTitle.textContent='แก้ไข · '+(titles[type]||'ข้อมูล');modalBody.innerHTML=form(type,d);if(type==='timeline'&&d.cultureId){setTimeout(()=>{let el=document.getElementById('tlCulture');if(el)el.value=d.cultureId},0)}if((type==='experiment'||type==='timeline')&&d.image){tempImage=d.image;setTimeout(()=>{let p=document.getElementById('imgPreview');if(p)p.innerHTML=`<img src="${d.image}">`},0)}modal.classList.add('show')}
+function openModal(type){
+  modalType=type;
+  editType=null;
+  editIndex=null;
+  tempImage='';
+  modalTitle.textContent=titles[type]||'เพิ่มข้อมูล';
+  modalBody.innerHTML=form(type,{});
+  modal.classList.add('show');
+  if(type==='experiment'){
+    setTimeout(()=>addExpImageRow(),0);
+  }
+}
+function editItem(type,i){
+  modalType=type;
+  editType=type;
+  editIndex=i;
+  tempImage='';
+  let d=list(type)[i]||{};
+  modalTitle.textContent='แก้ไข · '+(titles[type]||'ข้อมูล');
+  modalBody.innerHTML=form(type,d);
+
+  if(type==='timeline'&&d.cultureId){
+    setTimeout(()=>{
+      let el=document.getElementById('tlCulture');
+      if(el)el.value=d.cultureId;
+    },0);
+  }
+
+  if(type==='experiment'){
+    setTimeout(()=>{
+      let imgs=normalizeExpImages(d);
+      if(!imgs.length)addExpImageRow();
+      else imgs.forEach(img=>addExpImageRow(img));
+    },0);
+  }
+
+  if((type==='timeline')&&d.image){
+    tempImage=d.image;
+    setTimeout(()=>{
+      let p=document.getElementById('imgPreview');
+      if(p)p.innerHTML=`<img src="${d.image}">`;
+    },0);
+  }
+
+  modal.classList.add('show');
+}
+
 function deleteItem(type,i){if(!confirm('ต้องการลบรายการนี้ใช่ไหม?'))return;list(type).splice(i,1);save();render();toast('ลบรายการแล้ว')}
 function list(t){return t==='goal'?db.goals:t==='culture'?db.cultures:t==='timeline'?db.timelines:t==='experiment'?db.experiments:t==='formula'?db.formulas:t==='material'?db.materials:db.equipment}
 function closeModal(){modal.classList.remove('show')}
@@ -451,11 +567,125 @@ function vesselOptions(selected=''){let vessels=db.materials.filter(m=>{let text
 function cultureOptions(){return db.cultures.map(c=>`<option value="${c.id}">${c.id} · ${c.plant}</option>`).join('')}
 function addIngredientLine(){let name=document.getElementById('pickMat').value,qty=document.getElementById('pickQty').value;if(!name||!qty)return;let ta=document.getElementById('fItems');ta.value=(ta.value?ta.value+'\n':'')+name+'='+qty;document.getElementById('pickQty').value='';previewFormula()}
 
+
+function escapeText(s){
+  return String(s??'').replace(/[&<>"']/g,m=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[m]));
+}
+
+function normalizeExpImages(d){
+  if(Array.isArray(d.images))return d.images;
+  if(d.image)return [{x:'Day 0',y:'Image 1',note:'',src:d.image}];
+  return [];
+}
+
+function addExpImageRow(data={}){
+  const wrap=document.getElementById('expImageTable');
+  if(!wrap)return;
+
+  const index=wrap.querySelectorAll('.xy-card').length+1;
+  const card=document.createElement('div');
+  card.className='xy-card';
+
+  card.innerHTML=`
+    <div class="xy-head">
+      <div class="xy-title">รูปภาพการทดลอง #${index}</div>
+      <button type="button" class="small del" onclick="removeExpImageRow(this)">🗑</button>
+    </div>
+
+    <div class="xy-fields">
+      <div>
+        <label class="label">แกน X</label>
+        <input class="input exp-x" value="${escapeText(data.x||'')}" placeholder="เช่น Day 0">
+      </div>
+      <div>
+        <label class="label">แกน Y</label>
+        <input class="input exp-y" value="${escapeText(data.y||'')}" placeholder="เช่น F1 / ชุด A">
+      </div>
+    </div>
+
+    <div class="group" style="margin-bottom:8px">
+      <label class="label">หมายเหตุรูปภาพ</label>
+      <input class="input exp-note" value="${escapeText(data.note||'')}" placeholder="เช่น ใบเขียวดี ไม่มีเชื้อ">
+    </div>
+
+    <div class="group" style="margin-bottom:0">
+      <label class="label">เลือกรูปภาพ</label>
+      <input class="input exp-file" type="file" accept="image/*" onchange="readExpImage(event,this)">
+      <img class="xy-img ${data.src?'show':''}" src="${data.src||''}">
+      <input type="hidden" class="exp-src" value="${data.src||''}">
+      <div class="xy-note">ใช้แกน X/Y เพื่อจัดหมวดรูป เช่น Day 0 × F1 หรือ Day 14 × ชุดทดลอง A</div>
+    </div>
+  `;
+
+  wrap.appendChild(card);
+}
+
+function removeExpImageRow(btn){
+  const card=btn.closest('.xy-card');
+  if(card)card.remove();
+
+  document.querySelectorAll('#expImageTable .xy-card .xy-title').forEach((el,i)=>{
+    el.textContent='รูปภาพการทดลอง #'+(i+1);
+  });
+}
+
+function readExpImage(e,input){
+  const file=e.target.files[0];
+  if(!file)return;
+
+  const card=input.closest('.xy-card');
+  const img=card.querySelector('.xy-img');
+  const hidden=card.querySelector('.exp-src');
+  const reader=new FileReader();
+
+  reader.onload=()=>{
+    hidden.value=reader.result;
+    img.src=reader.result;
+    img.classList.add('show');
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function getExpImagesFromForm(){
+  return Array.from(document.querySelectorAll('#expImageTable .xy-card')).map(card=>({
+    x:card.querySelector('.exp-x')?.value.trim()||'',
+    y:card.querySelector('.exp-y')?.value.trim()||'',
+    note:card.querySelector('.exp-note')?.value.trim()||'',
+    src:card.querySelector('.exp-src')?.value||''
+  })).filter(item=>item.x||item.y||item.note||item.src);
+}
+
 function form(type,d){
 if(type==='goal')return `<div class="group"><label class="label">ชื่อเป้าหมาย</label><input id="gName" class="input" value="${d.name||''}" placeholder="เช่น Survival สูตร F1"></div><div class="form-row"><div class="group"><label class="label">เป้าหมาย (%)</label><input id="gTarget" class="input" type="number" value="${d.target||100}"></div><div class="group"><label class="label">ผลปัจจุบัน</label><input class="input" value="คำนวณจาก Checklist" readonly></div></div><div class="group"><label class="label">Checklist สิ่งที่ต้องทำ</label><textarea id="gTasks" class="textarea" placeholder="1 บรรทัด = 1 งาน">${(d.tasks||[]).map(t=>(t.done?'[x] ':'[ ] ')+t.text).join('\n')}</textarea></div><div class="group"><label class="label">หมายเหตุ</label><textarea id="gNote" class="textarea">${d.note||''}</textarea></div>`;
 if(type==='culture')return `<div class="form-row"><div class="group"><label class="label">รหัส</label><input id="cuId" class="input" value="${d.id||''}"></div><div class="group"><label class="label">สถานะ</label><select id="cuStatus" class="select"><option ${d.status==='Active'?'selected':''}>Active</option><option ${d.status==='Shoot'?'selected':''}>Shoot</option><option ${d.status==='Rooting'?'selected':''}>Rooting</option><option ${d.status==='Browning'?'selected':''}>Browning</option><option ${d.status==='Contamination'?'selected':''}>Contamination</option><option ${d.status==='Closed'?'selected':''}>Closed</option><option ${d.status==='Dead'?'selected':''}>Dead</option></select></div></div><div class="group"><label class="label">ชนิดพืช</label><input id="cuPlant" class="input" value="${d.plant||''}"></div><div class="group"><label class="label">สูตรอาหาร</label><input id="cuFormula" class="input" value="${d.formula||'F1'}"></div><div class="form-row"><div class="group"><label class="label">วันที่เริ่มเลี้ยง</label><input id="cuStart" class="input" type="date" value="${d.startDate||todayISO()}"></div><div class="group"><label class="label">วันที่อัปเดตล่าสุด</label><input id="cuUpdate" class="input" type="date" value="${d.updateDate||todayISO()}"></div></div><div class="form-row"><div class="group"><label class="label">วันที่ปิดงาน</label><input id="cuClose" class="input" type="date" value="${d.closeDate||''}"></div><div class="group"><label class="label">วันที่พบปนเปื้อน</label><input id="cuContam" class="input" type="date" value="${d.contamDate||''}"></div></div><div class="form-row"><div class="group"><label class="label">Lot อาหาร</label><input id="cuMediaLot" class="input" value="${d.mediaLot||''}"></div><div class="group"><label class="label">Lot สารเคมี</label><input id="cuMatLot" class="input" value="${d.materialLot||''}"></div></div><div class="form-row"><div class="group"><label class="label">Lot ภาชนะ</label><input id="cuVesselLot" class="input" value="${d.vesselLot||''}"></div><div class="group"><label class="label">ผู้เตรียมอาหาร</label><input id="cuPreparedBy" class="input" value="${d.preparedBy||''}"></div></div><div class="group"><label class="label">วันที่เตรียมอาหาร</label><input id="cuPreparedDate" class="input" type="date" value="${d.preparedDate||todayISO()}"></div><div class="group"><label class="label">หมายเหตุ</label><textarea id="cuNote" class="textarea">${d.note||''}</textarea></div>`;
 if(type==='timeline')return `<div class="group"><label class="label">Culture ID</label><select id="tlCulture" class="select">${cultureOptions()}</select></div><div class="form-row"><div class="group"><label class="label">วัน/ระยะ</label><input id="tlDay" class="input" value="${d.dayLabel||'Day 0'}"></div><div class="group"><label class="label">วันที่</label><input id="tlDate" type="date" class="input" value="${d.date||todayISO()}"></div></div><div class="group"><label class="label">หัวข้อ</label><input id="tlTitle" class="input" value="${d.title||''}"></div><div class="group"><label class="label">สถานะ</label><select id="tlStatus" class="select"><option ${d.status==='Active'?'selected':''}>Active</option><option ${d.status==='Shoot'?'selected':''}>Shoot</option><option ${d.status==='Rooting'?'selected':''}>Rooting</option><option ${d.status==='Browning'?'selected':''}>Browning</option><option ${d.status==='Contamination'?'selected':''}>Contamination</option></select></div><div class="group"><label class="label">รูปภาพ</label><input class="input" type="file" accept="image/*" onchange="readImage(event)"><div id="imgPreview" class="preview"></div></div><div class="group"><label class="label">หมายเหตุ</label><textarea id="tlNote" class="textarea">${d.note||''}</textarea></div>`;
-if(type==='experiment')return `<div class="group"><label class="label">ชื่อการทดลอง</label><input id="eName" class="input" value="${d.name||''}"></div><div class="group"><label class="label">อาหารที่ใช้ในการทดลอง</label><input id="eMedia" class="input" value="${d.media||''}"></div><div class="group"><label class="label">ชุดทดลอง</label><textarea id="eSets" class="textarea">${d.sets||''}</textarea></div><div class="group"><label class="label">ขั้นตอนการทดลอง</label><textarea id="eSteps" class="textarea">${d.steps||''}</textarea></div><div class="group"><label class="label">เกณฑ์การประเมิน</label><textarea id="eCriteria" class="textarea">${d.criteria||''}</textarea></div><div class="group"><label class="label">ตารางการทดลอง</label><textarea id="eTable" class="textarea">${d.table||''}</textarea></div><div class="group"><label class="label">รูปภาพประกอบ</label><input class="input" type="file" accept="image/*" onchange="readImage(event)"><div id="imgPreview" class="preview"></div></div><div class="group"><label class="label">สรุปผลการทดลอง</label><textarea id="eSummary" class="textarea">${d.summary||''}</textarea></div>`;
+if(type==='experiment')return `
+    <div class="group"><label class="label">ชื่อการทดลอง</label><input id="eName" class="input" value="${d.name||''}"></div>
+    <div class="group"><label class="label">อาหารที่ใช้ในการทดลอง</label><input id="eMedia" class="input" value="${d.media||''}"></div>
+    <div class="group"><label class="label">ชุดทดลอง</label><textarea id="eSets" class="textarea">${d.sets||''}</textarea></div>
+    <div class="group"><label class="label">ขั้นตอนการทดลอง</label><textarea id="eSteps" class="textarea">${d.steps||''}</textarea></div>
+    <div class="group"><label class="label">เกณฑ์การประเมิน</label><textarea id="eCriteria" class="textarea">${d.criteria||''}</textarea></div>
+    <div class="group"><label class="label">ตารางการทดลอง</label><textarea id="eTable" class="textarea">${d.table||''}</textarea></div>
+
+    <div class="group">
+      <label class="label">ตารางรูปภาพประกอบ แกน X / แกน Y</label>
+      <div class="xy-toolbar">
+        <button type="button" class="btn ghost btn-sm" onclick="addExpImageRow()">+ เพิ่มรูปภาพ</button>
+        <button type="button" class="btn ghost btn-sm" onclick="document.getElementById('expImageTable').innerHTML=''">ล้างตาราง</button>
+      </div>
+      <div id="expImageTable" class="xy-grid"></div>
+      <div class="xy-note">ตัวอย่าง: แกน X = Day 7, แกน Y = สูตร F1 หรือ ชุดทดลอง A</div>
+    </div>
+
+    <div class="group"><label class="label">สรุปผลการทดลอง</label><textarea id="eSummary" class="textarea">${d.summary||''}</textarea></div>`;
+
 if(type==='formula')return `<div class="form-row"><div class="group"><label class="label">รหัสสูตร</label><input id="fCode" class="input" value="${d.code||''}" placeholder="F5"></div><div class="group"><label class="label">pH</label><input id="fPh" class="input" type="number" step="0.1" value="${d.ph||5.7}"></div></div><div class="group"><label class="label">เลือกสารเคมีจากหน้าต้นทุน</label><div class="form-row"><select id="pickMat" class="select">${materialOptions()}</select><input id="pickQty" class="input" type="number" placeholder="ปริมาณ/L"></div><button type="button" class="btn ghost btn-sm" style="margin-top:8px" onclick="addIngredientLine()">+ เพิ่มสารเข้าตารางสูตร</button></div><div class="group"><label class="label">รายการสารในสูตร</label><textarea id="fItems" class="textarea" oninput="previewFormula()" placeholder="Agar=7&#10;Sugar=30">${d.items||''}</textarea></div><div class="form-row"><div class="group"><label class="label">ปริมาตรอาหารต่อขวด (ml)</label><input id="fBottle" class="input" type="number" value="${d.bottleMl||250}" oninput="previewFormula()"></div><div class="group"><label class="label">ภาชนะที่ใช้</label><select id="fVessel" class="select" onchange="previewFormula()"><option value="">ไม่รวมภาชนะ</option>${vesselOptions(d.vesselName||'')}</select></div></div><div class="form-row"><div class="group"><label class="label">จำนวนภาชนะ/ขวด</label><input id="fVesselQty" class="input" type="number" value="${d.vesselQty||1}" oninput="previewFormula()"></div><div class="group"><label class="label">ต้นทุนอัตโนมัติ</label><input id="fCostPreview" class="input" value="${baht(formulaCost(d))} ฿/L · ${baht(formulaPerMl(d))} ฿/ml · รวม ${baht(formulaBottle(d))} ฿/ขวด" readonly></div></div><div class="calc"><span>สูตร</span><b>ค่าสาร + ค่าภาชนะ = ต้นทุน/ขวด</b></div>`;
 if(type==='material')return `<div class="group"><label class="label">ชื่อสารเคมี / วัสดุ</label><input id="mName" class="input" value="${d.name||''}"></div><div class="form-row"><div class="group"><label class="label">หมวดหมู่</label><input id="mCat" class="input" value="${d.category||''}"></div><div class="group"><label class="label">Lot</label><input id="mLot" class="input" value="${d.lot||''}"></div></div><div class="form-row"><div class="group"><label class="label">ราคาที่ซื้อ (฿)</label><input id="mPrice" class="input" type="number" value="${d.price||0}" oninput="previewMaterial()"></div><div class="group"><label class="label">หน่วยซื้อ</label><input id="mUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">ปริมาณรวมในหน่วยซื้อ</label><input id="mTotal" class="input" type="number" value="${d.totalQty||1}" oninput="previewMaterial()"></div><div class="group"><label class="label">ปริมาณใช้ต่อสูตร/ล็อต</label><input id="mUse" class="input" type="number" value="${d.useQty||0}" oninput="previewMaterial()"></div></div><div class="form-row"><div class="group"><label class="label">หน่วยที่ใช้</label><input id="mUseUnit" class="input" value="${d.useUnit||'g/L'}" oninput="previewMaterial()"></div><div class="group"><label class="label">ต้นทุนคำนวณ</label><input id="mCalc" class="input" value="${baht(matCalc(d))} ฿/${d.useUnit||'unit'}" readonly></div></div><div class="calc"><span>สูตร</span><b>ราคา ÷ ปริมาณรวม × ปริมาณใช้</b></div>`;
 return `<div class="group"><label class="label">ชื่ออุปกรณ์</label><input id="eqName" class="input" value="${d.name||''}"></div><div class="group"><label class="label">หมวดหมู่</label><input id="eqCat" class="input" value="${d.category||''}"></div><div class="form-row"><div class="group"><label class="label">ราคาอุปกรณ์ (฿)</label><input id="eqPrice" class="input" type="number" value="${d.price||0}" oninput="previewEquipment()"></div><div class="group"><label class="label">หน่วย</label><input id="eqUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">อายุใช้งาน (เดือน)</label><input id="eqLife" class="input" type="number" value="${d.lifeMonths||1}" oninput="previewEquipment()"></div><div class="group"><label class="label">ค่าเสื่อม</label><input id="eqCalc" class="input" value="${baht(eqCalc(d))} ฿/เดือน" readonly></div></div><div class="calc"><span>สูตร</span><b>ราคา ÷ อายุใช้งาน</b></div>`;
@@ -472,8 +702,7 @@ function saveModal(){
   if(modalType==='goal')obj={name:v('gName')||'เป้าหมายใหม่',target:+v('gTarget')||100,note:v('gNote'),tasks:v('gTasks').split('\n').map(x=>x.trim()).filter(Boolean).map(x=>({done:x.startsWith('[x]')||x.startsWith('[X]'),text:x.replace('[x]','').replace('[X]','').replace('[ ]','').trim()}))};
   else if(modalType==='culture')obj={id:v('cuId')||'C-'+String(db.cultures.length+1).padStart(3,'0'),plant:v('cuPlant')||'ไม่ระบุ',part:'ยอด',status:v('cuStatus'),formula:v('cuFormula')||'F1',exp:'EXP-NEW',startDate:v('cuStart')||todayISO(),updateDate:v('cuUpdate')||todayISO(),closeDate:v('cuClose'),contamDate:v('cuContam'),mediaLot:v('cuMediaLot'),materialLot:v('cuMatLot'),vesselLot:v('cuVesselLot'),preparedBy:v('cuPreparedBy'),preparedDate:v('cuPreparedDate'),score:80,note:v('cuNote')||'-',cost:0};
   else if(modalType==='timeline')obj={cultureId:v('tlCulture'),dayLabel:v('tlDay')||'Day 0',date:v('tlDate')||todayISO(),title:v('tlTitle')||'Update',status:v('tlStatus'),note:v('tlNote'),image:tempImage||(editType==='timeline'?db.timelines[editIndex]?.image:'')};
-  else if(modalType==='experiment')obj={code:(editType==='experiment'&&db.experiments[editIndex]?.code)||'EXP-'+String(db.experiments.length+1).padStart(3,'0'),name:v('eName')||'การทดลองใหม่',media:v('eMedia'),sets:v('eSets'),steps:v('eSteps'),criteria:v('eCriteria'),table:v('eTable'),summary:v('eSummary'),image:tempImage||(editType==='experiment'?db.experiments[editIndex]?.image:''),survival:0};
-  else if(modalType==='formula'){obj={code:v('fCode')||'F-New',name:'New Medium',ph:+v('fPh')||5.7,survival:0,tag:'Testing',items:v('fItems'),bottleMl:+v('fBottle')||250,vesselName:v('fVessel'),vesselQty:+v('fVesselQty')||1};obj.cost=formulaCost(obj);obj.perMl=formulaPerMl(obj);obj.mediaBottle=formulaMediaBottle(obj);obj.vesselCost=vesselCost(obj);obj.perBottle=formulaBottle(obj);obj.totalPerMl=formulaTotalPerMl(obj)}
+  else if(modalType==='experiment')obj={code:(editType==='experiment'&&db.experiments[editIndex]?.code)||'EXP-'+String(db.experiments.length+1).padStart(3,'0'),name:v('eName')||'การทดลองใหม่',media:v('eMedia'),sets:v('eSets'),steps:v('eSteps'),criteria:v('eCriteria'),table:v('eTable'),summary:v('eSummary'),images:getExpImagesFromForm(),image:(getExpImagesFromForm()[0]?.src||''),survival:0};else if(modalType==='formula'){obj={code:v('fCode')||'F-New',name:'New Medium',ph:+v('fPh')||5.7,survival:0,tag:'Testing',items:v('fItems'),bottleMl:+v('fBottle')||250,vesselName:v('fVessel'),vesselQty:+v('fVesselQty')||1};obj.cost=formulaCost(obj);obj.perMl=formulaPerMl(obj);obj.mediaBottle=formulaMediaBottle(obj);obj.vesselCost=vesselCost(obj);obj.perBottle=formulaBottle(obj);obj.totalPerMl=formulaTotalPerMl(obj)}
   else if(modalType==='material')obj={name:v('mName')||'วัสดุใหม่',category:v('mCat'),lot:v('mLot'),price:+v('mPrice')||0,unit:v('mUnit')||'-',totalQty:+v('mTotal')||1,useQty:+v('mUse')||0,useUnit:v('mUseUnit')||'unit'};
   else obj={name:v('eqName')||'อุปกรณ์ใหม่',category:v('eqCat'),price:+v('eqPrice')||0,unit:v('eqUnit')||'-',lifeMonths:+v('eqLife')||1};
 
