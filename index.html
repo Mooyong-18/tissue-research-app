@@ -743,6 +743,22 @@ img{
   }
 }
 
+
+/* v5.8 extra performance improvements */
+:root{--shadow-lite:0 1px 3px rgba(0,0,0,.055)}
+@media(max-width:540px){
+  .card,.stat,.mini-card{box-shadow:var(--shadow-lite) !important}
+  .app::before{opacity:.16 !important;filter:contrast(1.05) saturate(1.02) brightness(1.02) !important}
+}
+.scroll{will-change:scroll-position;-webkit-overflow-scrolling:touch}
+.page:not(.active){content-visibility:hidden}
+.preview img,.tl-img,.xy-img{contain:layout paint}
+
+/* Optional fast mode */
+.perf-mode .app::before{display:none !important}
+.perf-mode .card,.perf-mode .stat,.perf-mode .mini-card{box-shadow:none !important}
+.perf-mode *{transition:none !important;animation:none !important}
+
 </style>
 </head>
 
@@ -816,7 +832,10 @@ img{
         <div class="row"><div class="row-icon">🌓</div><div class="row-main"><div class="row-title">Dark Mode</div><div class="row-sub">เปลี่ยนธีมสีแอป</div></div><button class="btn ghost btn-sm" onclick="toggleDark()">Toggle</button></div>
         <div class="row" onclick="exportJSON()"><div class="row-icon">⬇</div><div class="row-main"><div class="row-title">Export JSON</div><div class="row-sub">สำรองข้อมูลทั้งหมด</div></div>›</div>
         <div class="row"><div class="row-icon">⬆</div><div class="row-main"><div class="row-title">Import JSON</div><div class="row-sub">โหลดข้อมูลกลับเข้าแอป</div></div><label class="mono">เลือกไฟล์<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label></div>
-        <div class="row" onclick="resetData()"><div class="row-icon">🗑</div><div class="row-main"><div class="row-title">Reset Data</div><div class="row-sub">ล้างข้อมูลและกลับค่าเริ่มต้น</div></div>›</div>
+        
+        <div class="row" onclick="togglePerformanceMode()"><div class="row-icon">⚡</div><div class="row-main"><div class="row-title">Performance Mode</div><div class="row-sub">ปิดพื้นหลัง/เงา เพื่อให้แอปไวขึ้น</div></div>›</div>
+        <div class="row" onclick="compactData()"><div class="row-icon">🧹</div><div class="row-main"><div class="row-title">Compact Data</div><div class="row-sub">จัดข้อมูลและรูปภาพเก่าให้เบาลง</div></div>›</div>
+<div class="row" onclick="resetData()"><div class="row-icon">🗑</div><div class="row-main"><div class="row-title">Reset Data</div><div class="row-sub">ล้างข้อมูลและกลับค่าเริ่มต้น</div></div>›</div>
       </div>
     </section>
   </div>
@@ -865,7 +884,18 @@ function actions(type,i){return `<div class="actions"><button class="small" oncl
 function row(icon,title,sub,right=''){return `<div class="row"><div class="row-icon">${icon}</div><div class="row-main"><div class="row-title">${title}</div><div class="row-sub">${sub}</div></div><div class="row-right">${right}</div></div>`}
 function bar(label,count,total){let pct=total?Math.round(count/total*100):0;return `<div class="bar-row"><div class="bar-label">${label}</div><div class="bar"><div class="fill" style="width:${pct}%"></div></div><div class="bar-val">${baht(count)}</div></div>`}
 
-function render(){renderDashboard();renderCultures();renderExperiments();renderFormulas();renderCosts();renderReports()}
+function renderCurrentPage(){
+  if(page==='dashboard')renderDashboard();
+  else if(page==='cultures')renderCultures();
+  else if(page==='experiments')renderExperiments();
+  else if(page==='formulas')renderFormulas();
+  else if(page==='costs')renderCosts();
+  else if(page==='reports')renderReports();
+}
+function render(){
+  renderDashboard();
+  if(page!=='dashboard')renderCurrentPage();
+}
 function renderDashboard(){let active=db.cultures.filter(c=>!['Contamination','Closed','Dead'].includes(c.status)).length,cont=Math.round(db.cultures.filter(c=>c.status==='Contamination').length/(db.cultures.length||1)*100),avg=Math.round(db.cultures.reduce((s,c)=>s+Number(c.score||0),0)/(db.cultures.length||1)),avgCost=(db.cultures.reduce((s,c)=>s+Number(c.cost||0),0)/(db.cultures.length||1)).toFixed(2);sActive.textContent=active;sSurv.textContent=avg;sCont.textContent=cont;sExp.textContent=db.experiments.length;sCost.textContent=avgCost;totalCult.textContent=db.cultures.length+' ขวด';goalList.innerHTML=db.goals.map((g,i)=>{let pct=goalPct(g);let tasks=(g.tasks||[]).map((t,ti)=>`<label style="display:flex;gap:8px;align-items:center;margin-top:7px;font-size:12px;color:var(--muted)"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i},${ti},this.checked)"><span style="text-decoration:${t.done?'line-through':'none'}">${t.text}</span></label>`).join('');return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;color:var(--muted)"><span>${g.name}</span><span>${pct}% / goal ${g.target}%</span></div><div class="bar" style="margin-top:7px"><div class="fill" style="width:${pct}%"></div></div><div style="font-size:11px;color:var(--muted);margin-top:5px">${g.note||''}</div>${tasks}${actions('goal',i)}</div>`}).join('')||'<div style="color:var(--muted)">ยังไม่มีเป้าหมาย</div>';statusChart.innerHTML=['Active','Shoot','Rooting','Browning','Contamination','Closed'].map(x=>bar(x,db.cultures.filter(c=>c.status===x).length,db.cultures.length)).join('');recentList.innerHTML=db.cultures.slice(0,4).map((c,i)=>row('🧪',`${c.id} · ${c.plant}`,`${c.formula} · Day ${cultureDay(c)} · Lot ${c.mediaLot||'-'}`,`<div class="mono">${c.score}</div>${actions('culture',i)}`)).join('')}
 function renderCultures(){let items=filter==='all'?db.cultures:db.cultures.filter(c=>c.status===filter);cultureList.innerHTML=items.map(c=>{let i=db.cultures.indexOf(c);let tl=db.timelines.filter(t=>t.cultureId===c.id).map(t=>`<div class="tl"><div class="tl-day">${t.dayLabel} · ${t.date}</div><div class="tl-title">${t.title} ${pill(t.status)}</div><div class="tl-note">${t.note||''}</div>${t.image?`<img class="tl-img" src="${t.image}" loading="lazy">`:''}${actions('timeline',db.timelines.indexOf(t))}</div>`).join('');return `<div>${row('🧪',`${c.id} · ${c.plant}`,`${c.part||'ยอด'} · ${c.formula} · Day ${cultureDay(c)} · MediaLot ${c.mediaLot||'-'}`,`${pill(c.status)}<div class="mono cost">${c.cost}฿</div>${actions('culture',i)}`)}<div class="timeline">${tl||'<div class="tl-note">ยังไม่มี Timeline</div>'}</div></div>`}).join('')||'<div class="card-body">ไม่มีข้อมูล</div>'}
 function renderExperiments(){
@@ -931,7 +961,7 @@ function renderFormulas(){
 
 function renderCosts(){let mat=sum(db.materials,'price'),eq=sum(db.equipment,'price'),fm=db.formulas.reduce((s,f)=>s+formulaBottle(f),0),total=mat+eq+fm;cMat.textContent=baht(mat);cEq.textContent=baht(eq);cTotal.textContent=baht(total);cCult.textContent=db.cultures.length;cPer.textContent=baht(total/(db.cultures.length||1));costChart.innerHTML=bar('Materials',mat,total)+bar('Equipment',eq,total)+bar('Formulas',fm,total);materialList.innerHTML=db.materials.map((m,i)=>row('🧴',m.name,`${m.category} · Lot ${m.lot||'-'} · ${m.unit} · ใช้ ${m.useQty} ${m.useUnit}`,`<div class="mono cost">${baht(m.price)}฿</div><div class="row-sub">${baht(matCalc(m))} ฿/${m.useUnit}</div>${actions('material',i)}`)).join('');equipmentList.innerHTML=db.equipment.map((e,i)=>row('🔧',e.name,`${e.category} · ${e.unit} · อายุ ${e.lifeMonths} เดือน`,`<div class="mono">${baht(e.price)}฿</div><div class="row-sub">${baht(eqCalc(e))} ฿/เดือน</div>${actions('equipment',i)}`)).join('')}
 function renderReports(){let best=db.formulas.slice().sort((a,b)=>formulaBottle(a)-formulaBottle(b))[0];reportText.innerHTML=`สรุปข้อมูลปัจจุบัน: มี Culture ${db.cultures.length} รายการ, การทดลอง ${db.experiments.length} รายการ, สูตรอาหาร ${db.formulas.length} สูตร<br><br>สูตรต้นทุนต่ำสุด: <b>${best?.code||'-'}</b> = ${baht(formulaBottle(best||{}))} ฿/ขวด<br><br>กด Save PDF ด้านบนเพื่อบันทึกเป็น PDF`}
-function showPage(p){page=p;document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(p).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));let idx={dashboard:0,cultures:1,experiments:2,formulas:3,costs:4}[p];if(idx!==undefined)document.querySelectorAll('.tab')[idx].classList.add('active');let m={dashboard:['Dashboard','OVERVIEW / ภาพรวม'],cultures:['Cultures','TRACKING / ติดตามขวด'],experiments:['Experiments','RESEARCH / การทดลอง'],formulas:['Formulas','MEDIA / สูตรอาหาร'],costs:['Costs','ANALYSIS / ต้นทุน'],reports:['Reports','PDF / รายงาน'],settings:['Settings','SYSTEM / ระบบ']};pageTitle.textContent=m[p][0];pageSub.textContent=m[p][1]}
+function showPage(p){page=p;document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(p).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));let idx={dashboard:0,cultures:1,experiments:2,formulas:3,costs:4;renderCurrentPage()}[p];if(idx!==undefined)document.querySelectorAll('.tab')[idx].classList.add('active');let m={dashboard:['Dashboard','OVERVIEW / ภาพรวม'],cultures:['Cultures','TRACKING / ติดตามขวด'],experiments:['Experiments','RESEARCH / การทดลอง'],formulas:['Formulas','MEDIA / สูตรอาหาร'],costs:['Costs','ANALYSIS / ต้นทุน'],reports:['Reports','PDF / รายงาน'],settings:['Settings','SYSTEM / ระบบ']};pageTitle.textContent=m[p][0];pageSub.textContent=m[p][1]}
 function filterCulture(f,el){filter=f;document.querySelectorAll('#segCult .seg').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderCultures()}
 function fabAction(){if(page==='costs')openModal('material');else if(page==='formulas')openModal('formula');else if(page==='experiments')openModal('experiment');else openModal('culture')}
 const titles={goal:'🎯 เพิ่มเป้าหมาย',culture:'🧪 บันทึก Culture',timeline:'📅 เพิ่ม Timeline',experiment:'🔬 เพิ่มการทดลอง',formula:'⚗️ สูตรอาหาร',material:'🧴 เพิ่มสารเคมี / วัสดุ',equipment:'🔧 เพิ่มอุปกรณ์'};
@@ -1074,7 +1104,7 @@ function readExpImage(e,input){
   const img=card.querySelector('.xy-img');
   const hidden=card.querySelector('.exp-src');
 
-  resizeImageFile(file,900,900,.78).then(dataUrl=>{
+  resizeImageFile(file,720,720,.68).then(dataUrl=>{
     hidden.value=dataUrl;
     img.src=dataUrl;
     img.loading='lazy';
@@ -1160,13 +1190,38 @@ function readImage(e){
   let file=e.target.files[0];
   if(!file)return;
 
-  resizeImageFile(file,900,900,.78).then(dataUrl=>{
+  resizeImageFile(file,720,720,.68).then(dataUrl=>{
     tempImage=dataUrl;
     let p=document.getElementById('imgPreview');
     if(p)p.innerHTML=`<img src="${tempImage}" loading="lazy">`;
   }).catch(()=>{
     toast('อ่านรูปภาพไม่สำเร็จ');
   });
+}
+
+
+function compactData(){
+  try{
+    db.timelines=(db.timelines||[]).slice(-250);
+    db.experiments=(db.experiments||[]).map(e=>{
+      let imgs=Array.isArray(e.images)?e.images.slice(-24):[];
+      return {...e,images:imgs,image:imgs[0]?.src||e.image||''};
+    });
+    save();
+    render();
+    toast('จัดข้อมูลให้เบาขึ้นแล้ว');
+  }catch(err){
+    console.error(err);
+    toast('จัดข้อมูลไม่สำเร็จ');
+  }
+}
+function togglePerformanceMode(){
+  document.documentElement.classList.toggle('perf-mode');
+  localStorage.setItem('tissue_perf_mode',document.documentElement.classList.contains('perf-mode')?'1':'0');
+  toast(document.documentElement.classList.contains('perf-mode')?'เปิดโหมดเร็ว':'ปิดโหมดเร็ว');
+}
+if(localStorage.getItem('tissue_perf_mode')==='1'){
+  document.documentElement.classList.add('perf-mode');
 }
 
 function resetData(){if(!confirm('ล้างข้อมูลทั้งหมดใช่ไหม?'))return;localStorage.removeItem(KEY);db=structuredClone(seed);render();toast('Reset แล้ว')}
