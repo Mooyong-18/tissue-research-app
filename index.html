@@ -114,13 +114,91 @@ body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-fa
   font-size:13px;
 }
 
+
+/* Formula dashboard: clean cost summary */
+.formula-dashboard{
+  display:grid;
+  gap:12px;
+  margin:12px 0;
+}
+.formula-cost-summary{
+  border-radius:20px;
+  padding:16px;
+  background:linear-gradient(135deg,var(--green-soft),rgba(4,120,87,.035));
+  border:1px solid rgba(4,120,87,.18);
+}
+.formula-cost-summary.secondary{
+  background:linear-gradient(135deg,rgba(217,119,6,.10),rgba(217,119,6,.035));
+  border-color:rgba(217,119,6,.18);
+}
+.formula-cost-kicker{
+  font-size:11px;
+  font-weight:900;
+  color:var(--muted);
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.formula-cost-number{
+  font-family:monospace;
+  font-size:24px;
+  line-height:1.05;
+  font-weight:900;
+  color:var(--green);
+}
+.formula-cost-summary.secondary .formula-cost-number{
+  color:var(--amber);
+}
+.formula-cost-caption{
+  font-size:11.5px;
+  color:var(--muted);
+  line-height:1.35;
+  margin-top:6px;
+}
+.formula-chip-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
+}
+.formula-mini-chip{
+  display:inline-flex;
+  align-items:center;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  color:var(--green);
+  background:var(--green-soft);
+  border:1px solid rgba(4,120,87,.16);
+}
+.formula-actions-clean{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:10px;
+}
+.formula-actions-clean .small{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+}
+@media(max-width:420px){
+  #formulaGrid{
+    grid-template-columns:1fr;
+  }
+  .formula-cost-number{
+    font-size:22px;
+  }
+}
+
 </style>
 </head>
 
 <body>
 <div class="app">
   <div class="header">
-    <div class="logo"><div class="logo-icon">🌱</div><div><div class="logo-title">TISSUE LAB</div><div class="logo-sub">Research System v4.2</div></div></div>
+    <div class="logo"><div class="logo-icon">🌱</div><div><div class="logo-title">TISSUE LAB</div><div class="logo-sub">Research System v4.3</div></div></div>
     <div style="display:flex;gap:8px"><button class="icon-btn" onclick="showPage('settings')">⚙️</button><button class="icon-btn" onclick="showPage('reports')">🖨</button></div>
   </div>
 
@@ -234,79 +312,43 @@ function renderCultures(){let items=filter==='all'?db.cultures:db.cultures.filte
 function renderExperiments(){experimentList.innerHTML=db.experiments.map((e,i)=>{let img=e.image?`<div class="preview"><img src="${e.image}"></div>`:'';return row('🔬',`${e.code||'EXP'} · ${e.name}`,`อาหาร: ${e.media||'-'} · ชุด: ${e.sets||'-'} · เกณฑ์: ${e.criteria||'-'}`,`<div class="mono">${e.survival||0}%</div>${img}${actions('experiment',i)}`)}).join('')||'<div class="card-body">ยังไม่มีการทดลอง</div>'}
 function renderFormulas(){
   formulaGrid.innerHTML=db.formulas.map((f,i)=>{
-    let perL=formulaCost(f);
-    let perMl=formulaPerMl(f);
     let mediaBottle=formulaMediaBottle(f);
-    let vessel=vesselCost(f);
     let totalBottle=formulaBottle(f);
-    let totalMl=formulaTotalPerMl(f);
 
-    f.cost=perL;
-    f.perMl=perMl;
     f.mediaBottle=mediaBottle;
-    f.vesselCost=vessel;
     f.perBottle=totalBottle;
-    f.totalPerMl=totalMl;
 
     return `
       <div class="mini-card formula">
         <div class="formula-title">${f.code} · ${f.name||'New Medium'}</div>
 
-        <div class="formula-breakdown">
-          <div class="cost-line">
-            <div>
-              <div class="cost-label">ต้นทุนอาหารต่อ 1 ลิตร</div>
-              <div class="row-sub">รวมราคาสารทั้งหมดในสูตร</div>
+        <div class="formula-dashboard">
+          <div class="formula-cost-summary secondary">
+            <div class="formula-cost-kicker">ต้นทุนอาหาร</div>
+            <div class="formula-cost-number">${baht(mediaBottle)} ฿</div>
+            <div class="formula-cost-caption">
+              ค่าอาหารตามปริมาตร ${f.bottleMl||250} ml
             </div>
-            <div class="cost-value">${baht(perL)} ฿/L</div>
           </div>
 
-          <div class="cost-line">
-            <div>
-              <div class="cost-label">ต้นทุนอาหารต่อ 1 ml</div>
-              <div class="row-sub">ต้นทุนอาหาร 1 ลิตร ÷ 1000</div>
+          <div class="formula-cost-summary">
+            <div class="formula-cost-kicker">ต้นทุนรวมต่อขวด</div>
+            <div class="formula-cost-number">${baht(totalBottle)} ฿/ขวด</div>
+            <div class="formula-cost-caption">
+              ต้นทุนอาหาร + ภาชนะ ${f.vesselName?`(${f.vesselName})`:''}
             </div>
-            <div class="cost-value">${baht(perMl)} ฿/ml</div>
-          </div>
-
-          <div class="cost-line">
-            <div>
-              <div class="cost-label">ค่าอาหารต่อขวด</div>
-              <div class="row-sub">ตามปริมาตร ${f.bottleMl||250} ml</div>
-            </div>
-            <div class="cost-value">${baht(mediaBottle)} ฿</div>
-          </div>
-
-          <div class="cost-line">
-            <div>
-              <div class="cost-label">ค่าภาชนะ</div>
-              <div class="row-sub">${f.vesselName||'ไม่รวมภาชนะ'} × ${f.vesselQty||1}</div>
-            </div>
-            <div class="cost-value">${baht(vessel)} ฿</div>
-          </div>
-
-          <div class="cost-line main">
-            <div>
-              <div class="cost-label">ต้นทุนรวมต่อขวด</div>
-              <div class="row-sub">ค่าอาหารต่อขวด + ค่าภาชนะ</div>
-            </div>
-            <div class="cost-value">${baht(totalBottle)} ฿/ขวด</div>
-          </div>
-
-          <div class="cost-line main">
-            <div>
-              <div class="cost-label">ต้นทุนรวมต่อ 1 ml</div>
-              <div class="row-sub">ต้นทุนรวมต่อขวด ÷ ${f.bottleMl||250} ml</div>
-            </div>
-            <div class="cost-value">${baht(totalMl)} ฿/ml</div>
           </div>
         </div>
 
-        <div class="formula-tags">
+        <div class="formula-chip-row">
           ${pill(f.tag||'Testing')}
           ${pill((f.survival||0)+'%')}
         </div>
-        ${actions('formula',i)}
+
+        <div class="formula-actions-clean">
+          <button class="small" onclick="event.stopPropagation();editItem('formula',${i})">✎</button>
+          <button class="small del" onclick="event.stopPropagation();deleteItem('formula',${i})">🗑</button>
+        </div>
       </div>`;
   }).join('');
 
