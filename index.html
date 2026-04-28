@@ -659,6 +659,57 @@ label{
   z-index:10 !important;
 }
 
+
+/* v5.6 modal layering fix: prevent stacked windows */
+body.modal-open{
+  overflow:hidden !important;
+}
+
+body.modal-open .tabs,
+body.modal-open .fab{
+  display:none !important;
+}
+
+.modal{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  z-index:9999 !important;
+  align-items:flex-end !important;
+  justify-content:center !important;
+  background:rgba(0,0,0,.48) !important;
+  backdrop-filter:blur(8px) !important;
+  -webkit-backdrop-filter:blur(8px) !important;
+}
+
+.modal.show{
+  display:flex !important;
+}
+
+.sheet{
+  width:100% !important;
+  max-width:540px !important;
+  max-height:calc(100dvh - env(safe-area-inset-top,0px) - 16px) !important;
+  border-radius:28px 28px 0 0 !important;
+  position:relative !important;
+  z-index:10000 !important;
+  box-shadow:0 -18px 42px rgba(0,0,0,.22) !important;
+}
+
+.sheet-body{
+  max-height:calc(100dvh - 230px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) !important;
+  overflow:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+.sheet-foot{
+  background:var(--card) !important;
+  position:sticky !important;
+  bottom:0 !important;
+  z-index:2 !important;
+}
+
 </style>
 </head>
 
@@ -748,7 +799,7 @@ label{
   <span id="pullText">ดึงเพื่อรีเฟรช</span>
 </div>
 
-<div class="modal" id="modal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><div class="sheet-title" id="modalTitle">เพิ่มข้อมูล</div><button class="btn ghost btn-sm" onclick="closeModal()">ยกเลิก</button></div><div class="sheet-body" id="modalBody"></div><div class="sheet-foot"><button class="btn" style="width:100%" onclick="saveModal()">💾 บันทึก</button></div></div></div>
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="handle"></div><div class="sheet-head"><div class="sheet-title" id="modalTitle">เพิ่มข้อมูล</div><button class="btn ghost btn-sm" onclick="closeModal()">ยกเลิก</button></div><div class="sheet-body" id="modalBody"></div><div class="sheet-foot"><button class="btn" style="width:100%" onclick="saveModal()">💾 บันทึก</button></div></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -856,6 +907,9 @@ function openModal(type){
   editType=null;
   editIndex=null;
   tempImage='';
+
+  document.body.classList.add('modal-open');
+
   modalTitle.textContent=titles[type]||'เพิ่มข้อมูล';
   modalBody.innerHTML=form(type,{});
   modal.classList.add('show');
@@ -870,6 +924,8 @@ function editItem(type,i){
   editType=type;
   editIndex=i;
   tempImage='';
+
+  document.body.classList.add('modal-open');
 
   let d=list(type)[i]||{};
   modalTitle.textContent='แก้ไข · '+(titles[type]||'ข้อมูล');
@@ -903,7 +959,7 @@ function editItem(type,i){
 
 function deleteItem(type,i){if(!confirm('ต้องการลบรายการนี้ใช่ไหม?'))return;list(type).splice(i,1);save();render();toast('ลบรายการแล้ว')}
 function list(t){return t==='goal'?db.goals:t==='culture'?db.cultures:t==='timeline'?db.timelines:t==='experiment'?db.experiments:t==='formula'?db.formulas:t==='material'?db.materials:db.equipment}
-function closeModal(){modal.classList.remove('show')}
+function closeModal(){modal.classList.remove('show');document.body.classList.remove('modal-open')}
 function materialOptions(){return db.materials.map(m=>`<option value="${m.name}">${m.name}</option>`).join('')}
 function vesselOptions(selected=''){let vessels=db.materials.filter(m=>{let text=((m.category||'')+' '+(m.name||'')).toLowerCase();return text.includes('ภาชนะ')||text.includes('vessel')||text.includes('ขวด')||text.includes('ถุง')||text.includes('bottle')||text.includes('container')});if(!vessels.length)vessels=db.materials;return vessels.map(m=>`<option value="${m.name}" ${selected===m.name?'selected':''}>${m.name}</option>`).join('')}
 function cultureOptions(){return db.cultures.map(c=>`<option value="${c.id}">${c.id} · ${c.plant}</option>`).join('')}
