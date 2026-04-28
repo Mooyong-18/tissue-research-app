@@ -609,6 +609,56 @@ body{
   }
 }
 
+
+/* v5.5 click fix: prevent background/overlays from blocking buttons */
+.app::before,
+.app::after{
+  pointer-events:none !important;
+}
+
+.header,
+.titlebar,
+.scroll,
+.tabs,
+.fab,
+.modal,
+.toast,
+.pull-refresh{
+  position:relative;
+  z-index:10 !important;
+}
+
+.modal{
+  z-index:200 !important;
+}
+
+.fab{
+  z-index:120 !important;
+  pointer-events:auto !important;
+}
+
+.tabs{
+  z-index:100 !important;
+}
+
+button,
+.btn,
+.icon-btn,
+.tab,
+.row,
+.small,
+input,
+textarea,
+select,
+label{
+  pointer-events:auto !important;
+}
+
+.scroll{
+  position:relative;
+  z-index:10 !important;
+}
+
 </style>
 </head>
 
@@ -809,15 +859,18 @@ function openModal(type){
   modalTitle.textContent=titles[type]||'เพิ่มข้อมูล';
   modalBody.innerHTML=form(type,{});
   modal.classList.add('show');
+
   if(type==='experiment'){
     setTimeout(()=>addExpImageRow(),0);
   }
 }
+
 function editItem(type,i){
   modalType=type;
   editType=type;
   editIndex=i;
   tempImage='';
+
   let d=list(type)[i]||{};
   modalTitle.textContent='แก้ไข · '+(titles[type]||'ข้อมูล');
   modalBody.innerHTML=form(type,d);
@@ -837,7 +890,7 @@ function editItem(type,i){
     },0);
   }
 
-  if((type==='timeline')&&d.image){
+  if(type==='timeline'&&d.image){
     tempImage=d.image;
     setTimeout(()=>{
       let p=document.getElementById('imgPreview');
@@ -1066,7 +1119,7 @@ function setupPullToRefresh(){
 
 setupPullToRefresh();
 
-render();
+try{render();}catch(err){console.error(err);alert('เกิดข้อผิดพลาด: '+err.message);}
 </script>
 </body>
 </html>
