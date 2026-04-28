@@ -534,6 +534,31 @@ body{
   }
 }
 
+
+/* Fixed floating add button position */
+.fab{
+  position:fixed !important;
+  right:max(20px, env(safe-area-inset-right, 0px) + 20px) !important;
+  left:auto !important;
+  bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 26px) !important;
+  width:58px !important;
+  height:58px !important;
+  border-radius:20px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  transform:none !important;
+  z-index:60 !important;
+  box-shadow:0 12px 32px rgba(4,120,87,.30) !important;
+}
+
+@media(max-width:420px){
+  .fab{
+    right:18px !important;
+    bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 34px) !important;
+  }
+}
+
 </style>
 </head>
 
@@ -615,7 +640,7 @@ body{
   <nav class="tabs"><div class="tab active" onclick="showPage('dashboard')"><i>📊</i>ภาพรวม</div><div class="tab" onclick="showPage('cultures')"><i>🧪</i>Culture</div><div class="tab" onclick="showPage('experiments')"><i>🔬</i>ทดลอง</div><div class="tab" onclick="showPage('formulas')"><i>⚗️</i>สูตร</div><div class="tab" onclick="showPage('costs')"><i>💰</i>ต้นทุน</div></nav>
 </div>
 
-<button class="fab" onclick="fabAction()">+</button>
+<button class="fab" onclick="fabAction()" aria-label="เพิ่มข้อมูล">+</button>
 
 
 <div class="pull-refresh" id="pullRefresh">
