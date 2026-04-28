@@ -1846,4 +1846,307 @@ if(type==='reference')return `
     <div class="group"><label class="label">\u0E41\u0E17\u0E47\u0E01</label><input id="refTagsInput" class="input" value="${d.tags||''}" placeholder="\u0E40\u0E0A\u0E48\u0E19 anthocyanin, tissue culture, pH indicator"></div>
     <div class="group"><label class="label">\u0E2A\u0E23\u0E38\u0E1B\u0E2A\u0E31\u0E49\u0E19 \u0E46 / \u0E43\u0E0A\u0E49\u0E2D\u0E49\u0E32\u0E07\u0E2D\u0E34\u0E07\u0E40\u0E23\u0E37\u0E48\u0E2D\u0E07\u0E2D\u0E30\u0E44\u0E23</label><textarea id="refNote" class="textarea" placeholder="\u0E2A\u0E23\u0E38\u0E1B\u0E43\u0E08\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E33\u0E04\u0E31\u0E0D \u0E2B\u0E23\u0E37\u0E2D\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E27\u0E48\u0E32\u0E40\u0E2D\u0E32\u0E44\u0E27\u0E49\u0E43\u0E0A\u0E49\u0E2D\u0E49\u0E32\u0E07\u0E2D\u0E34\u0E07\u0E2A\u0E48\u0E27\u0E19\u0E44\u0E2B\u0E19">${d.note||''}</textarea></div>`;
 
-if(type==='material')return `<div class="group"><label class="label">\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E32\u0E23\u0E40\u0E04\u0E21\u0E35 / \u0E27\u0E31\u0E2A\u0E14\u0E38</label><input id="mName" class="input" value="${d.name||''}"></div><div class="form-row"><div class="group"><la
+if(type==='material')return `<div class="group"><label class="label">\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E32\u0E23\u0E40\u0E04\u0E21\u0E35 / \u0E27\u0E31\u0E2A\u0E14\u0E38</label><input id="mName" class="input" value="${d.name||''}"></div><div class="form-row"><div class="group"><label class="label">\u0E2B\u0E21\u0E27\u0E14\u0E2B\u0E21\u0E39\u0E48</label><input id="mCat" class="input" value="${d.category||''}"></div><div class="group"><label class="label">Lot</label><input id="mLot" class="input" value="${d.lot||''}"></div></div><div class="form-row"><div class="group"><label class="label">\u0E23\u0E32\u0E04\u0E32\u0E17\u0E35\u0E48\u0E0B\u0E37\u0E49\u0E2D (\u0E3F)</label><input id="mPrice" class="input" type="number" value="${d.price||0}" oninput="previewMaterial()"></div><div class="group"><label class="label">\u0E2B\u0E19\u0E48\u0E27\u0E22\u0E0B\u0E37\u0E49\u0E2D</label><input id="mUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">\u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E23\u0E27\u0E21\u0E43\u0E19\u0E2B\u0E19\u0E48\u0E27\u0E22\u0E0B\u0E37\u0E49\u0E2D</label><input id="mTotal" class="input" type="number" value="${d.totalQty||1}" oninput="previewMaterial()"></div><div class="group"><label class="label">\u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E43\u0E0A\u0E49\u0E15\u0E48\u0E2D\u0E2A\u0E39\u0E15\u0E23/\u0E25\u0E47\u0E2D\u0E15</label><input id="mUse" class="input" type="number" value="${d.useQty||0}" oninput="previewMaterial()"></div></div><div class="form-row"><div class="group"><label class="label">\u0E2B\u0E19\u0E48\u0E27\u0E22\u0E17\u0E35\u0E48\u0E43\u0E0A\u0E49</label><input id="mUseUnit" class="input" value="${d.useUnit||'g/L'}" oninput="previewMaterial()"></div><div class="group"><label class="label">\u0E15\u0E49\u0E19\u0E17\u0E38\u0E19\u0E04\u0E33\u0E19\u0E27\u0E13</label><input id="mCalc" class="input" value="${baht(matCalc(d))} \u0E3F/${d.useUnit||'unit'}" readonly></div></div><div class="calc"><span>\u0E2A\u0E39\u0E15\u0E23</span><b>\u0E23\u0E32\u0E04\u0E32 \u00F7 \u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E23\u0E27\u0E21 \u00D7 \u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E43\u0E0A\u0E49</b></div>`;
+return `<div class="group"><label class="label">\u0E0A\u0E37\u0E48\u0E2D\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C</label><input id="eqName" class="input" value="${d.name||''}"></div><div class="group"><label class="label">\u0E2B\u0E21\u0E27\u0E14\u0E2B\u0E21\u0E39\u0E48</label><input id="eqCat" class="input" value="${d.category||''}"></div><div class="form-row"><div class="group"><label class="label">\u0E23\u0E32\u0E04\u0E32\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C (\u0E3F)</label><input id="eqPrice" class="input" type="number" value="${d.price||0}" oninput="previewEquipment()"></div><div class="group"><label class="label">\u0E2B\u0E19\u0E48\u0E27\u0E22</label><input id="eqUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">\u0E2D\u0E32\u0E22\u0E38\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19 (\u0E40\u0E14\u0E37\u0E2D\u0E19)</label><input id="eqLife" class="input" type="number" value="${d.lifeMonths||1}" oninput="previewEquipment()"></div><div class="group"><label class="label">\u0E04\u0E48\u0E32\u0E40\u0E2A\u0E37\u0E48\u0E2D\u0E21</label><input id="eqCalc" class="input" value="${baht(eqCalc(d))} \u0E3F/\u0E40\u0E14\u0E37\u0E2D\u0E19" readonly></div></div><div class="calc"><span>\u0E2A\u0E39\u0E15\u0E23</span><b>\u0E23\u0E32\u0E04\u0E32 \u00F7 \u0E2D\u0E32\u0E22\u0E38\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19</b></div>`;
+}
+
+function previewMaterial(){mCalc.value=baht(Number(mPrice.value||0)/Number(mTotal.value||1)*Number(mUse.value||0))+' \u0E3F/'+(mUseUnit.value||'unit')}
+function previewEquipment(){eqCalc.value=baht(Number(eqPrice.value||0)/Number(eqLife.value||1))+' \u0E3F/\u0E40\u0E14\u0E37\u0E2D\u0E19'}
+function previewFormula(){let f={items:fItems.value,bottleMl:Number(fBottle.value||250),vesselName:fVessel.value,vesselQty:Number(fVesselQty.value||1)};fCostPreview.value=baht(formulaCost(f))+' \u0E3F/L \u00B7 '+baht(formulaPerMl(f))+' \u0E3F/ml \u00B7 \u0E23\u0E27\u0E21 '+baht(formulaBottle(f))+' \u0E3F/\u0E02\u0E27\u0E14'}
+function toggleTask(gi,ti,done){db.goals[gi].tasks[ti].done=done;save();renderDashboard()}
+
+function resizeImageFile(file,maxW=900,maxH=900,quality=.78){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=reject;
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=reject;
+      img.onload=()=>{
+        let w=img.width;
+        let h=img.height;
+        const ratio=Math.min(maxW/w,maxH/h,1);
+        w=Math.round(w*ratio);
+        h=Math.round(h*ratio);
+
+        const canvas=document.createElement('canvas');
+        canvas.width=w;
+        canvas.height=h;
+
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function readImage(e){
+  let file=e.target.files[0];
+  if(!file)return;
+
+  resizeImageFile(file,720,720,.68).then(dataUrl=>{
+    tempImage=dataUrl;
+    let p=document.getElementById('imgPreview');
+    if(p)p.innerHTML=`<img src="${tempImage}" loading="lazy">`;
+  }).catch(()=>{
+    toast('\u0E2D\u0E48\u0E32\u0E19\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E\u0E44\u0E21\u0E48\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08');
+  });
+}
+
+
+function compactData(){
+  try{
+    db.timelines=(db.timelines||[]).slice(-250);
+    db.experiments=(db.experiments||[]).map(e=>{
+      let imgs=Array.isArray(e.images)?e.images.slice(-24):[];
+      return {...e,images:imgs,image:imgs[0]?.src||e.image||''};
+    });
+    save();
+    render();
+    toast('\u0E08\u0E31\u0E14\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E43\u0E2B\u0E49\u0E40\u0E1A\u0E32\u0E02\u0E36\u0E49\u0E19\u0E41\u0E25\u0E49\u0E27');
+  }catch(err){
+    console.error(err);
+    toast('\u0E08\u0E31\u0E14\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E44\u0E21\u0E48\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08');
+  }
+}
+function togglePerformanceMode(){
+  document.documentElement.classList.toggle('perf-mode');
+  localStorage.setItem('tissue_perf_mode',document.documentElement.classList.contains('perf-mode')?'1':'0');
+  toast(document.documentElement.classList.contains('perf-mode')?'\u0E40\u0E1B\u0E34\u0E14\u0E42\u0E2B\u0E21\u0E14\u0E40\u0E23\u0E47\u0E27':'\u0E1B\u0E34\u0E14\u0E42\u0E2B\u0E21\u0E14\u0E40\u0E23\u0E47\u0E27');
+}
+if(localStorage.getItem('tissue_perf_mode')==='1'){
+  document.documentElement.classList.add('perf-mode');
+}
+
+function resetData(){if(!confirm('\u0E25\u0E49\u0E32\u0E07\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14\u0E43\u0E0A\u0E48\u0E44\u0E2B\u0E21?'))return;localStorage.removeItem(KEY);db=structuredClone(seed);render();toast('Reset \u0E41\u0E25\u0E49\u0E27')}
+function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500)}
+function toggleDark(){document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'}
+function exportJSON(){let b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='tissue-lab-backup.json';a.click();toast('Export \u0E41\u0E25\u0E49\u0E27')}
+function importJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{db={...seed,...JSON.parse(r.result)};save();render();toast('Import \u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08')}catch(err){toast('\u0E44\u0E1F\u0E25\u0E4C\u0E44\u0E21\u0E48\u0E16\u0E39\u0E01\u0E15\u0E49\u0E2D\u0E07')}};r.readAsText(f)}
+
+let pullStartY=0;
+let pulling=false;
+let pullReady=false;
+
+function setupPullToRefresh(){
+  const scroller=document.querySelector('.scroll');
+  const indicator=document.getElementById('pullRefresh');
+  const text=document.getElementById('pullText');
+  if(!scroller||!indicator||!text)return;
+
+  scroller.addEventListener('touchstart',e=>{
+    if(scroller.scrollTop<=0){
+      pullStartY=e.touches[0].clientY;
+      pulling=true;
+      pullReady=false;
+    }
+  },{passive:true});
+
+  scroller.addEventListener('touchmove',e=>{
+    if(!pulling)return;
+
+    let diff=e.touches[0].clientY-pullStartY;
+
+    if(diff>35&&scroller.scrollTop<=0){
+      indicator.classList.add('show');
+      text.textContent=diff>90?'\u0E1B\u0E25\u0E48\u0E2D\u0E22\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E23\u0E35\u0E40\u0E1F\u0E23\u0E0A':'\u0E14\u0E36\u0E07\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E23\u0E35\u0E40\u0E1F\u0E23\u0E0A';
+      pullReady=diff>90;
+    }
+  },{passive:true});
+
+  scroller.addEventListener('touchend',()=>{
+    if(!pulling)return;
+
+    if(pullReady){
+      indicator.classList.add('show','refreshing');
+      text.textContent='\u0E01\u0E33\u0E25\u0E31\u0E07\u0E23\u0E35\u0E40\u0E1F\u0E23\u0E0A...';
+
+      setTimeout(()=>{
+        db=load();
+        render();
+        indicator.classList.remove('refreshing');
+        text.textContent='\u0E23\u0E35\u0E40\u0E1F\u0E23\u0E0A\u0E41\u0E25\u0E49\u0E27';
+        toast('\u0E23\u0E35\u0E40\u0E1F\u0E23\u0E0A\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E41\u0E25\u0E49\u0E27');
+
+        setTimeout(()=>{
+          indicator.classList.remove('show');
+          text.textContent='\u0E14\u0E36\u0E07\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E23\u0E35\u0E40\u0E1F\u0E23\u0E0A';
+        },600);
+      },450);
+    }else{
+      indicator.classList.remove('show');
+    }
+
+    pulling=false;
+    pullReady=false;
+  },{passive:true});
+}
+
+setupPullToRefresh();
+
+
+/* v6.3 hotfix: reference save + stable saveModal */
+function list(t){
+  if(t==='goal')return db.goals;
+  if(t==='culture')return db.cultures;
+  if(t==='timeline')return db.timelines;
+  if(t==='experiment')return db.experiments;
+  if(t==='formula')return db.formulas;
+  if(t==='material')return db.materials;
+  if(t==='reference'){
+    db.references=db.references||[];
+    return db.references;
+  }
+  return db.equipment;
+}
+
+function closeModal(){
+  modal.classList.remove('show');
+  document.body.classList.remove('modal-open');
+}
+
+function saveModal(){
+  let obj;
+
+  if(modalType==='goal'){
+    obj={
+      name:v('gName')||'\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22\u0E43\u0E2B\u0E21\u0E48',
+      target:+v('gTarget')||100,
+      note:v('gNote'),
+      tasks:v('gTasks').split('\n').map(x=>x.trim()).filter(Boolean).map(x=>({
+        done:x.startsWith('[x]')||x.startsWith('[X]'),
+        text:x.replace('[x]','').replace('[X]','').replace('[ ]','').trim()
+      }))
+    };
+  }else if(modalType==='culture'){
+    obj={
+      id:v('cuId')||'C-'+String(db.cultures.length+1).padStart(3,'0'),
+      plant:v('cuPlant')||'\u0E44\u0E21\u0E48\u0E23\u0E30\u0E1A\u0E38',
+      part:'\u0E22\u0E2D\u0E14',
+      status:v('cuStatus'),
+      formula:v('cuFormula')||'F1',
+      exp:'EXP-NEW',
+      startDate:v('cuStart')||todayISO(),
+      updateDate:v('cuUpdate')||todayISO(),
+      closeDate:v('cuClose'),
+      contamDate:v('cuContam'),
+      mediaLot:v('cuMediaLot'),
+      materialLot:v('cuMatLot'),
+      vesselLot:v('cuVesselLot'),
+      preparedBy:v('cuPreparedBy'),
+      preparedDate:v('cuPreparedDate'),
+      score:80,
+      note:v('cuNote')||'-',
+      cost:0
+    };
+  }else if(modalType==='timeline'){
+    obj={
+      cultureId:v('tlCulture'),
+      dayLabel:v('tlDay')||'Day 0',
+      date:v('tlDate')||todayISO(),
+      title:v('tlTitle')||'Update',
+      status:v('tlStatus'),
+      note:v('tlNote'),
+      image:tempImage||(editType==='timeline'?db.timelines[editIndex]?.image:'')
+    };
+  }else if(modalType==='experiment'){
+    let imgs=typeof getExpImagesFromForm==='function'?getExpImagesFromForm():[];
+    obj={
+      code:(editType==='experiment'&&db.experiments[editIndex]?.code)||'EXP-'+String(db.experiments.length+1).padStart(3,'0'),
+      name:v('eName')||'\u0E01\u0E32\u0E23\u0E17\u0E14\u0E25\u0E2D\u0E07\u0E43\u0E2B\u0E21\u0E48',
+      media:v('eMedia'),
+      sets:v('eSets'),
+      steps:v('eSteps'),
+      criteria:v('eCriteria'),
+      table:v('eTable'),
+      summary:v('eSummary'),
+      images:imgs,
+      image:imgs[0]?.src||'',
+      survival:0
+    };
+  }else if(modalType==='formula'){
+    obj={
+      code:v('fCode')||'F-New',
+      name:'New Medium',
+      ph:+v('fPh')||5.7,
+      survival:0,
+      tag:'Testing',
+      items:v('fItems'),
+      bottleMl:+v('fBottle')||250,
+      vesselName:v('fVessel'),
+      vesselQty:+v('fVesselQty')||1
+    };
+    obj.cost=formulaCost(obj);
+    obj.perMl=formulaPerMl(obj);
+    obj.mediaBottle=formulaMediaBottle(obj);
+    obj.vesselCost=vesselCost(obj);
+    obj.perBottle=formulaBottle(obj);
+    obj.totalPerMl=formulaTotalPerMl(obj);
+  }else if(modalType==='reference'){
+    db.references=db.references||[];
+    obj={
+      title:v('refTitle')||'Untitled Research',
+      authors:v('refAuthors'),
+      year:v('refYear'),
+      journal:v('refJournal'),
+      url:v('refUrl'),
+      tags:v('refTagsInput'),
+      note:v('refNote')
+    };
+  }else if(modalType==='material'){
+    obj={
+      name:v('mName')||'\u0E27\u0E31\u0E2A\u0E14\u0E38\u0E43\u0E2B\u0E21\u0E48',
+      category:v('mCat'),
+      lot:v('mLot'),
+      price:+v('mPrice')||0,
+      unit:v('mUnit')||'-',
+      totalQty:+v('mTotal')||1,
+      useQty:+v('mUse')||0,
+      useUnit:v('mUseUnit')||'unit'
+    };
+  }else{
+    obj={
+      name:v('eqName')||'\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C\u0E43\u0E2B\u0E21\u0E48',
+      category:v('eqCat'),
+      price:+v('eqPrice')||0,
+      unit:v('eqUnit')||'-',
+      lifeMonths:+v('eqLife')||1
+    };
+  }
+
+  let arr=list(modalType);
+  if(editType!==null && editIndex!==null)arr[editIndex]=obj;
+  else arr.push(obj);
+
+  try{
+    save();
+    closeModal();
+    requestAnimationFrame(()=>{
+      render();
+      if(page==='references' && typeof renderReferences==='function')renderReferences();
+      toast(editType?'\u0E41\u0E01\u0E49\u0E44\u0E02\u0E41\u0E25\u0E49\u0E27':'\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E41\u0E25\u0E49\u0E27');
+    });
+  }catch(err){
+    console.error(err);
+    alert('\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E44\u0E21\u0E48\u0E2A\u0E33\u0E40\u0E23\u0E47\u0E08: '+err.message);
+  }
+}
+
+function renderCurrentPage(){
+  if(page==='dashboard')renderDashboard();
+  else if(page==='cultures')renderCultures();
+  else if(page==='experiments')renderExperiments();
+  else if(page==='formulas')renderFormulas();
+  else if(page==='costs')renderCosts();
+  else if(page==='reports')renderReports();
+  else if(page==='references')renderReferences();
+}
+
+try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
+</script>
+</body>
+</html>
