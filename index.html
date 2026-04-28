@@ -38,6 +38,43 @@ body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-fa
 .group{margin-bottom:12px}.label{display:block;font-size:12px;color:var(--muted);font-weight:900;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}.input,.textarea,.select{width:100%;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);padding:12px 14px;font-size:15px;outline:0}.textarea{min-height:82px;resize:none}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.calc{padding:12px;border-radius:12px;background:var(--green-soft);border:1px solid rgba(4,120,87,.18);display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--green);font-weight:800}.preview img{width:100%;max-height:160px;object-fit:cover;border-radius:12px;margin-top:8px;border:1px solid var(--line)}
 .timeline{padding:4px 18px 16px}.tl{position:relative;padding-left:22px;margin-bottom:14px}.tl:before{content:"";position:absolute;left:5px;top:7px;width:9px;height:9px;border-radius:999px;background:var(--green)}.tl:after{content:"";position:absolute;left:9px;top:20px;bottom:-12px;width:1px;background:var(--line)}.tl:last-child:after{display:none}.tl-day{font-family:monospace;color:var(--green);font-size:11px;font-weight:900}.tl-title{font-size:14px;font-weight:900;margin-top:2px}.tl-note{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4}.tl-img{margin-top:7px;width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid var(--line)}
 .toast{position:fixed;left:50%;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 80px);transform:translateX(-50%) translateY(12px);opacity:0;background:var(--text);color:var(--card);border-radius:999px;padding:10px 18px;font-weight:900;font-size:13px;z-index:80;transition:.25s}.toast.show{opacity:1;transform:translateX(-50%)}
+
+.pull-refresh{
+  position:fixed;
+  left:50%;
+  top:calc(env(safe-area-inset-top,20px) + 8px);
+  transform:translateX(-50%) translateY(-80px);
+  background:var(--card);
+  color:var(--green);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:8px 14px;
+  box-shadow:var(--shadow);
+  font-size:13px;
+  font-weight:900;
+  z-index:90;
+  opacity:0;
+  transition:.22s;
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.pull-refresh.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+.pull-refresh .spin{
+  display:inline-block;
+  transition:.2s;
+}
+.pull-refresh.refreshing .spin{
+  animation:spinRefresh .8s linear infinite;
+}
+@keyframes spinRefresh{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+
 </style>
 </head>
 
@@ -112,6 +149,12 @@ body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-fa
 </div>
 
 <button class="fab" onclick="fabAction()">+</button>
+
+
+<div class="pull-refresh" id="pullRefresh">
+  <span class="spin">↻</span>
+  <span id="pullText">ดึงเพื่อรีเฟรช</span>
+</div>
 
 <div class="modal" id="modal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><div class="sheet-title" id="modalTitle">เพิ่มข้อมูล</div><button class="btn ghost btn-sm" onclick="closeModal()">ยกเลิก</button></div><div class="sheet-body" id="modalBody"></div><div class="sheet-foot"><button class="btn" style="width:100%" onclick="saveModal()">💾 บันทึก</button></div></div></div>
 <div class="toast" id="toast"></div>
@@ -203,6 +246,67 @@ function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.c
 function toggleDark(){document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'}
 function exportJSON(){let b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='tissue-lab-backup.json';a.click();toast('Export แล้ว')}
 function importJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{db={...seed,...JSON.parse(r.result)};save();render();toast('Import สำเร็จ')}catch(err){toast('ไฟล์ไม่ถูกต้อง')}};r.readAsText(f)}
+
+let pullStartY=0;
+let pulling=false;
+let pullReady=false;
+
+function setupPullToRefresh(){
+  const scroller=document.querySelector('.scroll');
+  const indicator=document.getElementById('pullRefresh');
+  const text=document.getElementById('pullText');
+  if(!scroller||!indicator||!text)return;
+
+  scroller.addEventListener('touchstart',e=>{
+    if(scroller.scrollTop<=0){
+      pullStartY=e.touches[0].clientY;
+      pulling=true;
+      pullReady=false;
+    }
+  },{passive:true});
+
+  scroller.addEventListener('touchmove',e=>{
+    if(!pulling)return;
+
+    let diff=e.touches[0].clientY-pullStartY;
+
+    if(diff>35&&scroller.scrollTop<=0){
+      indicator.classList.add('show');
+      text.textContent=diff>90?'ปล่อยเพื่อรีเฟรช':'ดึงเพื่อรีเฟรช';
+      pullReady=diff>90;
+    }
+  },{passive:true});
+
+  scroller.addEventListener('touchend',()=>{
+    if(!pulling)return;
+
+    if(pullReady){
+      indicator.classList.add('show','refreshing');
+      text.textContent='กำลังรีเฟรช...';
+
+      setTimeout(()=>{
+        db=load();
+        render();
+        indicator.classList.remove('refreshing');
+        text.textContent='รีเฟรชแล้ว';
+        toast('รีเฟรชข้อมูลแล้ว');
+
+        setTimeout(()=>{
+          indicator.classList.remove('show');
+          text.textContent='ดึงเพื่อรีเฟรช';
+        },600);
+      },450);
+    }else{
+      indicator.classList.remove('show');
+    }
+
+    pulling=false;
+    pullReady=false;
+  },{passive:true});
+}
+
+setupPullToRefresh();
+
 render();
 </script>
 </body>
