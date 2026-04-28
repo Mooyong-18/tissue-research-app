@@ -1847,11 +1847,11 @@ if(type==='reference')return `
     <div class="group"><label class="label">\u0E2A\u0E23\u0E38\u0E1B\u0E2A\u0E31\u0E49\u0E19 \u0E46 / \u0E43\u0E0A\u0E49\u0E2D\u0E49\u0E32\u0E07\u0E2D\u0E34\u0E07\u0E40\u0E23\u0E37\u0E48\u0E2D\u0E07\u0E2D\u0E30\u0E44\u0E23</label><textarea id="refNote" class="textarea" placeholder="\u0E2A\u0E23\u0E38\u0E1B\u0E43\u0E08\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E33\u0E04\u0E31\u0E0D \u0E2B\u0E23\u0E37\u0E2D\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E27\u0E48\u0E32\u0E40\u0E2D\u0E32\u0E44\u0E27\u0E49\u0E43\u0E0A\u0E49\u0E2D\u0E49\u0E32\u0E07\u0E2D\u0E34\u0E07\u0E2A\u0E48\u0E27\u0E19\u0E44\u0E2B\u0E19">${d.note||''}</textarea></div>`;
 
 if(type==='material')return `<div class="group"><label class="label">\u0E0A\u0E37\u0E48\u0E2D\u0E2A\u0E32\u0E23\u0E40\u0E04\u0E21\u0E35 / \u0E27\u0E31\u0E2A\u0E14\u0E38</label><input id="mName" class="input" value="${d.name||''}"></div><div class="form-row"><div class="group"><label class="label">\u0E2B\u0E21\u0E27\u0E14\u0E2B\u0E21\u0E39\u0E48</label><input id="mCat" class="input" value="${d.category||''}"></div><div class="group"><label class="label">Lot</label><input id="mLot" class="input" value="${d.lot||''}"></div></div><div class="form-row"><div class="group"><label class="label">\u0E23\u0E32\u0E04\u0E32\u0E17\u0E35\u0E48\u0E0B\u0E37\u0E49\u0E2D (\u0E3F)</label><input id="mPrice" class="input" type="number" value="${d.price||0}" oninput="previewMaterial()"></div><div class="group"><label class="label">\u0E2B\u0E19\u0E48\u0E27\u0E22\u0E0B\u0E37\u0E49\u0E2D</label><input id="mUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">\u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E23\u0E27\u0E21\u0E43\u0E19\u0E2B\u0E19\u0E48\u0E27\u0E22\u0E0B\u0E37\u0E49\u0E2D</label><input id="mTotal" class="input" type="number" value="${d.totalQty||1}" oninput="previewMaterial()"></div><div class="group"><label class="label">\u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E43\u0E0A\u0E49\u0E15\u0E48\u0E2D\u0E2A\u0E39\u0E15\u0E23/\u0E25\u0E47\u0E2D\u0E15</label><input id="mUse" class="input" type="number" value="${d.useQty||0}" oninput="previewMaterial()"></div></div><div class="form-row"><div class="group"><label class="label">\u0E2B\u0E19\u0E48\u0E27\u0E22\u0E17\u0E35\u0E48\u0E43\u0E0A\u0E49</label><input id="mUseUnit" class="input" value="${d.useUnit||'g/L'}" oninput="previewMaterial()"></div><div class="group"><label class="label">\u0E15\u0E49\u0E19\u0E17\u0E38\u0E19\u0E04\u0E33\u0E19\u0E27\u0E13</label><input id="mCalc" class="input" value="${baht(matCalc(d))} \u0E3F/${d.useUnit||'unit'}" readonly></div></div><div class="calc"><span>\u0E2A\u0E39\u0E15\u0E23</span><b>\u0E23\u0E32\u0E04\u0E32 \u00F7 \u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E23\u0E27\u0E21 \u00D7 \u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E43\u0E0A\u0E49</b></div>`;
-return `<div class="group"><label class="label">\u0E0A\u0E37\u0E48\u0E2D\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C</label><input id="eqName" class="input" value="${d.name||''}"></div><div class="group"><label class="label">\u0E2B\u0E21\u0E27\u0E14\u0E2B\u0E21\u0E39\u0E48</label><input id="eqCat" class="input" value="${d.category||''}"></div><div class="form-row"><div class="group"><label class="label">\u0E23\u0E32\u0E04\u0E32\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C (\u0E3F)</label><input id="eqPrice" class="input" type="number" value="${d.price||0}" oninput="previewEquipment()"></div><div class="group"><label class="label">\u0E2B\u0E19\u0E48\u0E27\u0E22</label><input id="eqUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">\u0E2D\u0E32\u0E22\u0E38\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19 (\u0E40\u0E14\u0E37\u0E2D\u0E19)</label><input id="eqLife" class="input" type="number" value="${d.lifeMonths||1}" oninput="previewEquipment()"></div><div class="group"><label class="label">\u0E04\u0E48\u0E32\u0E40\u0E2A\u0E37\u0E48\u0E2D\u0E21</label><input id="eqCalc" class="input" value="${baht(eqCalc(d))} \u0E3F/\u0E40\u0E14\u0E37\u0E2D\u0E19" readonly></div></div><div class="calc"><span>\u0E2A\u0E39\u0E15\u0E23</span><b>\u0E23\u0E32\u0E04\u0E32 \u00F7 \u0E2D\u0E32\u0E22\u0E38\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19</b></div>`;
+return `<div class="group"><label class="label">\u0E0A\u0E37\u0E48\u0E2D\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C</label><input id="eqName" class="input" value="${d.name||''}"></div><div class="group"><label class="label">\u0E2B\u0E21\u0E27\u0E14\u0E2B\u0E21\u0E39\u0E48</label><input id="eqCat" class="input" value="${d.category||''}"></div><div class="form-row"><div class="group"><label class="label">\u0E23\u0E32\u0E04\u0E32\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C (\u0E3F)</label><input id="eqPrice" class="input" type="number" value="${d.price||0}" oninput="previewEquipment()" onchange="previewEquipment()"></div><div class="group"><label class="label">\u0E2B\u0E19\u0E48\u0E27\u0E22</label><input id="eqUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">\u0E2D\u0E32\u0E22\u0E38\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19 (\u0E40\u0E14\u0E37\u0E2D\u0E19)</label><input id="eqLife" class="input" type="number" value="${d.lifeMonths||1}" oninput="previewEquipment()" onchange="previewEquipment()"></div><div class="group"><label class="label">\u0E04\u0E48\u0E32\u0E40\u0E2A\u0E37\u0E48\u0E2D\u0E21</label><input id="eqCalc" class="input" value="${baht(eqCalc(d))} \u0E3F/\u0E40\u0E14\u0E37\u0E2D\u0E19" readonly></div></div><div class="calc"><span>\u0E2A\u0E39\u0E15\u0E23</span><b>\u0E23\u0E32\u0E04\u0E32 \u00F7 \u0E2D\u0E32\u0E22\u0E38\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19</b></div>`;
 }
 
 function previewMaterial(){mCalc.value=baht(Number(mPrice.value||0)/Number(mTotal.value||1)*Number(mUse.value||0))+' \u0E3F/'+(mUseUnit.value||'unit')}
-function previewEquipment(){eqCalc.value=baht(Number(eqPrice.value||0)/Number(eqLife.value||1))+' \u0E3F/\u0E40\u0E14\u0E37\u0E2D\u0E19'}
+function previewEquipment(){const priceEl=document.getElementById('eqPrice');const lifeEl=document.getElementById('eqLife');const calcEl=document.getElementById('eqCalc');if(!priceEl||!lifeEl||!calcEl)return;const price=Number(priceEl.value||0);const life=Number(lifeEl.value||1);const result=life>0?price/life:0;calcEl.value=baht(result)+' ฿/เดือน';}
 function previewFormula(){let f={items:fItems.value,bottleMl:Number(fBottle.value||250),vesselName:fVessel.value,vesselQty:Number(fVesselQty.value||1)};fCostPreview.value=baht(formulaCost(f))+' \u0E3F/L \u00B7 '+baht(formulaPerMl(f))+' \u0E3F/ml \u00B7 \u0E23\u0E27\u0E21 '+baht(formulaBottle(f))+' \u0E3F/\u0E02\u0E27\u0E14'}
 function toggleTask(gi,ti,done){db.goals[gi].tasks[ti].done=done;save();renderDashboard()}
 
@@ -2144,6 +2144,46 @@ function renderCurrentPage(){
   else if(page==='costs')renderCosts();
   else if(page==='reports')renderReports();
   else if(page==='references')renderReferences();
+}
+
+
+/* v6.5 equipment depreciation auto-calc fix */
+if(typeof bindEquipmentAutoCalc==='undefined'){
+  var bindEquipmentAutoCalc=function(){
+    const body=document.getElementById('modalBody');
+    if(!body||body.dataset.eqCalcBound==='1')return;
+    body.dataset.eqCalcBound='1';
+
+    body.addEventListener('input',e=>{
+      if(e.target&&['eqPrice','eqLife'].includes(e.target.id)){
+        previewEquipment();
+      }
+    });
+
+    body.addEventListener('change',e=>{
+      if(e.target&&['eqPrice','eqLife'].includes(e.target.id)){
+        previewEquipment();
+      }
+    });
+  };
+
+  bindEquipmentAutoCalc();
+
+  const __oldOpenModalForEqCalc=openModal;
+  openModal=function(type){
+    __oldOpenModalForEqCalc(type);
+    if(type==='equipment'){
+      setTimeout(previewEquipment,0);
+    }
+  };
+
+  const __oldEditItemForEqCalc=editItem;
+  editItem=function(type,i){
+    __oldEditItemForEqCalc(type,i);
+    if(type==='equipment'){
+      setTimeout(previewEquipment,0);
+    }
+  };
 }
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
