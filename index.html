@@ -192,13 +192,93 @@ body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-fa
   }
 }
 
+
+/* Compact formula cards: show more formulas at once */
+#formulaGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.formula{
+  padding:12px;
+  border-radius:18px;
+}
+
+.formula-title{
+  font-size:15px;
+  line-height:1.2;
+  margin-bottom:8px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.formula-dashboard{
+  gap:7px;
+  margin:8px 0;
+}
+
+.formula-cost-summary{
+  border-radius:14px;
+  padding:10px;
+}
+
+.formula-cost-kicker{
+  font-size:10px;
+  margin-bottom:3px;
+}
+
+.formula-cost-number{
+  font-size:17px;
+  line-height:1.1;
+}
+
+.formula-cost-caption{
+  font-size:10px;
+  margin-top:3px;
+  line-height:1.25;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.formula-chip-row{
+  gap:5px;
+  margin-top:7px;
+}
+
+.formula-chip-row .pill{
+  font-size:10px;
+  padding:3px 7px;
+}
+
+.formula-actions-clean{
+  margin-top:7px;
+  gap:6px;
+}
+
+.formula-actions-clean .small{
+  width:30px;
+  height:30px;
+  border-radius:10px;
+}
+
+@media(max-width:360px){
+  #formulaGrid{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 
 <body>
 <div class="app">
   <div class="header">
-    <div class="logo"><div class="logo-icon">🌱</div><div><div class="logo-title">TISSUE LAB</div><div class="logo-sub">Research System v4.3</div></div></div>
+    <div class="logo"><div class="logo-icon">🌱</div><div><div class="logo-title">TISSUE LAB</div><div class="logo-sub">Research System v4.4</div></div></div>
     <div style="display:flex;gap:8px"><button class="icon-btn" onclick="showPage('settings')">⚙️</button><button class="icon-btn" onclick="showPage('reports')">🖨</button></div>
   </div>
 
@@ -326,17 +406,13 @@ function renderFormulas(){
           <div class="formula-cost-summary secondary">
             <div class="formula-cost-kicker">ต้นทุนอาหาร</div>
             <div class="formula-cost-number">${baht(mediaBottle)} ฿</div>
-            <div class="formula-cost-caption">
-              ค่าอาหารตามปริมาตร ${f.bottleMl||250} ml
-            </div>
+            <div class="formula-cost-caption">${f.bottleMl||250} ml</div>
           </div>
 
           <div class="formula-cost-summary">
-            <div class="formula-cost-kicker">ต้นทุนรวมต่อขวด</div>
-            <div class="formula-cost-number">${baht(totalBottle)} ฿/ขวด</div>
-            <div class="formula-cost-caption">
-              ต้นทุนอาหาร + ภาชนะ ${f.vesselName?`(${f.vesselName})`:''}
-            </div>
+            <div class="formula-cost-kicker">รวมต่อขวด</div>
+            <div class="formula-cost-number">${baht(totalBottle)} ฿</div>
+            <div class="formula-cost-caption">รวมภาชนะ ${f.vesselName||''}</div>
           </div>
         </div>
 
