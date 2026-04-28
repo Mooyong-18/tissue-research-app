@@ -584,6 +584,31 @@ body{
   }
 }
 
+
+/* FAB v5.4: exact position like requested screenshot */
+.fab{
+  position:fixed !important;
+  right:max(18px, env(safe-area-inset-right, 0px) + 18px) !important;
+  left:auto !important;
+  bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) - 14px) !important;
+  width:58px !important;
+  height:58px !important;
+  border-radius:20px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  transform:none !important;
+  z-index:70 !important;
+  box-shadow:0 12px 32px rgba(4,120,87,.32) !important;
+}
+
+@media(max-width:420px){
+  .fab{
+    right:18px !important;
+    bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) - 12px) !important;
+  }
+}
+
 </style>
 </head>
 
