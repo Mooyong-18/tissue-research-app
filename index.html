@@ -1308,6 +1308,43 @@ body,
   line-height:1.5;
 }
 
+
+/* v6.6 Firebase Cloud Sync */
+.cloud-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 14px;
+  border-radius:16px;
+  background:var(--green-soft);
+  border:1px solid rgba(4,120,87,.16);
+  color:var(--green);
+  font-size:13px;
+  font-weight:900;
+  margin:0 18px 14px;
+}
+.cloud-dot{
+  width:10px;
+  height:10px;
+  border-radius:999px;
+  background:var(--amber);
+  box-shadow:0 0 0 4px rgba(217,119,6,.10);
+}
+.cloud-dot.on{
+  background:var(--green);
+  box-shadow:0 0 0 4px rgba(4,120,87,.12);
+}
+.cloud-dot.off{
+  background:var(--red);
+  box-shadow:0 0 0 4px rgba(220,38,38,.10);
+}
+.cloud-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  padding:0 18px 16px;
+}
+
 </style>
 </head>
 
@@ -1338,7 +1375,18 @@ body,
         <div class="stat"><div class="stat-label">&#xE15;&#xE49;&#xE19;&#xE17;&#xE38;&#xE19;/&#xE02;&#xE27;&#xE14;</div><div class="stat-value" id="sCost">0<span class="unit">&#xE3F;</span></div></div>
       </div>
 
-      <div class="card"><div class="card-head"><div class="card-title">&#x1F3AF; &#xE40;&#xE1B;&#xE49;&#xE32;&#xE2B;&#xE21;&#xE32;&#xE22;&#xE01;&#xE32;&#xE23;&#xE17;&#xE14;&#xE25;&#xE2D;&#xE07;</div><button class="btn ghost btn-sm" onclick="openModal('goal')">+ &#xE40;&#xE1E;&#xE34;&#xE48;&#xE21;&#xE40;&#xE1B;&#xE49;&#xE32;&#xE2B;&#xE21;&#xE32;&#xE22;</button></div><div class="card-body" id="goalList"></div></div>
+      <div class="card">
+        <div class="cloud-status">
+          <span class="cloud-dot off" id="cloudDot"></span>
+          <span id="cloudStatus">Cloud Sync: ยังไม่ได้เชื่อมต่อ</span>
+        </div>
+        <div class="cloud-actions">
+          <button type="button" class="btn" onclick="enableCloudSync()">เปิด Cloud Sync</button>
+          <button type="button" class="btn ghost" onclick="pushCloudNow()">อัปโหลดขึ้น Cloud</button>
+          <button type="button" class="btn ghost" onclick="pullCloudNow()">โหลดจาก Cloud</button>
+          <button type="button" class="btn ghost" onclick="disableCloudSync()">ปิด Sync</button>
+        </div>
+<div class="card-head"><div class="card-title">&#x1F3AF; &#xE40;&#xE1B;&#xE49;&#xE32;&#xE2B;&#xE21;&#xE32;&#xE22;&#xE01;&#xE32;&#xE23;&#xE17;&#xE14;&#xE25;&#xE2D;&#xE07;</div><button class="btn ghost btn-sm" onclick="openModal('goal')">+ &#xE40;&#xE1E;&#xE34;&#xE48;&#xE21;&#xE40;&#xE1B;&#xE49;&#xE32;&#xE2B;&#xE21;&#xE32;&#xE22;</button></div><div class="card-body" id="goalList"></div></div>
       <div class="card"><div class="card-head"><div class="card-title">&#x1F4C8; &#xE2A;&#xE16;&#xE32;&#xE19;&#xE30; Culture</div><span class="pill green" id="totalCult">0 &#xE02;&#xE27;&#xE14;</span></div><div class="card-body" id="statusChart"></div></div>
       <div class="card"><div class="card-head"><div class="card-title">&#x1F550; &#xE25;&#xE48;&#xE32;&#xE2A;&#xE38;&#xE14;</div><button class="btn ghost btn-sm" onclick="showPage('cultures')">&#xE14;&#xE39;&#xE17;&#xE31;&#xE49;&#xE07;&#xE2B;&#xE21;&#xE14;</button></div><div id="recentList"></div></div>
     </section>
@@ -2184,6 +2232,198 @@ if(typeof bindEquipmentAutoCalc==='undefined'){
       setTimeout(previewEquipment,0);
     }
   };
+}
+
+
+/* v6.6 Firebase Firestore Sync */
+const firebaseConfig={
+  apiKey:"AIzaSyAquBn0jrSwbTwyuVy9vUDz9_Z8rLhnu5w",
+  authDomain:"tissue-research-app.firebaseapp.com",
+  projectId:"tissue-research-app",
+  storageBucket:"tissue-research-app.firebasestorage.app",
+  messagingSenderId:"471203249913",
+  appId:"1:471203249913:web:9e21f5b93631d3b750ac28"
+};
+
+let cloudReady=false;
+let cloudEnabled=localStorage.getItem('tissue_cloud_sync_enabled')==='1';
+let cloudDb=null;
+let cloudDocRef=null;
+let cloudUnsubscribe=null;
+let cloudSaving=false;
+let cloudLoadedOnce=false;
+
+function setCloudStatus(text,state='off'){
+  const s=document.getElementById('cloudStatus');
+  const d=document.getElementById('cloudDot');
+  if(s)s.textContent=text;
+  if(d){
+    d.classList.remove('on','off');
+    d.classList.add(state);
+  }
+}
+
+async function initCloud(){
+  if(cloudReady)return true;
+
+  try{
+    setCloudStatus('Cloud Sync: กำลังเชื่อมต่อ...','off');
+
+    const appMod=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js');
+    const fsMod=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
+
+    const app=appMod.initializeApp(firebaseConfig);
+    cloudDb=fsMod.getFirestore(app);
+    cloudDocRef=fsMod.doc(cloudDb,'tissueLabs','defaultLab');
+
+    window.__fs={
+      getDoc:fsMod.getDoc,
+      setDoc:fsMod.setDoc,
+      onSnapshot:fsMod.onSnapshot,
+      serverTimestamp:fsMod.serverTimestamp
+    };
+
+    cloudReady=true;
+    setCloudStatus('Cloud Sync: พร้อมใช้งาน','on');
+    return true;
+  }catch(err){
+    console.error(err);
+    setCloudStatus('Cloud Sync: เชื่อมต่อไม่ได้','off');
+    toast('เชื่อมต่อ Firebase ไม่สำเร็จ');
+    return false;
+  }
+}
+
+function cleanDbForCloud(){
+  return JSON.parse(JSON.stringify({
+    goals:db.goals||[],
+    cultures:db.cultures||[],
+    timelines:db.timelines||[],
+    experiments:db.experiments||[],
+    formulas:db.formulas||[],
+    materials:db.materials||[],
+    equipment:db.equipment||[],
+    references:db.references||[]
+  }));
+}
+
+async function pushCloudNow(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  try{
+    cloudSaving=true;
+    await window.__fs.setDoc(cloudDocRef,{
+      data:cleanDbForCloud(),
+      updatedAt:window.__fs.serverTimestamp(),
+      appVersion:'v6.6'
+    },{merge:true});
+
+    cloudSaving=false;
+    setCloudStatus('Cloud Sync: อัปโหลดแล้ว','on');
+    toast('อัปโหลดขึ้น Cloud แล้ว');
+  }catch(err){
+    cloudSaving=false;
+    console.error(err);
+    setCloudStatus('Cloud Sync: อัปโหลดไม่สำเร็จ','off');
+    toast('อัปโหลด Cloud ไม่สำเร็จ');
+  }
+}
+
+async function pullCloudNow(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  try{
+    const snap=await window.__fs.getDoc(cloudDocRef);
+    if(!snap.exists()){
+      toast('ยังไม่มีข้อมูลบน Cloud');
+      return;
+    }
+
+    const remote=snap.data().data||{};
+    db={...db,...remote};
+    save();
+    render();
+    setCloudStatus('Cloud Sync: โหลดข้อมูลแล้ว','on');
+    toast('โหลดข้อมูลจาก Cloud แล้ว');
+  }catch(err){
+    console.error(err);
+    setCloudStatus('Cloud Sync: โหลดไม่สำเร็จ','off');
+    toast('โหลด Cloud ไม่สำเร็จ');
+  }
+}
+
+async function enableCloudSync(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  cloudEnabled=true;
+  localStorage.setItem('tissue_cloud_sync_enabled','1');
+  setCloudStatus('Cloud Sync: เปิดใช้งานแล้ว','on');
+
+  if(cloudUnsubscribe)cloudUnsubscribe();
+
+  cloudUnsubscribe=window.__fs.onSnapshot(cloudDocRef,(snap)=>{
+    if(!snap.exists()){
+      if(!cloudLoadedOnce)pushCloudNow();
+      return;
+    }
+
+    if(cloudSaving)return;
+
+    const remote=snap.data().data||{};
+    cloudLoadedOnce=true;
+    db={...db,...remote};
+    save();
+    render();
+
+    if(page==='references'&&typeof renderReferences==='function')renderReferences();
+    setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+  },err=>{
+    console.error(err);
+    setCloudStatus('Cloud Sync: realtime error','off');
+  });
+
+  toast('เปิด Cloud Sync แล้ว');
+}
+
+function disableCloudSync(){
+  cloudEnabled=false;
+  localStorage.setItem('tissue_cloud_sync_enabled','0');
+
+  if(cloudUnsubscribe){
+    cloudUnsubscribe();
+    cloudUnsubscribe=null;
+  }
+
+  setCloudStatus('Cloud Sync: ปิดอยู่','off');
+  toast('ปิด Cloud Sync แล้ว');
+}
+
+/* Wrap save so every local change is also pushed to Firestore */
+const __localSaveBeforeCloud=save;
+save=function(){
+  __localSaveBeforeCloud();
+
+  if(cloudEnabled&&cloudReady&&!cloudSaving){
+    clearTimeout(window.__cloudSaveTimer);
+    window.__cloudSaveTimer=setTimeout(()=>pushCloudNow(),550);
+  }
+};
+
+window.addEventListener('online',()=>{
+  if(cloudEnabled)enableCloudSync();
+});
+
+window.addEventListener('offline',()=>{
+  setCloudStatus('Cloud Sync: ออฟไลน์ ใช้ข้อมูลในเครื่อง','off');
+});
+
+if(cloudEnabled){
+  setTimeout(()=>enableCloudSync(),700);
+}else{
+  setTimeout(()=>setCloudStatus('Cloud Sync: ปิดอยู่','off'),300);
 }
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
