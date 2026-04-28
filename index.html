@@ -1240,6 +1240,73 @@ body,
   color:var(--red) !important;
 }
 
+
+/* v6.2 Research References page */
+.ref-card{
+  padding:16px;
+}
+.ref-title{
+  font-size:16px;
+  font-weight:900;
+  line-height:1.25;
+  margin-bottom:6px;
+}
+.ref-meta{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.45;
+  margin-bottom:10px;
+}
+.ref-url{
+  display:block;
+  font-size:12px;
+  color:var(--green);
+  font-family:monospace;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  padding:9px 10px;
+  border-radius:12px;
+  background:var(--green-soft);
+  border:1px solid rgba(4,120,87,.14);
+  margin-bottom:10px;
+}
+.ref-note{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.45;
+  margin-bottom:10px;
+}
+.ref-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:8px 0;
+}
+.ref-tag{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  background:rgba(2,132,199,.10);
+  color:var(--blue);
+  border:1px solid rgba(2,132,199,.14);
+}
+.ref-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr 34px 34px;
+  gap:8px;
+  align-items:center;
+  margin-top:10px;
+}
+.ref-empty{
+  padding:22px;
+  text-align:center;
+  color:var(--muted);
+  line-height:1.5;
+}
+
 </style>
 </head>
 
@@ -1308,8 +1375,40 @@ body,
 
     <section id="reports" class="page"><div class="card"><div class="card-head"><div class="card-title">Report Preview</div><button class="btn ghost btn-sm" onclick="window.print()">Save PDF</button></div><div class="card-body" id="reportText"></div></div></section>
 
+
+    <section id="references" class="page">
+      <div class="stats">
+        <div class="stat wide">
+          <div class="stat-label">Research References</div>
+          <div class="stat-value" id="rTotal">0<span class="unit">ลิงก์</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">ปีล่าสุด</div>
+          <div class="stat-value" id="rYear">-</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">แท็กทั้งหมด</div>
+          <div class="stat-value" id="rTags">0</div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="grid-template-columns:1fr">
+        <button class="btn" onclick="openModal('reference')">+ เพิ่มลิงก์งานวิจัย</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">📚 คลังลิงก์งานวิจัย</div>
+          <button class="btn ghost btn-sm" onclick="exportReferences()">Export Citation</button>
+        </div>
+        <div id="referenceList"></div>
+      </div>
+    </section>
+
     <section id="settings" class="page">
       <div class="card">
+        
+        <div class="row" onclick="showPage('references')"><div class="row-icon">📚</div><div class="row-main"><div class="row-title">Research References</div><div class="row-sub">บันทึกลิงก์งานวิจัยสำหรับอ้างอิง</div></div>›</div>
         <div class="row"><div class="row-icon">🌓</div><div class="row-main"><div class="row-title">Dark Mode</div><div class="row-sub">เปลี่ยนธีมสีแอป</div></div><button class="btn ghost btn-sm" onclick="toggleDark()">Toggle</button></div>
         <div class="row" onclick="exportJSON()"><div class="row-icon">⬇</div><div class="row-main"><div class="row-title">Export JSON</div><div class="row-sub">สำรองข้อมูลทั้งหมด</div></div>›</div>
         <div class="row"><div class="row-icon">⬆</div><div class="row-main"><div class="row-title">Import JSON</div><div class="row-sub">โหลดข้อมูลกลับเข้าแอป</div></div><label class="mono">เลือกไฟล์<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label></div>
@@ -1340,10 +1439,13 @@ const KEY='tissue_lab_v42_formula_dropdown_vessel';
 let page='dashboard',filter='all',modalType='culture',editType=null,editIndex=null,tempImage='';
 const todayISO=()=>new Date().toISOString().slice(0,10);
 
-const seed={goals:[{name:'สูตร F1 Survival',target:100,note:'เป้าหมายหลักของสูตรต้นทุนต่ำ',tasks:[{text:'เตรียมสูตร F1',done:true},{text:'ลงอาหาร Day 0',done:true},{text:'ถ่ายรูป Day 7',done:false},{text:'สรุปผล Survival',done:false}]}],cultures:[{id:'C-001',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Active',formula:'F1',exp:'EXP-001',startDate:'2026-04-01',updateDate:'2026-04-15',closeDate:'',contamDate:'',mediaLot:'MD-260401-A',materialLot:'MAT-260401',vesselLot:'BOT-01',preparedBy:'Satit',preparedDate:'2026-04-01',score:91,note:'ใบเขียวดี ไม่มีเชื้อ',cost:4.56},{id:'C-002',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Shoot',formula:'F1',exp:'EXP-001',startDate:'2026-04-01',updateDate:'2026-04-22',closeDate:'',contamDate:'',mediaLot:'MD-260401-A',materialLot:'MAT-260401',vesselLot:'BOT-01',preparedBy:'Satit',preparedDate:'2026-04-01',score:88,note:'เริ่มแตกยอดใหม่',cost:4.56},{id:'C-003',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Contamination',formula:'F2',exp:'EXP-001',startDate:'2026-04-01',updateDate:'2026-04-15',closeDate:'',contamDate:'2026-04-15',mediaLot:'MD-260401-B',materialLot:'MAT-260401',vesselLot:'PP-01',preparedBy:'Satit',preparedDate:'2026-04-01',score:22,note:'พบเชื้อ ควรแยกทิ้ง',cost:8.82}],timelines:[{cultureId:'C-001',dayLabel:'Day 0',date:'2026-04-01',title:'ลงอาหาร',status:'Active',note:'ลงอาหารสูตร F1',image:''},{cultureId:'C-001',dayLabel:'Day 14',date:'2026-04-15',title:'ตรวจการเจริญ',status:'Active',note:'ใบเขียวดี ไม่มีเชื้อ',image:''},{cultureId:'C-003',dayLabel:'Day 14',date:'2026-04-15',title:'พบปนเปื้อน',status:'Contamination',note:'แยกขวดออกจากชั้นวาง',image:''}],experiments:[{code:'EXP-001',name:'เปรียบเทียบสูตร F1 vs F2',media:'F1 / F2',sets:'F1 40 ขวด, F2 40 ขวด',steps:'เตรียมอาหาร → ฟอกฆ่าเชื้อ → ลงอาหาร → ตรวจ Day 7/14/21',criteria:'Survival %, Contamination %, Shoot growth',table:'Day 0 ลงอาหาร\nDay 7 ตรวจเชื้อ\nDay 14 ถ่ายภาพ',summary:'F1 ให้ผลดีกว่า F2 ในต้นทุนต่อขวด',image:'',survival:82}],formulas:[{code:'F1',name:'Low-cost Medium',ph:5.7,survival:91,tag:'Recommended',items:'Agar=7\nSugar=30',bottleMl:250,vesselName:'ขวดแก้ว',vesselQty:1},{code:'F2',name:'Standard Medium',ph:5.8,survival:82,tag:'Control',items:'Agar=7\nSugar=30',bottleMl:250,vesselName:'ขวดแก้ว',vesselQty:1}],materials:[{name:'Agar',category:'วุ้น / Solidifying Agent',price:210,unit:'500 g',totalQty:500,useQty:7,useUnit:'g/L',lot:'AG-260401'},{name:'Sugar',category:'Carbon Source',price:35,unit:'1 kg',totalQty:1000,useQty:30,useUnit:'g/L',lot:'SU-260401'},{name:'ขวดแก้ว',category:'ภาชนะ',price:420,unit:'60 ชิ้น',totalQty:60,useQty:1,useUnit:'ขวด',lot:'BOT-01'},{name:'ถุง PP',category:'ภาชนะ',price:180,unit:'100 ใบ',totalQty:100,useQty:1,useUnit:'ใบ',lot:'PP-01'}],equipment:[{name:'หม้อนึ่งฆ่าเชื้อ',category:'Sterilization',price:3500,unit:'1 เครื่อง',lifeMonths:36},{name:'ตู้ปลอดเชื้อ DIY',category:'Clean Bench',price:1800,unit:'1 ชุด',lifeMonths:24}]};
+const seed={goals:[{name:'สูตร F1 Survival',target:100,note:'เป้าหมายหลักของสูตรต้นทุนต่ำ',tasks:[{text:'เตรียมสูตร F1',done:true},{text:'ลงอาหาร Day 0',done:true},{text:'ถ่ายรูป Day 7',done:false},{text:'สรุปผล Survival',done:false}]}],cultures:[{id:'C-001',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Active',formula:'F1',exp:'EXP-001',startDate:'2026-04-01',updateDate:'2026-04-15',closeDate:'',contamDate:'',mediaLot:'MD-260401-A',materialLot:'MAT-260401',vesselLot:'BOT-01',preparedBy:'Satit',preparedDate:'2026-04-01',score:91,note:'ใบเขียวดี ไม่มีเชื้อ',cost:4.56},{id:'C-002',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Shoot',formula:'F1',exp:'EXP-001',startDate:'2026-04-01',updateDate:'2026-04-22',closeDate:'',contamDate:'',mediaLot:'MD-260401-A',materialLot:'MAT-260401',vesselLot:'BOT-01',preparedBy:'Satit',preparedDate:'2026-04-01',score:88,note:'เริ่มแตกยอดใหม่',cost:4.56},{id:'C-003',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Contamination',formula:'F2',exp:'EXP-001',startDate:'2026-04-01',updateDate:'2026-04-15',closeDate:'',contamDate:'2026-04-15',mediaLot:'MD-260401-B',materialLot:'MAT-260401',vesselLot:'PP-01',preparedBy:'Satit',preparedDate:'2026-04-01',score:22,note:'พบเชื้อ ควรแยกทิ้ง',cost:8.82}],timelines:[{cultureId:'C-001',dayLabel:'Day 0',date:'2026-04-01',title:'ลงอาหาร',status:'Active',note:'ลงอาหารสูตร F1',image:''},{cultureId:'C-001',dayLabel:'Day 14',date:'2026-04-15',title:'ตรวจการเจริญ',status:'Active',note:'ใบเขียวดี ไม่มีเชื้อ',image:''},{cultureId:'C-003',dayLabel:'Day 14',date:'2026-04-15',title:'พบปนเปื้อน',status:'Contamination',note:'แยกขวดออกจากชั้นวาง',image:''}],experiments:[{code:'EXP-001',name:'เปรียบเทียบสูตร F1 vs F2',media:'F1 / F2',sets:'F1 40 ขวด, F2 40 ขวด',steps:'เตรียมอาหาร → ฟอกฆ่าเชื้อ → ลงอาหาร → ตรวจ Day 7/14/21',criteria:'Survival %, Contamination %, Shoot growth',table:'Day 0 ลงอาหาร\nDay 7 ตรวจเชื้อ\nDay 14 ถ่ายภาพ',summary:'F1 ให้ผลดีกว่า F2 ในต้นทุนต่อขวด',image:'',survival:82}],formulas:[{code:'F1',name:'Low-cost Medium',ph:5.7,survival:91,tag:'Recommended',items:'Agar=7\nSugar=30',bottleMl:250,vesselName:'ขวดแก้ว',vesselQty:1},{code:'F2',name:'Standard Medium',ph:5.8,survival:82,tag:'Control',items:'Agar=7\nSugar=30',bottleMl:250,vesselName:'ขวดแก้ว',vesselQty:1}],materials:[{name:'Agar',category:'วุ้น / Solidifying Agent',price:210,unit:'500 g',totalQty:500,useQty:7,useUnit:'g/L',lot:'AG-260401'},{name:'Sugar',category:'Carbon Source',price:35,unit:'1 kg',totalQty:1000,useQty:30,useUnit:'g/L',lot:'SU-260401'},{name:'ขวดแก้ว',category:'ภาชนะ',price:420,unit:'60 ชิ้น',totalQty:60,useQty:1,useUnit:'ขวด',lot:'BOT-01'},{name:'ถุง PP',category:'ภาชนะ',price:180,unit:'100 ใบ',totalQty:100,useQty:1,useUnit:'ใบ',lot:'PP-01'}],references:[
+    {title:'Plant tissue culture medium optimization: low-cost approach',authors:'Example Research Group',year:'2024',journal:'Plant Tissue Culture Notes',url:'https://example.com/research-low-cost-medium',tags:'low-cost medium, tissue culture, cost analysis',note:'ใช้เป็นตัวอย่างรูปแบบการอ้างอิง สามารถแก้ไขหรือลบได้'},
+    {title:'Activated charcoal effects on browning in plant tissue culture',authors:'Example Author',year:'2023',journal:'In Vitro Plant Research',url:'https://example.com/activated-charcoal-browning',tags:'charcoal, browning, explant',note:'ตัวอย่างลิงก์สำหรับอ้างอิงเรื่อง charcoal ลด browning'}
+  ],equipment:[{name:'หม้อนึ่งฆ่าเชื้อ',category:'Sterilization',price:3500,unit:'1 เครื่อง',lifeMonths:36},{name:'ตู้ปลอดเชื้อ DIY',category:'Clean Bench',price:1800,unit:'1 ชุด',lifeMonths:24}]};
 
 let db=load();
-function load(){try{let raw=JSON.parse(localStorage.getItem(KEY));let d=raw?{...seed,...raw}:structuredClone(seed);d.goals=(d.goals||[]).map(g=>({...g,tasks:Array.isArray(g.tasks)?g.tasks:[]}));d.timelines=d.timelines||[];d.cultures=(d.cultures||[]).map(c=>({...c,startDate:c.startDate||todayISO(),updateDate:c.updateDate||todayISO(),closeDate:c.closeDate||'',contamDate:c.contamDate||'',mediaLot:c.mediaLot||'',materialLot:c.materialLot||'',vesselLot:c.vesselLot||'',preparedBy:c.preparedBy||'',preparedDate:c.preparedDate||''}));d.formulas=(d.formulas||[]).map(f=>({...f,bottleMl:Number(f.bottleMl||250),vesselName:f.vesselName||'',vesselQty:Number(f.vesselQty||1)}));return d}catch(e){return structuredClone(seed)}}
+function load(){try{let raw=JSON.parse(localStorage.getItem(KEY));let d=raw?{...seed,...raw}:structuredClone(seed);d.goals=(d.goals||[]).map(g=>({...g,tasks:Array.isArray(g.tasks)?g.tasks:[]}));d.timelines=d.timelines||[];d.references=d.references||[];d.cultures=(d.cultures||[]).map(c=>({...c,startDate:c.startDate||todayISO(),updateDate:c.updateDate||todayISO(),closeDate:c.closeDate||'',contamDate:c.contamDate||'',mediaLot:c.mediaLot||'',materialLot:c.materialLot||'',vesselLot:c.vesselLot||'',preparedBy:c.preparedBy||'',preparedDate:c.preparedDate||''}));d.formulas=(d.formulas||[]).map(f=>({...f,bottleMl:Number(f.bottleMl||250),vesselName:f.vesselName||'',vesselQty:Number(f.vesselQty||1)}));return d}catch(e){return structuredClone(seed)}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(err){console.error(err);toast('ข้อมูล/รูปภาพเยอะเกินไป กรุณา Export สำรองหรือลดรูปภาพ')}}
 function baht(n){return Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:4})}
 function v(id){let e=document.getElementById(id);return e?e.value.trim():''}
@@ -1371,7 +1473,9 @@ function renderCurrentPage(){
   else if(page==='experiments')renderExperiments();
   else if(page==='formulas')renderFormulas();
   else if(page==='costs')renderCosts();
+  else if(page==='references')renderReferences();
   else if(page==='reports')renderReports();
+  else if(page==='references')renderReferences();
 }
 function render(){
   renderDashboard();
@@ -1442,6 +1546,76 @@ function renderFormulas(){
 
 function renderCosts(){let mat=sum(db.materials,'price'),eq=sum(db.equipment,'price'),fm=db.formulas.reduce((s,f)=>s+formulaBottle(f),0),total=mat+eq+fm;cMat.textContent=baht(mat);cEq.textContent=baht(eq);cTotal.textContent=baht(total);cCult.textContent=db.cultures.length;cPer.textContent=baht(total/(db.cultures.length||1));costChart.innerHTML=bar('Materials',mat,total)+bar('Equipment',eq,total)+bar('Formulas',fm,total);materialList.innerHTML=db.materials.map((m,i)=>row('🧴',m.name,`${m.category} · Lot ${m.lot||'-'} · ${m.unit} · ใช้ ${m.useQty} ${m.useUnit}`,`<div class="mono cost">${baht(m.price)}฿</div><div class="row-sub">${baht(matCalc(m))} ฿/${m.useUnit}</div>${actions('material',i)}`)).join('');equipmentList.innerHTML=db.equipment.map((e,i)=>row('🔧',e.name,`${e.category} · ${e.unit} · อายุ ${e.lifeMonths} เดือน`,`<div class="mono">${baht(e.price)}฿</div><div class="row-sub">${baht(eqCalc(e))} ฿/เดือน</div>${actions('equipment',i)}`)).join('')}
 function renderReports(){let best=db.formulas.slice().sort((a,b)=>formulaBottle(a)-formulaBottle(b))[0];reportText.innerHTML=`สรุปข้อมูลปัจจุบัน: มี Culture ${db.cultures.length} รายการ, การทดลอง ${db.experiments.length} รายการ, สูตรอาหาร ${db.formulas.length} สูตร<br><br>สูตรต้นทุนต่ำสุด: <b>${best?.code||'-'}</b> = ${baht(formulaBottle(best||{}))} ฿/ขวด<br><br>กด Save PDF ด้านบนเพื่อบันทึกเป็น PDF`}
+
+function renderReferences(){
+  let refs=db.references||[];
+  let years=refs.map(r=>Number(r.year||0)).filter(Boolean);
+  let latest=years.length?Math.max(...years):'-';
+  let tagSet=new Set();
+
+  refs.forEach(r=>{
+    String(r.tags||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(t=>tagSet.add(t));
+  });
+
+  if(typeof rTotal!=='undefined')rTotal.textContent=refs.length;
+  if(typeof rYear!=='undefined')rYear.textContent=latest;
+  if(typeof rTags!=='undefined')rTags.textContent=tagSet.size;
+
+  referenceList.innerHTML=refs.map((r,i)=>{
+    let tags=String(r.tags||'').split(',').map(x=>x.trim()).filter(Boolean)
+      .map(t=>`<span class="ref-tag">${t}</span>`).join('');
+
+    return `
+      <div class="ref-card">
+        <div class="ref-title">${r.title||'Untitled Research'}</div>
+        <div class="ref-meta">
+          ${r.authors||'ไม่ระบุผู้เขียน'} · ${r.year||'ไม่ระบุปี'} · ${r.journal||'ไม่ระบุแหล่งตีพิมพ์'}
+        </div>
+        ${r.url?`<a class="ref-url" href="${r.url}" target="_blank" rel="noopener noreferrer">${r.url}</a>`:''}
+        ${tags?`<div class="ref-tags">${tags}</div>`:''}
+        ${r.note?`<div class="ref-note">${r.note}</div>`:''}
+        <div class="ref-actions">
+          <button class="btn ghost btn-sm" onclick="copyReference(${i})">Copy Cite</button>
+          <button class="btn ghost btn-sm" onclick="openReference(${i})">Open Link</button>
+          <button class="small" onclick="editItem('reference',${i})">✎</button>
+          <button class="small del" onclick="deleteItem('reference',${i})">🗑</button>
+        </div>
+      </div>`;
+  }).join('')||'<div class="ref-empty">ยังไม่มีลิงก์งานวิจัย<br>กด + เพิ่มลิงก์งานวิจัย เพื่อเริ่มบันทึกแหล่งอ้างอิง</div>';
+}
+
+function referenceCitation(r){
+  return `${r.authors||'Unknown author'} (${r.year||'n.d.'}). ${r.title||'Untitled'}. ${r.journal||''}. ${r.url||''}`.trim();
+}
+
+function copyReference(i){
+  let r=(db.references||[])[i];
+  if(!r)return;
+
+  let text=referenceCitation(r);
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>toast('คัดลอก citation แล้ว')).catch(()=>toast('คัดลอกไม่สำเร็จ'));
+  }else{
+    prompt('คัดลอก citation:',text);
+  }
+}
+
+function openReference(i){
+  let r=(db.references||[])[i];
+  if(r&&r.url)window.open(r.url,'_blank','noopener,noreferrer');
+  else toast('ยังไม่มี URL');
+}
+
+function exportReferences(){
+  let text=(db.references||[]).map(referenceCitation).join('\n\n');
+  let b=new Blob([text||'No references'],{type:'text/plain;charset=utf-8'});
+  let a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='tissue-references-citation.txt';
+  a.click();
+  toast('Export citation แล้ว');
+}
+
 function showPage(p){
   page=p;
 
@@ -1463,7 +1637,8 @@ function showPage(p){
     formulas:['Formulas','MEDIA / สูตรอาหาร'],
     costs:['Costs','ANALYSIS / ต้นทุน'],
     reports:['Reports','PDF / รายงาน'],
-    settings:['Settings','SYSTEM / ระบบ']
+    settings:['Settings','SYSTEM / ระบบ'],
+    references:['References','RESEARCH LINKS / อ้างอิงงานวิจัย']
   };
 
   if(m[p]){
@@ -1477,7 +1652,7 @@ function showPage(p){
 
 function filterCulture(f,el){filter=f;document.querySelectorAll('#segCult .seg').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderCultures()}
 function fabAction(){if(page==='costs')openModal('material');else if(page==='formulas')openModal('formula');else if(page==='experiments')openModal('experiment');else openModal('culture')}
-const titles={goal:'🎯 เพิ่มเป้าหมาย',culture:'🧪 บันทึก Culture',timeline:'📅 เพิ่ม Timeline',experiment:'🔬 เพิ่มการทดลอง',formula:'⚗️ สูตรอาหาร',material:'🧴 เพิ่มสารเคมี / วัสดุ',equipment:'🔧 เพิ่มอุปกรณ์'};
+const titles={goal:'🎯 เพิ่มเป้าหมาย',culture:'🧪 บันทึก Culture',timeline:'📅 เพิ่ม Timeline',experiment:'🔬 เพิ่มการทดลอง',formula:'⚗️ สูตรอาหาร',material:'🧴 เพิ่มสารเคมี / วัสดุ',equipment:'🔧 เพิ่มอุปกรณ์',reference:'📚 เพิ่มลิงก์งานวิจัย'};
 function openModal(type){
   modalType=type;
   editType=null;
@@ -1534,7 +1709,7 @@ function editItem(type,i){
 }
 
 function deleteItem(type,i){if(!confirm('ต้องการลบรายการนี้ใช่ไหม?'))return;list(type).splice(i,1);save();render();toast('ลบรายการแล้ว')}
-function list(t){return t==='goal'?db.goals:t==='culture'?db.cultures:t==='timeline'?db.timelines:t==='experiment'?db.experiments:t==='formula'?db.formulas:t==='material'?db.materials:db.equipment}
+function list(t){return t==='goal'?db.goals:t==='culture'?db.cultures:t==='timeline'?db.timelines:t==='experiment'?db.experiments:t==='formula'?db.formulas:t==='material'?db.materials:t==='reference'?db.references:db.equipment}
 function closeModal(){modal.classList.remove('show');document.body.classList.remove('modal-open')}
 function materialOptions(){return db.materials.map(m=>`<option value="${m.name}">${m.name}</option>`).join('')}
 function vesselOptions(selected=''){let vessels=db.materials.filter(m=>{let text=((m.category||'')+' '+(m.name||'')).toLowerCase();return text.includes('ภาชนะ')||text.includes('vessel')||text.includes('ขวด')||text.includes('ถุง')||text.includes('bottle')||text.includes('container')});if(!vessels.length)vessels=db.materials;return vessels.map(m=>`<option value="${m.name}" ${selected===m.name?'selected':''}>${m.name}</option>`).join('')}
@@ -1661,6 +1836,15 @@ if(type==='experiment')return `
     <div class="group"><label class="label">สรุปผลการทดลอง</label><textarea id="eSummary" class="textarea">${d.summary||''}</textarea></div>`;
 
 if(type==='formula')return `<div class="form-row"><div class="group"><label class="label">รหัสสูตร</label><input id="fCode" class="input" value="${d.code||''}" placeholder="F5"></div><div class="group"><label class="label">pH</label><input id="fPh" class="input" type="number" step="0.1" value="${d.ph||5.7}"></div></div><div class="group"><label class="label">เลือกสารเคมีจากหน้าต้นทุน</label><div class="form-row"><select id="pickMat" class="select">${materialOptions()}</select><input id="pickQty" class="input" type="number" placeholder="ปริมาณ/L"></div><button type="button" class="btn ghost btn-sm" style="margin-top:8px" onclick="addIngredientLine()">+ เพิ่มสารเข้าตารางสูตร</button></div><div class="group"><label class="label">รายการสารในสูตร</label><textarea id="fItems" class="textarea" oninput="previewFormula()" placeholder="Agar=7&#10;Sugar=30">${d.items||''}</textarea></div><div class="form-row"><div class="group"><label class="label">ปริมาตรอาหารต่อขวด (ml)</label><input id="fBottle" class="input" type="number" value="${d.bottleMl||250}" oninput="previewFormula()"></div><div class="group"><label class="label">ภาชนะที่ใช้</label><select id="fVessel" class="select" onchange="previewFormula()"><option value="">ไม่รวมภาชนะ</option>${vesselOptions(d.vesselName||'')}</select></div></div><div class="form-row"><div class="group"><label class="label">จำนวนภาชนะ/ขวด</label><input id="fVesselQty" class="input" type="number" value="${d.vesselQty||1}" oninput="previewFormula()"></div><div class="group"><label class="label">ต้นทุนอัตโนมัติ</label><input id="fCostPreview" class="input" value="${baht(formulaCost(d))} ฿/L · ${baht(formulaPerMl(d))} ฿/ml · รวม ${baht(formulaBottle(d))} ฿/ขวด" readonly></div></div><div class="calc"><span>สูตร</span><b>ค่าสาร + ค่าภาชนะ = ต้นทุน/ขวด</b></div>`;
+
+if(type==='reference')return `
+    <div class="group"><label class="label">ชื่องานวิจัย / หัวข้อบทความ</label><input id="refTitle" class="input" value="${d.title||''}" placeholder="เช่น Anthocyanin in plant tissue culture"></div>
+    <div class="form-row"><div class="group"><label class="label">ผู้เขียน</label><input id="refAuthors" class="input" value="${d.authors||''}" placeholder="เช่น Smith et al."></div><div class="group"><label class="label">ปี</label><input id="refYear" class="input" type="number" value="${d.year||''}" placeholder="2024"></div></div>
+    <div class="group"><label class="label">วารสาร / แหล่งที่มา</label><input id="refJournal" class="input" value="${d.journal||''}" placeholder="ชื่อวารสาร เว็บไซต์ หรือฐานข้อมูล"></div>
+    <div class="group"><label class="label">ลิงก์ URL / DOI</label><input id="refUrl" class="input" value="${d.url||''}" placeholder="https://... หรือ https://doi.org/..."></div>
+    <div class="group"><label class="label">แท็ก</label><input id="refTagsInput" class="input" value="${d.tags||''}" placeholder="เช่น anthocyanin, tissue culture, pH indicator"></div>
+    <div class="group"><label class="label">สรุปสั้น ๆ / ใช้อ้างอิงเรื่องอะไร</label><textarea id="refNote" class="textarea" placeholder="สรุปใจความสำคัญ หรือบันทึกว่าเอาไว้ใช้อ้างอิงส่วนไหน">${d.note||''}</textarea></div>`;
+
 if(type==='material')return `<div class="group"><label class="label">ชื่อสารเคมี / วัสดุ</label><input id="mName" class="input" value="${d.name||''}"></div><div class="form-row"><div class="group"><label class="label">หมวดหมู่</label><input id="mCat" class="input" value="${d.category||''}"></div><div class="group"><label class="label">Lot</label><input id="mLot" class="input" value="${d.lot||''}"></div></div><div class="form-row"><div class="group"><label class="label">ราคาที่ซื้อ (฿)</label><input id="mPrice" class="input" type="number" value="${d.price||0}" oninput="previewMaterial()"></div><div class="group"><label class="label">หน่วยซื้อ</label><input id="mUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">ปริมาณรวมในหน่วยซื้อ</label><input id="mTotal" class="input" type="number" value="${d.totalQty||1}" oninput="previewMaterial()"></div><div class="group"><label class="label">ปริมาณใช้ต่อสูตร/ล็อต</label><input id="mUse" class="input" type="number" value="${d.useQty||0}" oninput="previewMaterial()"></div></div><div class="form-row"><div class="group"><label class="label">หน่วยที่ใช้</label><input id="mUseUnit" class="input" value="${d.useUnit||'g/L'}" oninput="previewMaterial()"></div><div class="group"><label class="label">ต้นทุนคำนวณ</label><input id="mCalc" class="input" value="${baht(matCalc(d))} ฿/${d.useUnit||'unit'}" readonly></div></div><div class="calc"><span>สูตร</span><b>ราคา ÷ ปริมาณรวม × ปริมาณใช้</b></div>`;
 return `<div class="group"><label class="label">ชื่ออุปกรณ์</label><input id="eqName" class="input" value="${d.name||''}"></div><div class="group"><label class="label">หมวดหมู่</label><input id="eqCat" class="input" value="${d.category||''}"></div><div class="form-row"><div class="group"><label class="label">ราคาอุปกรณ์ (฿)</label><input id="eqPrice" class="input" type="number" value="${d.price||0}" oninput="previewEquipment()"></div><div class="group"><label class="label">หน่วย</label><input id="eqUnit" class="input" value="${d.unit||''}"></div></div><div class="form-row"><div class="group"><label class="label">อายุใช้งาน (เดือน)</label><input id="eqLife" class="input" type="number" value="${d.lifeMonths||1}" oninput="previewEquipment()"></div><div class="group"><label class="label">ค่าเสื่อม</label><input id="eqCalc" class="input" value="${baht(eqCalc(d))} ฿/เดือน" readonly></div></div><div class="calc"><span>สูตร</span><b>ราคา ÷ อายุใช้งาน</b></div>`;
 }
