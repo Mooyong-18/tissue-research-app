@@ -1,500 +1,131 @@
-import React, { useMemo, useState } from "react";
-
-const pages = [
-  { id: "dashboard", label: "ภาพรวม", title: "Dashboard", sub: "OVERVIEW / ภาพรวม", icon: "📊" },
-  { id: "cultures", label: "Culture", title: "Cultures", sub: "TRACKING / ติดตามขวด", icon: "🧪" },
-  { id: "experiments", label: "ทดลอง", title: "Experiments", sub: "RESEARCH / การทดลอง", icon: "🔬" },
-  { id: "formulas", label: "สูตร", title: "Formulas", sub: "MEDIA / สูตรอาหาร", icon: "⚗️" },
-  { id: "costs", label: "ต้นทุน", title: "Costs", sub: "ANALYSIS / ต้นทุน", icon: "💰" },
-  { id: "reports", label: "Report", title: "Reports", sub: "PDF / รายงาน", icon: "🖨" },
-  { id: "settings", label: "ตั้งค่า", title: "Settings", sub: "SYSTEM / ระบบ", icon: "⚙️" },
-];
-
-const cultures = [
-  { id: "C-001", plant: "กล้วยน้ำว้า", part: "ยอด", status: "Active", formula: "F1", exp: "EXP-001", day: 14, score: 91, note: "ใบเขียวดี ไม่มีเชื้อ", cost: 4.56 },
-  { id: "C-002", plant: "กล้วยน้ำว้า", part: "ยอด", status: "Shoot", formula: "F1", exp: "EXP-001", day: 21, score: 88, note: "เริ่มแตกยอดใหม่", cost: 4.56 },
-  { id: "C-003", plant: "กล้วยน้ำว้า", part: "ยอด", status: "Contamination", formula: "F2", exp: "EXP-001", day: 14, score: 22, note: "พบเชื้อ ควรแยกทิ้ง", cost: 8.82 },
-  { id: "C-004", plant: "เพชรสังฆาต", part: "ข้อ", status: "Browning", formula: "F4", exp: "EXP-002", day: 34, score: 61, note: "เริ่มแน่นขวด รอย้ายอาหาร", cost: 5.99 },
-  { id: "C-005", plant: "ว่านหางจระเข้", part: "หน่อ", status: "Rooting", formula: "F3", exp: "EXP-003", day: 28, score: 74, note: "รากเริ่มออกชัด", cost: 5.24 },
-];
-
-const experiments = [
-  { code: "EXP-001", name: "เปรียบเทียบสูตร F1 vs F2", project: "สูตรอาหารต้นทุนต่ำ", formula: "F1 / F2", samples: 80, survival: 82, contam: 3.2, goal: 80 },
-  { code: "EXP-002", name: "Charcoal ลด browning", project: "พืชเกิด browning", formula: "F4", samples: 40, survival: 61, contam: 5.1, goal: 70 },
-  { code: "EXP-003", name: "อาหารเปลี่ยนสี Indicator", project: "pH Indicator", formula: "F3", samples: 60, survival: 74, contam: 2.8, goal: 75 },
-];
-
-const formulas = [
-  { code: "F1", name: "Low-cost Medium", ph: 5.7, cost: 45.6, perBottle: 4.56, survival: 91, tag: "Recommended", items: "20-20-20 + TE, CaNO3, MgSO4, Sugar, Agar" },
-  { code: "F2", name: "Standard Medium", ph: 5.8, cost: 88.2, perBottle: 8.82, survival: 82, tag: "Control", items: "MS base, Sugar, Agar, Vitamins" },
-  { code: "F3", name: "Indicator Medium", ph: 5.6, cost: 52.4, perBottle: 5.24, survival: 74, tag: "Testing", items: "Low-cost base, Indicator, Sugar, Agar" },
-  { code: "F4", name: "Charcoal Medium", ph: 5.7, cost: 59.9, perBottle: 5.99, survival: 61, tag: "Browning", items: "Low-cost base, Activated Charcoal, Sugar, Agar" },
-];
-
-const materials = [
-  { name: "Agar", category: "วุ้น / Solidifying Agent", cost: 210, unit: "500 g", used: "7 g/L", calc: "2.94 ฿/L" },
-  { name: "Sugar", category: "Carbon Source", cost: 35, unit: "1 kg", used: "30 g/L", calc: "1.05 ฿/L" },
-  { name: "ขวดแก้ว", category: "ภาชนะ", cost: 420, unit: "60 ชิ้น", used: "1 ขวด", calc: "7.00 ฿/ขวด" },
-  { name: "ถุง PP", category: "ภาชนะ", cost: 180, unit: "100 ใบ", used: "1 ใบ", calc: "1.80 ฿/ใบ" },
-];
-
-const equipment = [
-  { name: "หม้อนึ่งฆ่าเชื้อ", category: "Sterilization", cost: 3500, unit: "1 เครื่อง", life: "36 เดือน", calc: "97.22 ฿/เดือน" },
-  { name: "ตู้ปลอดเชื้อ DIY", category: "Clean Bench", cost: 1800, unit: "1 ชุด", life: "24 เดือน", calc: "75.00 ฿/เดือน" },
-  { name: "LED Grow Light", category: "Lighting", cost: 650, unit: "1 ชุด", life: "18 เดือน", calc: "36.11 ฿/เดือน" },
-];
-
-const timeline = [
-  { day: "Day 0", title: "ลงอาหารสูตร F4", note: "ใช้ charcoal medium ลด browning", status: "Active" },
-  { day: "Day 7", title: "เริ่มแตกยอด", note: "เนื้อเยื่อยังเขียว ไม่มีเชื้อปนเปื้อน", status: "Shoot" },
-  { day: "Day 14", title: "เพิ่มรูปภาพ", note: "ใบเขียวดี ความชื้นในขวดปกติ", status: "Shoot" },
-  { day: "Day 28", title: "เริ่มแน่นขวด", note: "ควรวางแผนย้ายอาหาร", status: "Browning" },
-  { day: "Day 34", title: "ถึงกำหนด Subculture", note: "แนะนำย้ายอาหารภายใน 48 ชั่วโมง", status: "Browning" },
-];
-
-function runSmokeTests() {
-  const tests = [
-    { name: "has dashboard", pass: pages.some((p) => p.id === "dashboard") },
-    { name: "has bottom-tab pages", pass: ["cultures", "experiments", "formulas", "costs"].every((id) => pages.some((p) => p.id === id)) },
-    { name: "culture ids unique", pass: new Set(cultures.map((c) => c.id)).size === cultures.length },
-    { name: "formula costs positive", pass: formulas.every((f) => f.cost > 0 && f.perBottle > 0) },
-    { name: "experiment percent valid", pass: experiments.every((e) => e.survival >= 0 && e.survival <= 100 && e.contam >= 0) },
-    { name: "timeline has day zero", pass: timeline[0]?.day === "Day 0" },
-    { name: "material costs positive", pass: materials.every((m) => m.cost > 0) },
-    { name: "equipment costs positive", pass: equipment.every((e) => e.cost > 0) },
-  ];
-  if (typeof console !== "undefined") tests.forEach((t) => console.assert(t.pass, `Smoke test failed: ${t.name}`));
-  return tests;
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#f4f6f5" />
+<title>Tissue Lab</title>
+<style>
+:root{
+  --bio:#059669;--bio-text:#047857;--bio-dim:rgba(5,150,105,.08);--bio-glow:rgba(5,150,105,.18);
+  --blue:#0284c7;--blue-dim:rgba(2,132,199,.08);--amber:#d97706;--amber-dim:rgba(217,119,6,.08);
+  --red:#dc2626;--red-dim:rgba(220,38,38,.08);--bg:#f4f6f5;--card:#fff;--text:#111816;--text2:rgba(17,24,22,.58);--text3:rgba(17,24,22,.36);
+  --line:rgba(0,0,0,.07);--shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.04);
+  --tab-h:80px;--safe-bottom:env(safe-area-inset-bottom,0px);--safe-top:env(safe-area-inset-top,44px);
 }
-runSmokeTests();
-
-function cls(...parts) {
-  return parts.filter(Boolean).join(" ");
+[data-theme="dark"]{
+  --bio:#00e07a;--bio-text:#00c96e;--bio-dim:rgba(0,224,122,.1);--bio-glow:rgba(0,224,122,.2);
+  --blue:#38bdf8;--blue-dim:rgba(56,189,248,.1);--amber:#fbbf24;--amber-dim:rgba(251,191,36,.1);
+  --red:#f87171;--red-dim:rgba(248,113,113,.1);--bg:#080e14;--card:#101a24;--text:#e8f4f0;--text2:rgba(232,244,240,.58);--text3:rgba(232,244,240,.34);--line:rgba(255,255,255,.08);--shadow:0 4px 16px rgba(0,0,0,.3)
 }
-
-function statusClass(status) {
-  if (["Active", "Shoot", "Rooting", "Recommended"].includes(status)) return "bg-emerald-50 text-emerald-700 border-emerald-100";
-  if (["Contamination", "Dead"].includes(status)) return "bg-red-50 text-red-700 border-red-100";
-  if (["Browning", "Testing", "Planning"].includes(status)) return "bg-amber-50 text-amber-700 border-amber-100";
-  return "bg-blue-50 text-blue-700 border-blue-100";
-}
-
-function Pill({ children }) {
-  return <span className={cls("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold", statusClass(String(children)))}>{children}</span>;
-}
-
-function Card({ title, right, children, className = "" }) {
-  return (
-    <section className={cls("mb-3 overflow-hidden rounded-[22px] border border-black/5 bg-white shadow-[0_1px_4px_rgba(0,0,0,.06)]", className)}>
-      {title && (
-        <div className="flex items-center justify-between px-[18px] pb-3 pt-4">
-          <h2 className="text-[13px] font-bold uppercase tracking-[.08em] text-slate-500">{title}</h2>
-          {right}
-        </div>
-      )}
-      <div className={title ? "px-[18px] pb-4" : "p-[18px]"}>{children}</div>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+.app{height:100vh;display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0 auto;background:var(--bg)}
+.status-bar{height:var(--safe-top);flex-shrink:0}.top-header{padding:8px 20px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{display:flex;gap:10px;align-items:center}.logo-icon{width:34px;height:34px;border-radius:10px;background:var(--bio-dim);border:1px solid var(--bio-glow);display:flex;align-items:center;justify-content:center}.logo-title{font-family:monospace;font-size:13px;font-weight:800;color:var(--bio-text);letter-spacing:.5px}.logo-sub{font-size:10px;color:var(--text3)}
+.icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}[data-theme="dark"] .icon-btn{background:rgba(255,255,255,.04)}
+.page-title-bar{padding:0 20px 16px}.page-title{font-size:28px;font-weight:650;letter-spacing:-.5px}.page-subtitle{font-family:monospace;font-size:13px;color:var(--text3);margin-top:2px}.scroll{flex:1;overflow:auto;padding:0 16px calc(var(--tab-h) + 20px);-webkit-overflow-scrolling:touch}.scroll::-webkit-scrollbar{display:none}
+.page{display:none;animation:pageIn .25s ease}.page.active{display:block}@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card,.stat-card,.formula-card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}.card-header{padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center}.card-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text2)}.card-body{padding:0 18px 16px}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.stat-card{padding:14px 16px;position:relative}.stat-card:before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--bio-glow),transparent)}.wide{grid-column:1/-1;background:linear-gradient(135deg,var(--bio-dim),var(--blue-dim))}.stat-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}.stat-value{font-family:monospace;font-size:24px;font-weight:900;color:var(--bio-text);line-height:1}.wide .stat-value{font-size:32px}.stat-unit{font-size:12px;color:var(--text3);margin-left:3px}.blue .stat-value{color:var(--blue)}.amber .stat-value{color:var(--amber)}.red .stat-value{color:var(--red)}
+.btn{border:0;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:800;background:var(--bio-text);color:#fff;cursor:pointer}.btn:active,.tab-item:active,.fab:active{transform:scale(.94)}.btn.ghost{background:rgba(0,0,0,.05);border:1px solid var(--line);color:var(--text2)}[data-theme="dark"] .btn.ghost{background:rgba(255,255,255,.05)}.btn-sm{padding:6px 10px;font-size:12px}.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800}.pill-bio{background:var(--bio-dim);color:var(--bio-text);border:1px solid var(--bio-glow)}.pill-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(2,132,199,.2)}.pill-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(217,119,6,.2)}.pill-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2)}.pill-gray{background:rgba(0,0,0,.05);color:var(--text3);border:1px solid var(--line)}
+.list-row{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);cursor:pointer}.list-row:last-child{border-bottom:0}.row-icon{width:38px;height:38px;border-radius:10px;background:var(--bio-dim);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.row-content{flex:1;min-width:0}.row-title{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row-sub{font-size:12px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row-right{text-align:right;flex-shrink:0}.mono{font-family:monospace;font-weight:800;color:var(--bio-text);font-size:13px}.cost{color:var(--amber)}
+.segment{display:flex;background:rgba(0,0,0,.06);border-radius:10px;padding:3px;margin-bottom:14px}.seg{flex:1;padding:7px;border-radius:8px;text-align:center;font-size:12px;font-weight:800;color:var(--text3);cursor:pointer}.seg.active{background:var(--card);color:var(--bio-text);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.bar-row{display:grid;grid-template-columns:88px 1fr 36px;gap:10px;align-items:center;margin-bottom:10px}.bar-lbl{text-align:right;font-size:12px;color:var(--text2)}.bar-track{height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden}.bar-fill{height:100%;border-radius:3px;background:var(--bio-text)}.bar-val{font-family:monospace;font-size:11px;text-align:right;color:var(--text3)}
+.timeline{padding-left:24px;position:relative}.timeline:before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:1px;background:linear-gradient(var(--bio-glow),transparent)}.tl-item{position:relative;margin-bottom:16px}.tl-dot{position:absolute;left:-22px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--bio-text);border:2px solid var(--card)}.tl-day{font-family:monospace;font-size:11px;color:var(--bio-text);font-weight:800;margin-bottom:5px}.tl-content{background:rgba(0,0,0,.035);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.5}[data-theme="dark"] .tl-content{background:rgba(255,255,255,.04)}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.photo{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:linear-gradient(135deg,var(--bio-dim),rgba(132,204,22,.08));display:flex;align-items:center;justify-content:center;font-size:30px}.photo-label{text-align:center;font-size:11px;color:var(--text3);font-weight:800;margin-bottom:5px}
+.formula-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.formula-card{padding:14px;cursor:pointer}.formula-name{font-size:14px;font-weight:800;margin-bottom:4px}.formula-cost{font-family:monospace;font-size:11px;color:var(--amber);margin-bottom:8px}.formula-stats{display:flex;flex-wrap:wrap;gap:5px}
+.tab-bar{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tab-h) + var(--safe-bottom));padding-bottom:var(--safe-bottom);padding-top:8px;background:rgba(244,246,245,.9);backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;justify-content:space-around;z-index:100}[data-theme="dark"] .tab-bar{background:rgba(8,14,20,.88)}.tab-item{min-width:48px;border-radius:12px;padding:6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;cursor:pointer}.tab-icon{font-size:20px}.tab-label{font-size:10px;font-weight:700;color:var(--text3);white-space:nowrap}.tab-item.active .tab-label{color:var(--bio-text)}.tab-item.active:before{content:"";position:absolute;top:-8px;width:20px;height:2px;border-radius:2px;background:var(--bio-text)}.fab{position:fixed;right:20px;bottom:calc(var(--tab-h) + var(--safe-bottom) + 14px);width:52px;height:52px;border-radius:16px;border:0;background:var(--bio-text);color:#fff;font-size:28px;box-shadow:0 4px 20px var(--bio-glow);z-index:90}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.32);backdrop-filter:blur(6px);z-index:300;align-items:flex-end}.modal.show{display:flex}.sheet{width:100%;max-height:92vh;background:var(--card);border-radius:28px 28px 0 0;overflow:hidden;box-shadow:0 -4px 32px rgba(0,0,0,.14)}.handle{width:36px;height:4px;border-radius:2px;background:rgba(0,0,0,.14);margin:12px auto 0}.sheet-header{padding:14px 20px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.sheet-title{font-size:17px;font-weight:800}.sheet-body{padding:16px 20px;max-height:66vh;overflow:auto;background:rgba(0,0,0,.025)}[data-theme="dark"] .sheet-body{background:rgba(255,255,255,.03)}.sheet-footer{padding:12px 20px calc(var(--safe-bottom) + 12px);border-top:1px solid var(--line)}.form-group{margin-bottom:12px}.form-label{font-size:12px;color:var(--text3);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block}.form-input,.form-select,.form-textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);padding:12px 14px;font-size:15px;outline:0}.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--bio-text);box-shadow:0 0 0 3px var(--bio-dim)}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-textarea{min-height:80px;resize:none}.calc-preview{border:1px solid var(--bio-glow);background:var(--bio-dim);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center}.toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + var(--safe-bottom) + 80px);transform:translateX(-50%) translateY(16px);background:var(--text);color:var(--card);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:800;z-index:500;opacity:0;transition:.25s;white-space:nowrap}.toast.show{opacity:1;transform:translateX(-50%)}
+@media print{.tab-bar,.fab,.top-header,.page-title-bar{display:none}.scroll{padding:0;overflow:visible}.app,body{height:auto;overflow:visible;background:#fff}.page{display:block}.page:not(.active){display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="status-bar"></div>
+  <div class="top-header">
+    <div class="logo"><div class="logo-icon">🌱</div><div><div class="logo-title">TISSUE LAB</div><div class="logo-sub">Research System v2.0</div></div></div>
+    <div style="display:flex;gap:8px"><button class="icon-btn" onclick="showPage('settings')">⚙️</button><button class="icon-btn" onclick="window.print()">🖨</button></div>
+  </div>
+  <div class="page-title-bar"><div class="page-title" id="page-title">Dashboard</div><div class="page-subtitle" id="page-subtitle">OVERVIEW / ภาพรวม</div></div>
+  <div class="scroll">
+    <section id="page-dashboard" class="page active">
+      <div class="stat-grid">
+        <div class="stat-card wide"><div class="stat-label">Culture Active / กำลังทำ</div><div class="stat-value" id="st-active">0</div></div>
+        <div class="stat-card"><div class="stat-label">อัตรารอด</div><div class="stat-value" id="st-surv">0<span class="stat-unit">%</span></div></div>
+        <div class="stat-card red"><div class="stat-label">ปนเปื้อน</div><div class="stat-value" id="st-cont">0<span class="stat-unit">%</span></div></div>
+        <div class="stat-card blue"><div class="stat-label">โปรเจกต์</div><div class="stat-value" id="st-proj">0</div></div>
+        <div class="stat-card amber"><div class="stat-label">ต้นทุน/ขวด</div><div class="stat-value" id="st-cost">0<span class="stat-unit">฿</span></div></div>
+      </div>
+      <div class="card"><div class="card-header"><div class="card-title">🎯 เป้าหมายการทดลอง</div><button class="btn ghost btn-sm" onclick="showPage('experiments')">ตั้งเป้า</button></div><div class="card-body" id="goal-list"></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">📈 สถานะ Culture</div><span class="pill pill-bio" id="dash-total">0 ขวด</span></div><div class="card-body" id="dash-chart"></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">🕐 ล่าสุด</div><button class="btn ghost btn-sm" onclick="showPage('cultures')">ดูทั้งหมด →</button></div><div id="recent-list"></div></div>
     </section>
-  );
-}
-
-function StatCard({ label, value, unit, tone = "bio", wide = false }) {
-  const tones = {
-    bio: "text-emerald-700 before:from-transparent before:via-emerald-200 before:to-transparent",
-    blue: "text-sky-700 before:from-transparent before:via-sky-200 before:to-transparent",
-    amber: "text-amber-700 before:from-transparent before:via-amber-200 before:to-transparent",
-    red: "text-red-700 before:from-transparent before:via-red-200 before:to-transparent",
-  };
-  return (
-    <div className={cls("relative overflow-hidden rounded-2xl border border-black/5 bg-white p-4 shadow-[0_1px_4px_rgba(0,0,0,.06)] before:absolute before:left-0 before:right-0 before:top-0 before:h-0.5 before:bg-gradient-to-r", tones[tone], wide && "col-span-2 bg-gradient-to-br from-emerald-50 to-sky-50")}>
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[.06em] text-slate-400">{label}</div>
-      <div className={cls("font-mono text-2xl font-black leading-none", wide && "text-[32px]")}>{value}<span className="ml-1 text-xs font-normal text-slate-400">{unit}</span></div>
-    </div>
-  );
-}
-
-function Row({ icon, title, sub, right, onClick }) {
-  return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 border-b border-black/5 px-[18px] py-3 text-left last:border-b-0 active:bg-black/[.03]">
-      <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg">{icon}</div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] font-semibold text-slate-900">{title}</div>
-        <div className="truncate text-xs text-slate-400">{sub}</div>
+    <section id="page-cultures" class="page">
+      <div class="segment" id="culture-segment"><div class="seg active" onclick="filterCulture('all',this)">ทั้งหมด</div><div class="seg" onclick="filterCulture('Active',this)">Active</div><div class="seg" onclick="filterCulture('Shoot',this)">Shoot</div><div class="seg" onclick="filterCulture('Contamination',this)">Contam.</div></div>
+      <div class="btn-row"><button class="btn ghost">☑ เลือกหลายรายการ</button><button class="btn" onclick="openModal('culture')">+ เพิ่ม Culture</button></div>
+      <div class="card" id="culture-list"></div>
+    </section>
+    <section id="page-experiments" class="page"><div class="card" id="experiment-list"></div></section>
+    <section id="page-formulas" class="page"><div class="formula-grid" id="formula-grid"></div><div class="card"><div class="card-header"><div class="card-title">ส่วนประกอบ F1</div></div><div id="ingredient-list"></div></div></section>
+    <section id="page-costs" class="page">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">สารเคมี/วัสดุ</div><div class="stat-value" id="cs-mat">0<span class="stat-unit">฿</span></div></div>
+        <div class="stat-card blue"><div class="stat-label">อุปกรณ์</div><div class="stat-value" id="cs-eq">0<span class="stat-unit">฿</span></div></div>
+        <div class="stat-card wide amber"><div class="stat-label">ต้นทุนรวม / Grand Total</div><div class="stat-value" id="cs-total">0<span class="stat-unit">฿</span></div></div>
+        <div class="stat-card"><div class="stat-label">จำนวน Culture</div><div class="stat-value" id="cs-cult">0<span class="stat-unit">ขวด</span></div></div>
+        <div class="stat-card amber"><div class="stat-label">ต้นทุน/ขวด</div><div class="stat-value" id="cs-per">0<span class="stat-unit">฿</span></div></div>
       </div>
-      {right}
-    </button>
-  );
-}
-
-function Button({ children, onClick, ghost = false }) {
-  return <button onClick={onClick} className={cls("inline-flex items-center justify-center gap-1 rounded-xl px-4 py-2.5 text-sm font-bold active:scale-95", ghost ? "border border-black/5 bg-black/[.04] text-slate-600" : "bg-emerald-700 text-white")}>{children}</button>;
-}
-
-function Progress({ value, tone = "bg-emerald-600" }) {
-  return <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cls("h-full rounded-full", tone)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} /></div>;
-}
-
-function ScoreRing({ value }) {
-  const tone = value >= 75 ? "text-emerald-700" : value >= 50 ? "text-amber-700" : "text-red-700";
-  return (
-    <div className={cls("relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 font-mono text-xs font-black", tone)} style={{ background: `conic-gradient(currentColor ${value}%, #e5e7eb 0)` }}>
-      <div className="absolute inset-1 rounded-full bg-white" />
-      <span className="relative">{value}</span>
-    </div>
-  );
-}
-
-function AppHeader({ page, setPage, dark, setDark }) {
-  const meta = pages.find((p) => p.id === page) || pages[0];
-  return (
-    <>
-      <div className="h-[env(safe-area-inset-top,44px)] shrink-0" />
-      <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-2">
-        <div className="flex items-center gap-3">
-          <div className="flex h-[34px] w-[34px] items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-lg">🌱</div>
-          <div>
-            <div className="font-mono text-[13px] font-black uppercase tracking-wider text-emerald-700">Tissue Lab</div>
-            <div className="text-[10px] text-slate-400">Research System v2.0</div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setDark(!dark)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/5 bg-black/[.04]">{dark ? "☀️" : "🌓"}</button>
-          <button onClick={() => setPage("reports")} className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/5 bg-black/[.04]">🖨</button>
-        </div>
-      </header>
-      <div className="shrink-0 px-5 pb-4">
-        <h1 className="text-[28px] font-semibold tracking-[-.02em] text-slate-950">{meta.title}</h1>
-        <div className="mt-0.5 font-mono text-[13px] text-slate-400">{meta.sub}</div>
-      </div>
-    </>
-  );
-}
-
-function BottomTabs({ page, setPage }) {
-  const tabs = pages.slice(0, 5);
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-[calc(80px+env(safe-area-inset-bottom,0px))] items-start justify-around border-t border-black/5 bg-[#f4f6f5]/90 pt-2 backdrop-blur-2xl">
-      {tabs.map((tab) => (
-        <button key={tab.id} onClick={() => setPage(tab.id)} className="relative flex min-w-12 flex-col items-center gap-1 rounded-xl px-2.5 py-1.5 active:scale-90">
-          <span className={cls("absolute -top-2 h-0.5 rounded-full bg-emerald-700 transition-all", page === tab.id ? "w-5 opacity-100" : "w-0 opacity-0")} />
-          <span className={cls("text-xl transition-transform", page === tab.id && "scale-110")}>{tab.icon}</span>
-          <span className={cls("whitespace-nowrap text-[10px] font-semibold", page === tab.id ? "text-emerald-700" : "text-slate-400")}>{tab.label}</span>
-        </button>
-      ))}
-    </nav>
-  );
-}
-
-function Fab({ page, setShowModal }) {
-  if (["reports", "settings"].includes(page)) return null;
-  return <button onClick={() => setShowModal(true)} className="fixed bottom-[calc(80px+env(safe-area-inset-bottom,0px)+14px)] right-5 z-40 flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-emerald-700 text-3xl text-white shadow-[0_4px_20px_rgba(5,150,105,.25)] active:scale-90">+</button>;
-}
-
-function Dashboard({ setPage }) {
-  const active = cultures.filter((c) => c.status !== "Contamination").length;
-  const contam = Math.round((cultures.filter((c) => c.status === "Contamination").length / cultures.length) * 100);
-  const avgScore = Math.round(cultures.reduce((s, c) => s + c.score, 0) / cultures.length);
-  const avgCost = (cultures.reduce((s, c) => s + c.cost, 0) / cultures.length).toFixed(2);
-  return (
-    <>
-      <div className="mb-3 grid grid-cols-2 gap-2.5">
-        <StatCard wide label="Culture Active / กำลังทำ" value={active} unit="ขวด" />
-        <StatCard label="อัตรารอด" value={avgScore} unit="%" />
-        <StatCard label="ปนเปื้อน" value={contam} unit="%" tone="red" />
-        <StatCard label="โปรเจกต์" value={experiments.length} tone="blue" />
-        <StatCard label="ต้นทุน/ขวด" value={avgCost} unit="฿" tone="amber" />
-      </div>
-      <Card title="🎯 เป้าหมายการทดลอง" right={<Button ghost onClick={() => setPage("experiments")}>ตั้งเป้า</Button>}>
-        {experiments.map((e) => <GoalRow key={e.code} label={e.name} value={e.survival} goal={e.goal} />)}
-      </Card>
-      <Card title="📈 สถานะ Culture" right={<Pill>{cultures.length} ขวด</Pill>}>
-        {[
-          ["Active", cultures.filter((c) => c.status === "Active").length, "bg-emerald-600"],
-          ["Shoot", cultures.filter((c) => c.status === "Shoot").length, "bg-sky-600"],
-          ["Rooting", cultures.filter((c) => c.status === "Rooting").length, "bg-violet-600"],
-          ["Problem", cultures.filter((c) => ["Contamination", "Browning"].includes(c.status)).length, "bg-red-600"],
-        ].map(([name, count, tone]) => <BarRow key={name} label={name} count={count} total={cultures.length} tone={tone} />)}
-      </Card>
-      <Card title="⭐ Smart Lab Score">
-        {cultures.slice(0, 4).map((c) => <Row key={c.id} icon="🧪" title={`${c.id} · ${c.plant}`} sub={`${c.formula} · ${c.note}`} right={<ScoreRing value={c.score} />} onClick={() => setPage("cultures")} />)}
-      </Card>
-    </>
-  );
-}
-
-function GoalRow({ label, value, goal }) {
-  return (
-    <div className="mb-4 last:mb-0">
-      <div className="flex items-center justify-between text-xs font-bold text-slate-500"><span>{label}</span><span>{value}% / goal {goal}%</span></div>
-      <div className="relative mt-2 h-1.5 rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-emerald-700" style={{ width: `${value}%` }} />
-        <span className="absolute -top-1 h-3 w-0.5 rounded-full bg-red-500" style={{ left: `${goal}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function BarRow({ label, count, total, tone }) {
-  const pct = total ? Math.round((count / total) * 100) : 0;
-  return (
-    <div className="mb-3 grid grid-cols-[88px_1fr_34px] items-center gap-2 last:mb-0">
-      <div className="text-right text-xs font-semibold text-slate-500">{label}</div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cls("h-full rounded-full", tone)} style={{ width: `${pct}%` }} /></div>
-      <div className="text-right font-mono text-[11px] text-slate-400">{count}</div>
-    </div>
-  );
-}
-
-function Cultures({ setPage, setSelectedCulture }) {
-  const [filter, setFilter] = useState("all");
-  const items = filter === "all" ? cultures : cultures.filter((c) => c.status === filter);
-  return (
-    <>
-      <Segment options={["all", "Active", "Shoot", "Contamination"]} value={filter} onChange={setFilter} />
-      <div className="mb-3 flex gap-2">
-        <Button ghost>☑ เลือกหลายรายการ</Button>
-        <Button ghost>⬇ Export</Button>
-      </div>
-      <Card>
-        {items.map((c) => (
-          <Row key={c.id} icon="🧪" title={`${c.id} · ${c.plant}`} sub={`${c.part} · ${c.formula} · Day ${c.day}`} right={<div className="flex flex-col items-end gap-1"><Pill>{c.status}</Pill><span className="font-mono text-[11px] text-emerald-700">{c.cost}฿</span></div>} onClick={() => { setSelectedCulture(c.id); setPage("timeline"); }} />
-        ))}
-      </Card>
-    </>
-  );
-}
-
-function Segment({ options, value, onChange }) {
-  return (
-    <div className="mb-3 flex rounded-xl bg-black/[.06] p-1">
-      {options.map((op) => <button key={op} onClick={() => onChange(op)} className={cls("flex-1 rounded-lg px-2 py-2 text-xs font-bold", value === op ? "bg-white text-emerald-700 shadow-sm" : "text-slate-400")}>{op === "all" ? "ทั้งหมด" : op}</button>)}
-    </div>
-  );
-}
-
-function Experiments({ setPage }) {
-  return (
-    <Card>
-      {experiments.map((e) => (
-        <Row key={e.code} icon="🔬" title={`${e.code} · ${e.name}`} sub={`${e.project} · ${e.samples} samples · ${e.formula}`} right={<div className="w-16"><div className="text-right font-mono text-xs font-bold text-emerald-700">{e.survival}%</div><Progress value={e.survival} /></div>} onClick={() => setPage("reports")} />
-      ))}
-    </Card>
-  );
-}
-
-function Timeline({ selectedCulture }) {
-  const culture = cultures.find((c) => c.id === selectedCulture) || cultures[3];
-  return (
-    <>
-      <Card title={`${culture.id} · ${culture.plant}`} right={<Pill>{culture.status}</Pill>}>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <Info label="สูตร" value={culture.formula} />
-          <Info label="อายุ" value={`Day ${culture.day}`} />
-          <Info label="การทดลอง" value={culture.exp} />
-          <Info label="ต้นทุน" value={`${culture.cost} ฿/ขวด`} />
-        </div>
-      </Card>
-      <Card title="📷 รูปภาพตามเวลา">
-        <div className="grid grid-cols-3 gap-2">
-          {["Day 0", "Day 7", "Day 14"].map((d, i) => <div key={d}><div className="mb-1 text-center text-[11px] font-bold text-slate-400">{d}</div><div className="flex aspect-square items-center justify-center rounded-xl border border-black/5 bg-gradient-to-br from-emerald-50 to-lime-50 text-3xl">{i === 0 ? "🌱" : i === 1 ? "☘️" : "🌿"}</div></div>)}
-        </div>
-      </Card>
-      <Card title="📅 Timeline">
-        <div className="relative pl-6 before:absolute before:bottom-2 before:left-[5px] before:top-2 before:w-px before:bg-gradient-to-b before:from-emerald-200 before:to-transparent">
-          {timeline.map((t) => <div key={t.day} className="relative mb-4 last:mb-0"><span className="absolute -left-[23px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-700 shadow" /><div className="mb-1 flex items-center gap-2 font-mono text-[11px] font-bold text-emerald-700"><span>{t.day}</span><Pill>{t.status}</Pill></div><div className="rounded-xl border border-black/5 bg-[#f4f6f5] p-3"><div className="text-sm font-bold text-slate-800">{t.title}</div><div className="mt-1 text-xs leading-relaxed text-slate-500">{t.note}</div></div></div>)}
-        </div>
-      </Card>
-    </>
-  );
-}
-
-function Formulas() {
-  return (
-    <>
-      <div className="mb-3 grid grid-cols-2 gap-2.5">
-        {formulas.map((f) => <button key={f.code} className="rounded-2xl border border-black/5 bg-white p-3 text-left shadow-sm active:bg-slate-50"><div className="mb-1 text-sm font-black text-slate-900">{f.code} · {f.name}</div><div className="mb-2 font-mono text-[11px] text-amber-700">{f.cost}฿/L · {f.perBottle}฿/ขวด</div><div className="flex flex-wrap gap-1"><Pill>{f.tag}</Pill><Pill>{f.survival}%</Pill></div></button>)}
-      </div>
-      <Card title="ส่วนประกอบ F1">
-        {formulas[0].items.split(", ").map((item) => <Row key={item} icon="⚗️" title={item} sub="ส่วนประกอบต่อ 1 ลิตร" right={<span className="text-slate-300">›</span>} />)}
-      </Card>
-    </>
-  );
-}
-
-function Costs({ setShowModal, setModalMode }) {
-  const totalMaterials = materials.reduce((s, m) => s + m.cost, 0);
-  const totalEquipment = equipment.reduce((s, e) => s + e.cost, 0);
-  const totalFormula = formulas.reduce((s, f) => s + f.cost, 0);
-  const total = totalMaterials + totalEquipment + totalFormula;
-
-  function openCostModal(mode) {
-    setModalMode(mode);
-    setShowModal(true);
-  }
-
-  return (
-    <>
-      <div className="mb-3 grid grid-cols-2 gap-2.5">
-        <StatCard label="สารเคมี/วัสดุ" value={totalMaterials} unit="฿" />
-        <StatCard label="อุปกรณ์" value={totalEquipment} unit="฿" tone="blue" />
-        <StatCard wide label="ต้นทุนรวม / Grand Total" value={Math.round(total)} unit="฿" tone="amber" />
-        <StatCard label="จำนวน Culture" value={cultures.length} unit="ขวด" />
-        <StatCard label="ต้นทุน/ขวด" value={(total / cultures.length).toFixed(2)} unit="฿" tone="amber" />
-      </div>
-
-      <div className="mb-3 grid grid-cols-2 gap-2">
-        <Button onClick={() => openCostModal("material")}>+ เพิ่มสารเคมี</Button>
-        <Button onClick={() => openCostModal("equipment")}>+ เพิ่มอุปกรณ์</Button>
-      </div>
-
-      <Card title="หมวดหมู่ต้นทุน">
-        <BarRow label="Materials" count={totalMaterials} total={total} tone="bg-emerald-600" />
-        <BarRow label="Equipment" count={totalEquipment} total={total} tone="bg-sky-600" />
-        <BarRow label="Formulas" count={totalFormula} total={total} tone="bg-amber-500" />
-      </Card>
-
-      <Card title="สารเคมี / วัสดุสิ้นเปลือง" right={<Button ghost onClick={() => openCostModal("material")}>+ เพิ่ม</Button>}>
-        {materials.map((m) => <Row key={m.name} icon="🧴" title={m.name} sub={`${m.category} · ${m.unit} · ใช้ ${m.used}`} right={<div className="text-right"><div className="font-mono text-xs font-bold text-amber-700">{m.cost}฿</div><div className="text-[10px] text-slate-400">{m.calc}</div></div>} />)}
-      </Card>
-
-      <Card title="อุปกรณ์ / ครุภัณฑ์" right={<Button ghost onClick={() => openCostModal("equipment")}>+ เพิ่ม</Button>}>
-        {equipment.map((e) => <Row key={e.name} icon="🔧" title={e.name} sub={`${e.category} · ${e.unit} · อายุใช้งาน ${e.life}`} right={<div className="text-right"><div className="font-mono text-xs font-bold text-sky-700">{e.cost}฿</div><div className="text-[10px] text-slate-400">{e.calc}</div></div>} />)}
-      </Card>
-    </>
-  );
-}
-
-function Reports() {
-  return (
-    <>
-      <Card title="⚙️ ตั้งค่ารายงาน">
-        <label className="mb-3 block"><div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">ชื่อรายงาน</div><input className="w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-100" defaultValue="รายงานผลการทดลองเพาะเลี้ยงเนื้อเยื่อ" /></label>
-        <label className="block"><div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">สรุปผล</div><textarea className="min-h-24 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-100" defaultValue="สูตร F1 ให้ผลดีที่สุดในชุดทดลอง โดยมีอัตรารอดสูงและต้นทุนต่อขวดต่ำ" /></label>
-        <Button>🔄 สร้างรายงาน</Button>
-      </Card>
-      <Card title="รายงาน Preview">
-        <ReportSection title="สรุปผลอัตโนมัติ" text="จากข้อมูลตัวอย่าง F1 มีอัตรารอด 91% และต้นทุน 4.56 บาท/ขวด เหมาะสำหรับใช้เป็นสูตรหลักในการทดลอง Low-cost Plant Tissue Culture" />
-        <ReportSection title="ข้อเสนอแนะ" text="ควรติดตาม C-003 ที่ปนเปื้อน และบันทึกรูป Day 7 / Day 14 ให้ครบทุก Culture เพื่อใช้ประกอบรายงาน PDF" />
-      </Card>
-    </>
-  );
-}
-
-function ReportSection({ title, text }) {
-  return <div className="mb-5 last:mb-0"><h3 className="mb-2 border-l-2 border-emerald-700 pl-2 text-[13px] font-bold uppercase tracking-wider text-emerald-700">{title}</h3><div className="rounded-xl bg-[#f4f6f5] p-3 text-sm leading-relaxed text-slate-600">{text}</div></div>;
-}
-
-function Settings({ dark, setDark }) {
-  return (
-    <Card>
-      <SettingsRow icon="🌓" title="Dark Mode" sub="เปลี่ยนธีมสีแอป" right={<Toggle on={dark} onClick={() => setDark(!dark)} />} />
-      <SettingsRow icon="⬇" title="Export ข้อมูล (JSON)" sub="บันทึกข้อมูลทั้งหมดเป็นไฟล์" right={<span className="text-slate-300">›</span>} />
-      <SettingsRow icon="⬆" title="Import ข้อมูล (JSON)" sub="โหลดข้อมูลจากไฟล์ที่ export ไว้" right={<span className="text-emerald-700 text-sm font-bold">เลือกไฟล์</span>} />
-      <SettingsRow icon="📊" title="Export ต้นทุน (CSV)" sub="นำออกเป็นไฟล์ Excel/Sheets" right={<span className="text-slate-300">›</span>} />
-      <SettingsRow icon="🗑" title="ลบข้อมูลทั้งหมด" sub="ไม่สามารถกู้คืนได้" right={<span className="text-slate-300">›</span>} danger />
-    </Card>
-  );
-}
-
-function SettingsRow({ icon, title, sub, right, danger }) {
-  return <div className="flex items-center gap-3 border-b border-black/5 px-[18px] py-3.5 last:border-b-0"><div className="flex h-[38px] w-[38px] items-center justify-center rounded-xl bg-emerald-50 text-lg">{icon}</div><div className="min-w-0 flex-1"><div className={cls("text-[15px] font-semibold", danger ? "text-red-600" : "text-slate-900")}>{title}</div><div className="text-xs text-slate-400">{sub}</div></div>{right}</div>;
-}
-
-function Toggle({ on, onClick }) {
-  return <button onClick={onClick} className={cls("relative h-7 w-12 rounded-full transition", on ? "bg-emerald-700" : "bg-black/10")}><span className={cls("absolute top-1/2 h-[22px] w-[22px] -translate-y-1/2 rounded-full bg-white shadow transition", on ? "left-[23px]" : "left-[3px]")} /></button>;
-}
-
-function Info({ label, value }) {
-  return <div><div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-semibold text-slate-700">{value}</div></div>;
-}
-
-function Modal({ page, mode, onClose }) {
-  const title = mode === "material" ? "🧴 เพิ่มสารเคมี / วัสดุ" : mode === "equipment" ? "🔧 เพิ่มอุปกรณ์" : page === "cultures" ? "🧪 บันทึก Culture" : page === "experiments" ? "🔬 บันทึกการทดลอง" : page === "formulas" ? "⚗️ สูตรอาหาร" : page === "costs" ? "🧴 วัสดุ / สารเคมี" : "เพิ่มข้อมูล";
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end bg-black/30 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full overflow-hidden rounded-t-[28px] border border-black/5 bg-white shadow-2xl">
-        <div className="mx-auto mt-3 h-1 w-9 rounded-full bg-black/10" />
-        <div className="flex items-center justify-between border-b border-black/5 px-5 py-4"><h2 className="text-[17px] font-bold">{title}</h2><Button ghost onClick={onClose}>ยกเลิก</Button></div>
-        <div className="max-h-[65vh] overflow-y-auto bg-[#f8faf9] p-5">
-          {mode === "material" ? <MaterialForm /> : mode === "equipment" ? <EquipmentForm /> : <DefaultForm />}
-        </div>
-        <div className="border-t border-black/5 bg-white p-5"><Button onClick={onClose}>💾 บันทึก</Button></div>
-      </div>
-    </div>
-  );
-}
-
-function DefaultForm() {
-  return (
-    <>
-      <FormField label="รหัส / ชื่อ"><input className="field" placeholder="เช่น C-006 หรือ EXP-004" /></FormField>
-      <FormField label="ชนิดพืช / โปรเจกต์"><input className="field" placeholder="กรอกข้อมูล" /></FormField>
-      <div className="grid grid-cols-2 gap-3"><FormField label="สูตร"><select className="field"><option>F1</option><option>F2</option><option>F3</option><option>F4</option></select></FormField><FormField label="สถานะ"><select className="field"><option>Active</option><option>Shoot</option><option>Rooting</option><option>Contamination</option></select></FormField></div>
-      <FormField label="หมายเหตุ"><textarea className="field min-h-24" placeholder="บันทึกเพิ่มเติม" /></FormField>
-    </>
-  );
-}
-
-function MaterialForm() {
-  return (
-    <>
-      <FormField label="ชื่อสารเคมี / วัสดุ"><input className="field" placeholder="เช่น Agar, Sugar, NaOCl, ขวดแก้ว" /></FormField>
-      <FormField label="หมวดหมู่"><select className="field"><option>วุ้น / Solidifying Agent</option><option>น้ำตาล / Carbon Source</option><option>สารฆ่าเชื้อ / Sterilant</option><option>ฮอร์โมนพืช</option><option>ภาชนะ</option><option>วัสดุสิ้นเปลือง</option></select></FormField>
-      <div className="grid grid-cols-2 gap-3"><FormField label="ราคาที่ซื้อ (฿)"><input className="field" type="number" placeholder="210" /></FormField><FormField label="หน่วยซื้อ"><input className="field" placeholder="500 g" /></FormField></div>
-      <div className="grid grid-cols-2 gap-3"><FormField label="หน่วยใช้จริง"><input className="field" placeholder="g, ml, ชิ้น" /></FormField><FormField label="ใช้ต่อล็อต"><input className="field" type="number" placeholder="7" /></FormField></div>
-      <FormField label="สูตรคำนวณต้นทุน"><div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">ต้นทุน = ราคาซื้อ ÷ ปริมาณรวม × ปริมาณที่ใช้</div></FormField>
-      <FormField label="หมายเหตุ / แหล่งซื้อ"><textarea className="field min-h-20" placeholder="ร้าน, วันที่ซื้อ, lot no." /></FormField>
-    </>
-  );
-}
-
-function EquipmentForm() {
-  return (
-    <>
-      <FormField label="ชื่ออุปกรณ์"><input className="field" placeholder="เช่น Autoclave, Clean Bench, LED Grow Light" /></FormField>
-      <FormField label="หมวดหมู่"><select className="field"><option>Sterilization</option><option>Clean Bench</option><option>Lighting</option><option>Temperature Control</option><option>Measurement</option><option>Other</option></select></FormField>
-      <div className="grid grid-cols-2 gap-3"><FormField label="ราคาอุปกรณ์ (฿)"><input className="field" type="number" placeholder="3500" /></FormField><FormField label="จำนวน"><input className="field" type="number" placeholder="1" /></FormField></div>
-      <div className="grid grid-cols-2 gap-3"><FormField label="อายุใช้งาน"><input className="field" type="number" placeholder="36" /></FormField><FormField label="หน่วย"><select className="field"><option>เดือน</option><option>ปี</option></select></FormField></div>
-      <FormField label="ค่าเสื่อมโดยประมาณ"><div className="rounded-xl border border-sky-100 bg-sky-50 p-3 text-sm font-bold text-sky-700">ค่าเสื่อม/เดือน = ราคา ÷ อายุใช้งาน</div></FormField>
-      <FormField label="หมายเหตุ"><textarea className="field min-h-20" placeholder="รุ่น, วันที่ซื้อ, การใช้งานต่อเดือน" /></FormField>
-    </>
-  );
-}
-
-function FormField({ label, children }) {
-  return <label className="mb-3 block"><div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">{label}</div>{children}</label>;
-}
-
-export default function App() {
-  const [page, setPage] = useState("dashboard");
-  const [selectedCulture, setSelectedCulture] = useState("C-004");
-  const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("default");
-  const [dark, setDark] = useState(false);
-
-  const content = useMemo(() => {
-    if (page === "dashboard") return <Dashboard setPage={setPage} />;
-    if (page === "cultures") return <Cultures setPage={setPage} setSelectedCulture={setSelectedCulture} />;
-    if (page === "experiments") return <Experiments setPage={setPage} />;
-    if (page === "timeline") return <Timeline selectedCulture={selectedCulture} />;
-    if (page === "formulas") return <Formulas />;
-    if (page === "costs") return <Costs setShowModal={setShowModal} setModalMode={setModalMode} />;
-    if (page === "reports") return <Reports />;
-    if (page === "settings") return <Settings dark={dark} setDark={setDark} />;
-    return <Dashboard setPage={setPage} />;
-  }, [page, selectedCulture, dark]);
-
-  return (
-    <div className={cls("min-h-screen overflow-hidden font-sans", dark ? "bg-slate-950" : "bg-[#f4f6f5]") }>
-      <style>{`.field{width:100%;border-radius:12px;border:1px solid rgba(0,0,0,.10);background:white;padding:12px 14px;font-size:15px;outline:none}.field:focus{border-color:#047857;box-shadow:0 0 0 3px rgba(5,150,105,.08)}`}</style>
-      <div className={cls("mx-auto flex h-screen max-w-md flex-col overflow-hidden shadow-sm", dark ? "bg-slate-900" : "bg-[#f4f6f5]") }>
-        <AppHeader page={page} setPage={setPage} dark={dark} setDark={setDark} />
-        <main className="flex-1 overflow-y-auto px-4 pb-[calc(80px+env(safe-area-inset-bottom,0px)+16px)] [scrollbar-width:none]">
-          {content}
-        </main>
-        <BottomTabs page={page} setPage={setPage} />
-        <Fab page={page} setShowModal={(open) => { setModalMode(page === "costs" ? "material" : "default"); setShowModal(open); }} />
-        {showModal && <Modal page={page} mode={modalMode} onClose={() => setShowModal(false)} />}
-      </div>
-    </div>
-  );
-}
+      <div class="btn-row"><button class="btn" onclick="openModal('material')">+ เพิ่มสารเคมี</button><button class="btn" onclick="openModal('equipment')">+ เพิ่มอุปกรณ์</button></div>
+      <div class="card"><div class="card-header"><div class="card-title">หมวดหมู่ต้นทุน</div></div><div class="card-body" id="cost-chart"></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">🧴 สารเคมี / วัสดุสิ้นเปลือง</div><button class="btn ghost btn-sm" onclick="openModal('material')">+ เพิ่ม</button></div><div id="material-list"></div></div>
+      <div class="card"><div class="card-header"><div class="card-title">🔧 อุปกรณ์ / ครุภัณฑ์</div><button class="btn ghost btn-sm" onclick="openModal('equipment')">+ เพิ่ม</button></div><div id="equipment-list"></div></div>
+    </section>
+    <section id="page-reports" class="page"><div class="card"><div class="card-header"><div class="card-title">⚙️ ตั้งค่ารายงาน</div></div><div class="card-body"><div class="form-group"><label class="form-label">ชื่อรายงาน</label><input class="form-input" value="รายงานผลการทดลองเพาะเลี้ยงเนื้อเยื่อ"></div><div class="form-group"><label class="form-label">สรุปผล</label><textarea class="form-textarea">สูตร F1 มีอัตรารอดสูงและต้นทุนต่อขวดต่ำ เหมาะสำหรับต่อยอดการทดลอง</textarea></div><button class="btn" onclick="toast('สร้างรายงานตัวอย่างแล้ว')">🔄 สร้างรายงาน</button></div></div><div class="card"><div class="card-header"><div class="card-title">Report Preview</div></div><div class="card-body"><p style="line-height:1.7;color:var(--text2);font-size:13px">จากข้อมูลตัวอย่าง สูตร F1 มีอัตรารอดดีที่สุด 91% และต้นทุน 4.56 บาท/ขวด ควรใช้เป็นสูตรหลักสำหรับเปรียบเทียบกับสูตรอื่น</p></div></div></section>
+    <section id="page-settings" class="page"><div class="card"><div class="list-row"><div class="row-icon">🌓</div><div class="row-content"><div class="row-title">Dark Mode</div><div class="row-sub">เปลี่ยนธีมสีแอป</div></div><button class="btn ghost btn-sm" onclick="toggleDark()">Toggle</button></div><div class="list-row" onclick="exportJSON()"><div class="row-icon">⬇</div><div class="row-content"><div class="row-title">Export ข้อมูล JSON</div><div class="row-sub">บันทึกข้อมูลทั้งหมดเป็นไฟล์</div></div><div>›</div></div><div class="list-row"><div class="row-icon">⬆</div><div class="row-content"><div class="row-title">Import ข้อมูล JSON</div><div class="row-sub">โหลดข้อมูลจากไฟล์</div></div><label class="mono" style="cursor:pointer">เลือกไฟล์<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label></div></div></section>
+  </div>
+  <nav class="tab-bar"><div class="tab-item active" onclick="showPage('dashboard')"><div class="tab-icon">📊</div><div class="tab-label">ภาพรวม</div></div><div class="tab-item" onclick="showPage('cultures')"><div class="tab-icon">🧪</div><div class="tab-label">Culture</div></div><div class="tab-item" onclick="showPage('experiments')"><div class="tab-icon">🔬</div><div class="tab-label">ทดลอง</div></div><div class="tab-item" onclick="showPage('formulas')"><div class="tab-icon">⚗️</div><div class="tab-label">สูตร</div></div><div class="tab-item" onclick="showPage('costs')"><div class="tab-icon">💰</div><div class="tab-label">ต้นทุน</div></div></nav>
+</div>
+<button class="fab" id="fab" onclick="fabAction()">+</button>
+<div class="modal" id="modal"><div class="sheet"><div class="handle"></div><div class="sheet-header"><div class="sheet-title" id="modal-title">เพิ่มข้อมูล</div><button class="btn ghost btn-sm" onclick="closeModal()">ยกเลิก</button></div><div class="sheet-body" id="modal-body"></div><div class="sheet-footer"><button class="btn" style="width:100%" onclick="saveModal()">💾 บันทึก</button></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const KEY='tissue_lab_html_v1';
+let currentPage='dashboard';let currentModal='culture';let currentFilter='all';
+const seed={
+ cultures:[{id:'C-001',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Active',formula:'F1',exp:'EXP-001',day:14,score:91,note:'ใบเขียวดี ไม่มีเชื้อ',cost:4.56},{id:'C-002',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Shoot',formula:'F1',exp:'EXP-001',day:21,score:88,note:'เริ่มแตกยอดใหม่',cost:4.56},{id:'C-003',plant:'กล้วยน้ำว้า',part:'ยอด',status:'Contamination',formula:'F2',exp:'EXP-001',day:14,score:22,note:'พบเชื้อ ควรแยกทิ้ง',cost:8.82},{id:'C-004',plant:'เพชรสังฆาต',part:'ข้อ',status:'Browning',formula:'F4',exp:'EXP-002',day:34,score:61,note:'เริ่มแน่นขวด รอย้ายอาหาร',cost:5.99}],
+ experiments:[{code:'EXP-001',name:'เปรียบเทียบสูตร F1 vs F2',project:'สูตรอาหารต้นทุนต่ำ',formula:'F1 / F2',samples:80,survival:82,contam:3.2,goal:80},{code:'EXP-002',name:'Charcoal ลด browning',project:'พืชเกิด browning',formula:'F4',samples:40,survival:61,contam:5.1,goal:70}],
+ formulas:[{code:'F1',name:'Low-cost Medium',ph:5.7,cost:45.6,perBottle:4.56,survival:91,tag:'Recommended',items:'20-20-20 + TE, CaNO3, MgSO4, Sugar, Agar'},{code:'F2',name:'Standard Medium',ph:5.8,cost:88.2,perBottle:8.82,survival:82,tag:'Control',items:'MS base, Sugar, Agar, Vitamins'},{code:'F3',name:'Indicator Medium',ph:5.6,cost:52.4,perBottle:5.24,survival:74,tag:'Testing',items:'Low-cost base, Indicator, Sugar, Agar'},{code:'F4',name:'Charcoal Medium',ph:5.7,cost:59.9,perBottle:5.99,survival:61,tag:'Browning',items:'Low-cost base, Activated Charcoal, Sugar, Agar'}],
+ materials:[{name:'Agar',category:'วุ้น / Solidifying Agent',price:210,unit:'500 g',used:'7 g/L',calc:'2.94 ฿/L'},{name:'Sugar',category:'Carbon Source',price:35,unit:'1 kg',used:'30 g/L',calc:'1.05 ฿/L'},{name:'ขวดแก้ว',category:'ภาชนะ',price:420,unit:'60 ชิ้น',used:'1 ขวด',calc:'7.00 ฿/ขวด'}],
+ equipment:[{name:'หม้อนึ่งฆ่าเชื้อ',category:'Sterilization',price:3500,unit:'1 เครื่อง',life:'36 เดือน',calc:'97.22 ฿/เดือน'},{name:'ตู้ปลอดเชื้อ DIY',category:'Clean Bench',price:1800,unit:'1 ชุด',life:'24 เดือน',calc:'75.00 ฿/เดือน'}]
+};
+let db=load();
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||seed}catch(e){return seed}}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function baht(n){return Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:2})}
+function pill(status){let c=status==='Contamination'||status==='Dead'?'pill-red':status==='Browning'||status==='Testing'?'pill-amber':status==='Control'?'pill-blue':'pill-bio';return `<span class="pill ${c}">${status}</span>`}
+function row(icon,title,sub,right='',onclick=''){return `<div class="list-row" ${onclick?`onclick="${onclick}"`:''}><div class="row-icon">${icon}</div><div class="row-content"><div class="row-title">${title}</div><div class="row-sub">${sub}</div></div><div class="row-right">${right}</div></div>`}
+function render(){renderDash();renderCultures();renderExperiments();renderFormulas();renderCosts()}
+function renderDash(){let active=db.cultures.filter(c=>c.status!=='Contamination').length,cont=Math.round(db.cultures.filter(c=>c.status==='Contamination').length/db.cultures.length*100),avg=Math.round(db.cultures.reduce((s,c)=>s+c.score,0)/db.cultures.length),avgCost=(db.cultures.reduce((s,c)=>s+c.cost,0)/db.cultures.length).toFixed(2);st('st-active',active);st('st-surv',avg);st('st-cont',cont);st('st-proj',db.experiments.length);st('st-cost',avgCost);st('dash-total',db.cultures.length+' ขวด');document.getElementById('goal-list').innerHTML=db.experiments.map(e=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--text2)"><span>${e.name}</span><span>${e.survival}% / goal ${e.goal}%</span></div><div class="bar-track" style="margin-top:7px"><div class="bar-fill" style="width:${e.survival}%"></div></div></div>`).join('');let statuses=['Active','Shoot','Rooting','Browning','Contamination'];document.getElementById('dash-chart').innerHTML=statuses.map(x=>barRow(x,db.cultures.filter(c=>c.status===x).length,db.cultures.length)).join('');document.getElementById('recent-list').innerHTML=db.cultures.slice(0,4).map(c=>row('🧪',`${c.id} · ${c.plant}`,`${c.formula} · ${c.note}`,`<div class="mono">${c.score}</div>`)).join('')}
+function renderCultures(){let items=currentFilter==='all'?db.cultures:db.cultures.filter(c=>c.status===currentFilter);document.getElementById('culture-list').innerHTML=items.map(c=>row('🧪',`${c.id} · ${c.plant}`,`${c.part} · ${c.formula} · Day ${c.day}`,`${pill(c.status)}<div class="mono cost">${c.cost}฿</div>`)).join('')||empty('ไม่มีข้อมูล')}
+function renderExperiments(){document.getElementById('experiment-list').innerHTML=db.experiments.map(e=>row('🔬',`${e.code} · ${e.name}`,`${e.project} · ${e.samples} samples · ${e.formula}`,`<div class="mono">${e.survival}%</div>`)).join('')}
+function renderFormulas(){document.getElementById('formula-grid').innerHTML=db.formulas.map(f=>`<div class="formula-card"><div class="formula-name">${f.code} · ${f.name}</div><div class="formula-cost">${f.cost}฿/L · ${f.perBottle}฿/ขวด</div><div class="formula-stats">${pill(f.tag)}${pill(f.survival+'%')}</div></div>`).join('');document.getElementById('ingredient-list').innerHTML=(db.formulas[0].items||'').split(', ').map(i=>row('⚗️',i,'ส่วนประกอบต่อ 1 ลิตร','›')).join('')}
+function renderCosts(){let mat=sum(db.materials,'price'),eq=sum(db.equipment,'price'),fm=sum(db.formulas,'cost'),total=mat+eq+fm;st('cs-mat',baht(mat));st('cs-eq',baht(eq));st('cs-total',baht(total));st('cs-cult',db.cultures.length);st('cs-per',baht(total/db.cultures.length));document.getElementById('cost-chart').innerHTML=barRow('Materials',mat,total)+barRow('Equipment',eq,total)+barRow('Formulas',fm,total);document.getElementById('material-list').innerHTML=db.materials.map(m=>row('🧴',m.name,`${m.category} · ${m.unit} · ใช้ ${m.used}`,`<div class="mono cost">${baht(m.price)}฿</div><div class="row-sub">${m.calc}</div>`)).join('');document.getElementById('equipment-list').innerHTML=db.equipment.map(e=>row('🔧',e.name,`${e.category} · ${e.unit} · อายุ ${e.life}`,`<div class="mono">${baht(e.price)}฿</div><div class="row-sub">${e.calc}</div>`)).join('')}
+function sum(arr,key){return arr.reduce((s,x)=>s+Number(x[key]||0),0)}function st(id,v){document.getElementById(id).textContent=v}function empty(t){return `<div class="card-body" style="text-align:center;color:var(--text3);padding:40px">${t}</div>`}function barRow(lbl,count,total){let pct=total?Math.round(count/total*100):0;return `<div class="bar-row"><div class="bar-lbl">${lbl}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><div class="bar-val">${count}</div></div>`}
+function showPage(p){currentPage=p;document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.tab-item').forEach(x=>x.classList.remove('active'));let idx={dashboard:0,cultures:1,experiments:2,formulas:3,costs:4}[p];if(idx!==undefined)document.querySelectorAll('.tab-item')[idx].classList.add('active');let map={dashboard:['Dashboard','OVERVIEW / ภาพรวม'],cultures:['Cultures','TRACKING / ติดตามขวด'],experiments:['Experiments','RESEARCH / การทดลอง'],formulas:['Formulas','MEDIA / สูตรอาหาร'],costs:['Costs','ANALYSIS / ต้นทุน'],reports:['Reports','PDF / รายงาน'],settings:['Settings','SYSTEM / ระบบ']};document.getElementById('page-title').textContent=map[p][0];document.getElementById('page-subtitle').textContent=map[p][1]}
+function filterCulture(f,el){currentFilter=f;document.querySelectorAll('#culture-segment .seg').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderCultures()}
+function fabAction(){if(currentPage==='costs')openModal('material');else if(currentPage==='formulas')openModal('formula');else if(currentPage==='experiments')openModal('experiment');else openModal('culture')}
+function openModal(type){currentModal=type;let title={culture:'🧪 บันทึก Culture',experiment:'🔬 บันทึกการทดลอง',formula:'⚗️ สูตรอาหาร',material:'🧴 เพิ่มสารเคมี / วัสดุ',equipment:'🔧 เพิ่มอุปกรณ์'}[type]||'เพิ่มข้อมูล';document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').innerHTML=forms[type]||forms.culture;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+const forms={culture:`<div class="form-row"><div class="form-group"><label class="form-label">รหัส</label><input id="f-id" class="form-input" placeholder="C-006"></div><div class="form-group"><label class="form-label">สถานะ</label><select id="f-status" class="form-select"><option>Active</option><option>Shoot</option><option>Rooting</option><option>Browning</option><option>Contamination</option></select></div></div><div class="form-group"><label class="form-label">ชนิดพืช</label><input id="f-plant" class="form-input" placeholder="เช่น กล้วยน้ำว้า"></div><div class="form-group"><label class="form-label">สูตรอาหาร</label><select id="f-formula" class="form-select"><option>F1</option><option>F2</option><option>F3</option><option>F4</option></select></div><div class="form-group"><label class="form-label">หมายเหตุ</label><textarea id="f-note" class="form-textarea"></textarea></div>`,experiment:`<div class="form-group"><label class="form-label">รหัส</label><input id="e-code" class="form-input" placeholder="EXP-004"></div><div class="form-group"><label class="form-label">ชื่อการทดลอง</label><input id="e-name" class="form-input"></div><div class="form-row"><div class="form-group"><label class="form-label">จำนวนตัวอย่าง</label><input id="e-samples" class="form-input" type="number"></div><div class="form-group"><label class="form-label">เป้าหมาย survival</label><input id="e-goal" class="form-input" type="number"></div></div>`,formula:`<div class="form-row"><div class="form-group"><label class="form-label">ชื่อสูตร</label><input id="ff-code" class="form-input" placeholder="F5"></div><div class="form-group"><label class="form-label">pH</label><input id="ff-ph" class="form-input" type="number" step="0.1"></div></div><div class="form-row"><div class="form-group"><label class="form-label">ต้นทุน/ลิตร</label><input id="ff-cost" class="form-input" type="number"></div><div class="form-group"><label class="form-label">ต้นทุน/ขวด</label><input id="ff-bottle" class="form-input" type="number"></div></div><div class="form-group"><label class="form-label">ส่วนประกอบ</label><textarea id="ff-items" class="form-textarea"></textarea></div>`,material:`<div class="form-group"><label class="form-label">ชื่อสารเคมี / วัสดุ</label><input id="m-name" class="form-input" placeholder="เช่น Agar, Sugar, NaOCl"></div><div class="form-group"><label class="form-label">หมวดหมู่</label><select id="m-cat" class="form-select"><option>วุ้น / Solidifying Agent</option><option>น้ำตาล / Carbon Source</option><option>สารฆ่าเชื้อ / Sterilant</option><option>ฮอร์โมนพืช</option><option>ภาชนะ</option><option>วัสดุสิ้นเปลือง</option></select></div><div class="form-row"><div class="form-group"><label class="form-label">ราคาที่ซื้อ (฿)</label><input id="m-price" class="form-input" type="number" placeholder="210"></div><div class="form-group"><label class="form-label">หน่วยซื้อ</label><input id="m-unit" class="form-input" placeholder="500 g"></div></div><div class="form-row"><div class="form-group"><label class="form-label">ปริมาณใช้</label><input id="m-used" class="form-input" placeholder="7 g/L"></div><div class="form-group"><label class="form-label">ต้นทุนคำนวณ</label><input id="m-calc" class="form-input" placeholder="2.94 ฿/L"></div></div><div class="calc-preview"><span>สูตร</span><b>ราคา ÷ ปริมาณรวม × ปริมาณใช้</b></div>`,equipment:`<div class="form-group"><label class="form-label">ชื่ออุปกรณ์</label><input id="eq-name" class="form-input" placeholder="เช่น Autoclave, Clean Bench"></div><div class="form-group"><label class="form-label">หมวดหมู่</label><select id="eq-cat" class="form-select"><option>Sterilization</option><option>Clean Bench</option><option>Lighting</option><option>Temperature Control</option><option>Measurement</option></select></div><div class="form-row"><div class="form-group"><label class="form-label">ราคาอุปกรณ์ (฿)</label><input id="eq-price" class="form-input" type="number" placeholder="3500"></div><div class="form-group"><label class="form-label">หน่วย</label><input id="eq-unit" class="form-input" placeholder="1 เครื่อง"></div></div><div class="form-row"><div class="form-group"><label class="form-label">อายุใช้งาน</label><input id="eq-life" class="form-input" placeholder="36 เดือน"></div><div class="form-group"><label class="form-label">ค่าเสื่อม</label><input id="eq-calc" class="form-input" placeholder="97.22 ฿/เดือน"></div></div><div class="calc-preview"><span>สูตร</span><b>ค่าเสื่อม/เดือน = ราคา ÷ อายุใช้งาน</b></div>`};
+function saveModal(){if(currentModal==='material'){db.materials.push({name:v('m-name')||'วัสดุใหม่',category:v('m-cat'),price:+v('m-price')||0,unit:v('m-unit')||'-',used:v('m-used')||'-',calc:v('m-calc')||'-'});}else if(currentModal==='equipment'){db.equipment.push({name:v('eq-name')||'อุปกรณ์ใหม่',category:v('eq-cat'),price:+v('eq-price')||0,unit:v('eq-unit')||'-',life:v('eq-life')||'-',calc:v('eq-calc')||'-'});}else if(currentModal==='culture'){db.cultures.push({id:v('f-id')||'C-'+String(db.cultures.length+1).padStart(3,'0'),plant:v('f-plant')||'ไม่ระบุ',part:'ยอด',status:v('f-status'),formula:v('f-formula'),exp:'EXP-NEW',day:0,score:80,note:v('f-note')||'-',cost:0});}else if(currentModal==='experiment'){db.experiments.push({code:v('e-code')||'EXP-NEW',name:v('e-name')||'การทดลองใหม่',project:'New Project',formula:'F1',samples:+v('e-samples')||0,survival:0,contam:0,goal:+v('e-goal')||80});}else if(currentModal==='formula'){let cost=+v('ff-cost')||0;db.formulas.push({code:v('ff-code')||'F-New',name:'New Medium',ph:+v('ff-ph')||5.7,cost,perBottle:+v('ff-bottle')||cost/10,survival:0,tag:'Testing',items:v('ff-items')||''});}save();render();closeModal();toast('บันทึกแล้ว')}
+function v(id){let el=document.getElementById(id);return el?el.value.trim():''}
+function toast(t){let el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1600)}
+function toggleDark(){document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'}
+function exportJSON(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tissue-lab-backup.json';a.click();toast('Export แล้ว')}
+function importJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);save();render();toast('Import สำเร็จ')}catch(err){toast('ไฟล์ไม่ถูกต้อง')}};r.readAsText(f)}
+render();
+</script>
+</body>
+</html>
