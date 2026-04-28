@@ -1234,6 +1234,12 @@ body,
   overflow-x:hidden;
 }
 
+
+/* v6.1 contamination stat color */
+.stat-value.danger-value{
+  color:var(--red) !important;
+}
+
 </style>
 </head>
 
@@ -1259,7 +1265,7 @@ body,
       <div class="stats">
         <div class="stat wide"><div class="stat-label">Culture Active</div><div class="stat-value" id="sActive">0</div></div>
         <div class="stat"><div class="stat-label">อัตรารอด</div><div class="stat-value" id="sSurv">0<span class="unit">%</span></div></div>
-        <div class="stat"><div class="stat-label">ปนเปื้อน</div><div class="stat-value" id="sCont">0<span class="unit">%</span></div></div>
+        <div class="stat"><div class="stat-label">ปนเปื้อน</div><div class="stat-value danger-value" id="sCont">0<span class="unit">%</span></div></div>
         <div class="stat"><div class="stat-label">โปรเจกต์</div><div class="stat-value" id="sExp">0</div></div>
         <div class="stat"><div class="stat-label">ต้นทุน/ขวด</div><div class="stat-value" id="sCost">0<span class="unit">฿</span></div></div>
       </div>
