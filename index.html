@@ -1134,6 +1134,106 @@ body{
   }
 }
 
+
+/* v6.0 interaction fix only: keep same UI, restore all button clicks */
+.app{
+  position:relative !important;
+  isolation:isolate !important;
+}
+
+/* Put decorative background behind everything and make it impossible to receive touches */
+.app::before,
+.app::after{
+  pointer-events:none !important;
+  z-index:-2 !important;
+}
+
+.app::after{
+  z-index:-1 !important;
+}
+
+/* Ensure all real UI layers are above decorative layers */
+.header,
+.titlebar,
+.scroll,
+.tabs,
+.fab,
+.modal,
+.toast,
+.pull-refresh{
+  position:relative;
+  z-index:10 !important;
+}
+
+/* Scroll/page content must remain clickable */
+.scroll,
+.page,
+.card,
+.stat,
+.mini-card,
+.row,
+.card-head,
+.card-body{
+  pointer-events:auto !important;
+}
+
+/* All controls explicitly clickable */
+button,
+.btn,
+.icon-btn,
+.tab,
+.small,
+.row,
+input,
+textarea,
+select,
+label,
+.fab{
+  pointer-events:auto !important;
+  touch-action:manipulation;
+}
+
+/* Keep bottom tab and FAB above content but under modal */
+.tabs{
+  z-index:80 !important;
+}
+
+.fab{
+  z-index:90 !important;
+}
+
+/* Modal is highest only when open */
+.modal{
+  pointer-events:none !important;
+  z-index:9999 !important;
+}
+
+.modal.show{
+  pointer-events:auto !important;
+  display:flex !important;
+}
+
+.sheet,
+.sheet *{
+  pointer-events:auto !important;
+}
+
+/* Hide tabs/fab only while modal is open */
+body.modal-open .tabs,
+body.modal-open .fab{
+  display:none !important;
+}
+
+body.modal-open{
+  overflow:hidden !important;
+}
+
+/* Prevent pseudo layers from creating a click-blocking stacking layer */
+body,
+.app{
+  overflow-x:hidden;
+}
+
 </style>
 </head>
 
@@ -1336,7 +1436,39 @@ function renderFormulas(){
 
 function renderCosts(){let mat=sum(db.materials,'price'),eq=sum(db.equipment,'price'),fm=db.formulas.reduce((s,f)=>s+formulaBottle(f),0),total=mat+eq+fm;cMat.textContent=baht(mat);cEq.textContent=baht(eq);cTotal.textContent=baht(total);cCult.textContent=db.cultures.length;cPer.textContent=baht(total/(db.cultures.length||1));costChart.innerHTML=bar('Materials',mat,total)+bar('Equipment',eq,total)+bar('Formulas',fm,total);materialList.innerHTML=db.materials.map((m,i)=>row('🧴',m.name,`${m.category} · Lot ${m.lot||'-'} · ${m.unit} · ใช้ ${m.useQty} ${m.useUnit}`,`<div class="mono cost">${baht(m.price)}฿</div><div class="row-sub">${baht(matCalc(m))} ฿/${m.useUnit}</div>${actions('material',i)}`)).join('');equipmentList.innerHTML=db.equipment.map((e,i)=>row('🔧',e.name,`${e.category} · ${e.unit} · อายุ ${e.lifeMonths} เดือน`,`<div class="mono">${baht(e.price)}฿</div><div class="row-sub">${baht(eqCalc(e))} ฿/เดือน</div>${actions('equipment',i)}`)).join('')}
 function renderReports(){let best=db.formulas.slice().sort((a,b)=>formulaBottle(a)-formulaBottle(b))[0];reportText.innerHTML=`สรุปข้อมูลปัจจุบัน: มี Culture ${db.cultures.length} รายการ, การทดลอง ${db.experiments.length} รายการ, สูตรอาหาร ${db.formulas.length} สูตร<br><br>สูตรต้นทุนต่ำสุด: <b>${best?.code||'-'}</b> = ${baht(formulaBottle(best||{}))} ฿/ขวด<br><br>กด Save PDF ด้านบนเพื่อบันทึกเป็น PDF`}
-function showPage(p){page=p;document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(p).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));let idx={dashboard:0,cultures:1,experiments:2,formulas:3,costs:4;renderCurrentPage()}[p];if(idx!==undefined)document.querySelectorAll('.tab')[idx].classList.add('active');let m={dashboard:['Dashboard','OVERVIEW / ภาพรวม'],cultures:['Cultures','TRACKING / ติดตามขวด'],experiments:['Experiments','RESEARCH / การทดลอง'],formulas:['Formulas','MEDIA / สูตรอาหาร'],costs:['Costs','ANALYSIS / ต้นทุน'],reports:['Reports','PDF / รายงาน'],settings:['Settings','SYSTEM / ระบบ']};pageTitle.textContent=m[p][0];pageSub.textContent=m[p][1]}
+function showPage(p){
+  page=p;
+
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  let el=document.getElementById(p);
+  if(el)el.classList.add('active');
+
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  let idx={dashboard:0,cultures:1,experiments:2,formulas:3,costs:4}[p];
+  if(idx!==undefined){
+    let tabs=document.querySelectorAll('.tab');
+    if(tabs[idx])tabs[idx].classList.add('active');
+  }
+
+  let m={
+    dashboard:['Dashboard','OVERVIEW / ภาพรวม'],
+    cultures:['Cultures','TRACKING / ติดตามขวด'],
+    experiments:['Experiments','RESEARCH / การทดลอง'],
+    formulas:['Formulas','MEDIA / สูตรอาหาร'],
+    costs:['Costs','ANALYSIS / ต้นทุน'],
+    reports:['Reports','PDF / รายงาน'],
+    settings:['Settings','SYSTEM / ระบบ']
+  };
+
+  if(m[p]){
+    pageTitle.textContent=m[p][0];
+    pageSub.textContent=m[p][1];
+  }
+
+  if(typeof renderCurrentPage==='function')renderCurrentPage();
+  else render();
+}
+
 function filterCulture(f,el){filter=f;document.querySelectorAll('#segCult .seg').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderCultures()}
 function fabAction(){if(page==='costs')openModal('material');else if(page==='formulas')openModal('formula');else if(page==='experiments')openModal('experiment');else openModal('culture')}
 const titles={goal:'🎯 เพิ่มเป้าหมาย',culture:'🧪 บันทึก Culture',timeline:'📅 เพิ่ม Timeline',experiment:'🔬 เพิ่มการทดลอง',formula:'⚗️ สูตรอาหาร',material:'🧴 เพิ่มสารเคมี / วัสดุ',equipment:'🔧 เพิ่มอุปกรณ์'};
@@ -1352,7 +1484,7 @@ function openModal(type){
   modalBody.innerHTML=form(type,{});
   modal.classList.add('show');
 
-  if(type==='experiment'){
+  if(type==='experiment' && typeof addExpImageRow==='function'){
     setTimeout(()=>addExpImageRow(),0);
   }
 }
@@ -1376,7 +1508,7 @@ function editItem(type,i){
     },0);
   }
 
-  if(type==='experiment'){
+  if(type==='experiment' && typeof normalizeExpImages==='function' && typeof addExpImageRow==='function'){
     setTimeout(()=>{
       let imgs=normalizeExpImages(d);
       if(!imgs.length)addExpImageRow();
