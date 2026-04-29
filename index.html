@@ -1870,6 +1870,21 @@ body.modal-open .fab{
   border-width:2px !important;
 }
 
+
+/* v7.6 move Cloud Sync to Settings */
+.cloud-status{
+  margin:0 0 12px !important;
+}
+.cloud-actions{
+  padding:0 !important;
+  grid-template-columns:1fr 1fr !important;
+}
+@media(max-width:380px){
+  .cloud-actions{
+    grid-template-columns:1fr !important;
+  }
+}
+
 </style>
 </head>
 
@@ -1901,16 +1916,6 @@ body.modal-open .fab{
       </div>
 
       <div class="card">
-        <div class="cloud-status">
-          <span class="cloud-dot off" id="cloudDot"></span>
-          <span id="cloudStatus">Cloud Sync: ยังไม่ได้เชื่อมต่อ</span>
-        </div>
-        <div class="cloud-actions">
-          <button type="button" class="btn" onclick="enableCloudSync()">เปิด Cloud Sync</button>
-          <button type="button" class="btn ghost" onclick="pushCloudNow()">อัปโหลดขึ้น Cloud</button>
-          <button type="button" class="btn ghost" onclick="pullCloudNow()">โหลดจาก Cloud</button>
-          <button type="button" class="btn ghost" onclick="disableCloudSync()">ปิด Sync</button>
-        </div>
 <div class="card-head"><div class="card-title">&#x1F3AF; &#xE40;&#xE1B;&#xE49;&#xE32;&#xE2B;&#xE21;&#xE32;&#xE22;&#xE01;&#xE32;&#xE23;&#xE17;&#xE14;&#xE25;&#xE2D;&#xE07;</div><button class="btn ghost btn-sm" onclick="openModal('goal')">+ &#xE40;&#xE1E;&#xE34;&#xE48;&#xE21;&#xE40;&#xE1B;&#xE49;&#xE32;&#xE2B;&#xE21;&#xE32;&#xE22;</button></div><div class="card-body" id="goalList"></div></div>
       <div class="card"><div class="card-head"><div class="card-title">&#x1F4C8; &#xE2A;&#xE16;&#xE32;&#xE19;&#xE30; Culture</div><span class="pill green" id="totalCult">0 &#xE02;&#xE27;&#xE14;</span></div><div class="card-body" id="statusChart"></div></div>
       <div class="card"><div class="card-head"><div class="card-title">&#x1F550; &#xE25;&#xE48;&#xE32;&#xE2A;&#xE38;&#xE14;</div><button class="btn ghost btn-sm" onclick="showPage('cultures')">&#xE14;&#xE39;&#xE17;&#xE31;&#xE49;&#xE07;&#xE2B;&#xE21;&#xE14;</button></div><div id="recentList"></div></div>
@@ -1980,6 +1985,23 @@ body.modal-open .fab{
     </section>
 
     <section id="settings" class="page">
+      <div class="card">
+        <div class="card-head"><div class="card-title">☁️ Cloud Sync</div></div>
+        <div class="card-body">
+
+        <div class="cloud-status">
+          <span class="cloud-dot off" id="cloudDot"></span>
+          <span id="cloudStatus">Cloud Sync: ปิดอยู่</span>
+        </div>
+        <div class="cloud-actions">
+          <button type="button" class="btn" onclick="enableCloudSync()">เปิด Cloud Sync</button>
+          <button type="button" class="btn ghost" onclick="pushCloudNow()">อัปโหลดขึ้น Cloud</button>
+          <button type="button" class="btn ghost" onclick="pullCloudNow()">โหลดจาก Cloud</button>
+          <button type="button" class="btn ghost" onclick="disableCloudSync()">ปิด Sync</button>
+        </div>
+
+        </div>
+      </div>
       <div class="card">
         
         <div class="row" onclick="showPage('references')"><div class="row-icon">&#x1F4DA;</div><div class="row-main"><div class="row-title">Research References</div><div class="row-sub">&#xE1A;&#xE31;&#xE19;&#xE17;&#xE36;&#xE01;&#xE25;&#xE34;&#xE07;&#xE01;&#xE4C;&#xE07;&#xE32;&#xE19;&#xE27;&#xE34;&#xE08;&#xE31;&#xE22;&#xE2A;&#xE33;&#xE2B;&#xE23;&#xE31;&#xE1A;&#xE2D;&#xE49;&#xE32;&#xE07;&#xE2D;&#xE34;&#xE07;</div></div>&#x203A;</div>
@@ -2841,7 +2863,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.5'
+      appVersion:'v7.6'
     },{merge:true});
 
     cloudSaving=false;
@@ -2984,7 +3006,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.5'
+      appVersion:'v7.6'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -3518,7 +3540,7 @@ async function pushCloudSilent(){
       updatedAtClient:Date.now(),
       updatedBy:tmcClientId,
       hash:localHash,
-      appVersion:'v7.5'
+      appVersion:'v7.6'
     });
 
     __rtLastLocalHash=localHash;
@@ -3773,7 +3795,7 @@ save=function(){
         updatedBy:clientId,
         updatedAtClient:Date.now(),
         updatedAt:window.__fs.serverTimestamp(),
-        appVersion:'v7.5'
+        appVersion:'v7.6'
       });
 
       lastHash=h;
