@@ -1864,6 +1864,12 @@ body.modal-open .fab{
   }
 }
 
+
+/* v7.5 cloud status prominence */
+.cloud-status{
+  border-width:2px !important;
+}
+
 </style>
 </head>
 
@@ -2835,7 +2841,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.4'
+      appVersion:'v7.5'
     },{merge:true});
 
     cloudSaving=false;
@@ -2978,7 +2984,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.4'
+      appVersion:'v7.5'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -3512,7 +3518,7 @@ async function pushCloudSilent(){
       updatedAtClient:Date.now(),
       updatedBy:tmcClientId,
       hash:localHash,
-      appVersion:'v7.4'
+      appVersion:'v7.5'
     });
 
     __rtLastLocalHash=localHash;
@@ -3631,6 +3637,275 @@ save=function(){
     },650);
   }
 };
+
+
+/* v7.5 authoritative realtime cloud sync */
+(function(){
+  const CLOUD_COLLECTION='tissueLabs';
+  const CLOUD_DOC='defaultLab';
+  const CLOUD_ENABLED_KEY='tissue_cloud_sync_enabled';
+
+  let clientId=localStorage.getItem('tmc_client_id_v75');
+  if(!clientId){
+    clientId='client_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
+    localStorage.setItem('tmc_client_id_v75',clientId);
+  }
+
+  let applyingRemote=false;
+  let pushing=false;
+  let pendingPush=null;
+  let lastHash='';
+  let firstSnapshotReceived=false;
+  let autoStarted=false;
+
+  function hashData(data){
+    try{return JSON.stringify(data)}
+    catch(err){return String(Date.now())}
+  }
+
+  function normalizeData(raw){
+    const x=raw||{};
+    return {
+      goals:Array.isArray(x.goals)?x.goals:[],
+      cultures:Array.isArray(x.cultures)?x.cultures:[],
+      timelines:Array.isArray(x.timelines)?x.timelines:[],
+      experiments:Array.isArray(x.experiments)?x.experiments:[],
+      formulas:Array.isArray(x.formulas)?x.formulas:[],
+      materials:Array.isArray(x.materials)?x.materials:[],
+      equipment:Array.isArray(x.equipment)?x.equipment:[],
+      references:Array.isArray(x.references)?x.references:[]
+    };
+  }
+
+  function currentData(){
+    return normalizeData(db);
+  }
+
+  function saveCacheOnly(){
+    try{
+      localStorage.setItem(KEY,JSON.stringify(db));
+    }catch(err){
+      console.error('local cache save failed',err);
+      toast('ข้อมูลในเครื่องเยอะเกินไป กรุณา Export สำรอง');
+    }
+  }
+
+  function rerenderAfterSync(){
+    requestAnimationFrame(()=>{
+      try{
+        render();
+        if(page==='references'&&typeof renderReferences==='function')renderReferences();
+        if(page==='costs'&&typeof renderCosts==='function')renderCosts();
+        if(page==='formulas'&&typeof renderFormulas==='function')renderFormulas();
+        if(page==='cultures'&&typeof renderCultures==='function')renderCultures();
+      }catch(err){
+        console.error('render after sync failed',err);
+      }
+    });
+  }
+
+  function applyDataFromCloud(remote,reason='realtime'){
+    const normalized=normalizeData(remote);
+    const h=hashData(normalized);
+
+    if(h===lastHash&&reason!=='manual-pull'){
+      setCloudStatus('Cloud Sync: ข้อมูลตรงกันแล้ว','on');
+      return;
+    }
+
+    applyingRemote=true;
+    db={...db,...normalized};
+    saveCacheOnly();
+    applyingRemote=false;
+
+    lastHash=h;
+    rerenderAfterSync();
+
+    if(reason==='manual-pull')setCloudStatus('Cloud Sync: โหลดข้อมูลแล้ว','on');
+    else setCloudStatus('Cloud Sync: อัปเดต realtime แล้ว','on');
+  }
+
+  async function initCloudV75(){
+    if(typeof initCloud!=='function'){
+      setCloudStatus('Cloud Sync: ไม่พบ Firebase function','off');
+      return false;
+    }
+
+    const ok=await initCloud();
+    if(!ok)return false;
+
+    try{
+      if(!cloudDocRef&&cloudDb&&window.__fs){
+        cloudDocRef=window.__fs.doc(cloudDb,CLOUD_COLLECTION,CLOUD_DOC);
+      }
+    }catch(err){
+      console.warn('docRef already exists or cannot reset',err);
+    }
+
+    return !!cloudDocRef;
+  }
+
+  async function writeCloudData(manual=false){
+    const ok=await initCloudV75();
+    if(!ok)return;
+
+    const payload=currentData();
+    const h=hashData(payload);
+
+    if(h===lastHash&&!manual){
+      setCloudStatus('Cloud Sync: ข้อมูลตรงกันแล้ว','on');
+      return;
+    }
+
+    if(pushing){
+      clearTimeout(pendingPush);
+      pendingPush=setTimeout(()=>writeCloudData(manual),900);
+      return;
+    }
+
+    try{
+      pushing=true;
+      setCloudStatus('Cloud Sync: กำลังบันทึก...','on');
+
+      await window.__fs.setDoc(cloudDocRef,{
+        data:payload,
+        hash:h,
+        updatedBy:clientId,
+        updatedAtClient:Date.now(),
+        updatedAt:window.__fs.serverTimestamp(),
+        appVersion:'v7.5'
+      });
+
+      lastHash=h;
+      setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+      if(manual)toast('อัปโหลดขึ้น Cloud แล้ว');
+    }catch(err){
+      console.error('cloud write failed',err);
+      setCloudStatus('Cloud Sync: บันทึกไม่สำเร็จ','off');
+      if(manual)toast('อัปโหลด Cloud ไม่สำเร็จ');
+    }finally{
+      pushing=false;
+    }
+  }
+
+  async function readCloudData(manual=false){
+    const ok=await initCloudV75();
+    if(!ok)return;
+
+    try{
+      const snap=await window.__fs.getDoc(cloudDocRef);
+      if(!snap.exists()){
+        if(manual)toast('ยังไม่มีข้อมูลบน Cloud จะอัปโหลดข้อมูลเครื่องนี้');
+        await writeCloudData(manual);
+        return;
+      }
+
+      const doc=snap.data()||{};
+      applyDataFromCloud(doc.data||{},manual?'manual-pull':'pull');
+      if(manual)toast('โหลดข้อมูลจาก Cloud แล้ว');
+    }catch(err){
+      console.error('cloud read failed',err);
+      setCloudStatus('Cloud Sync: โหลดไม่สำเร็จ','off');
+      if(manual)toast('โหลด Cloud ไม่สำเร็จ');
+    }
+  }
+
+  enableCloudSync=async function(){
+    const ok=await initCloudV75();
+    if(!ok)return;
+
+    cloudEnabled=true;
+    localStorage.setItem(CLOUD_ENABLED_KEY,'1');
+    setCloudStatus('Cloud Sync: กำลังเชื่อม realtime...','on');
+
+    if(cloudUnsubscribe){
+      cloudUnsubscribe();
+      cloudUnsubscribe=null;
+    }
+
+    firstSnapshotReceived=false;
+
+    cloudUnsubscribe=window.__fs.onSnapshot(cloudDocRef,async(snap)=>{
+      if(!snap.exists()){
+        if(!firstSnapshotReceived){
+          firstSnapshotReceived=true;
+          await writeCloudData(false);
+        }
+        return;
+      }
+
+      firstSnapshotReceived=true;
+      const doc=snap.data()||{};
+      const remoteHash=doc.hash||hashData(normalizeData(doc.data||{}));
+
+      if(remoteHash===lastHash){
+        setCloudStatus('Cloud Sync: ข้อมูลตรงกันแล้ว','on');
+        return;
+      }
+
+      /* Important: even if this device wrote it, still apply once to keep cache exact. */
+      applyDataFromCloud(doc.data||{},'realtime');
+    },err=>{
+      console.error('snapshot failed',err);
+      setCloudStatus('Cloud Sync: realtime error','off');
+    });
+
+    toast('เปิด Cloud Sync แล้ว');
+  };
+
+  disableCloudSync=function(){
+    cloudEnabled=false;
+    localStorage.setItem(CLOUD_ENABLED_KEY,'0');
+
+    if(cloudUnsubscribe){
+      cloudUnsubscribe();
+      cloudUnsubscribe=null;
+    }
+
+    setCloudStatus('Cloud Sync: ปิดอยู่','off');
+    toast('ปิด Cloud Sync แล้ว');
+  };
+
+  pushCloudNow=function(){
+    return writeCloudData(true);
+  };
+
+  pullCloudNow=function(){
+    return readCloudData(true);
+  };
+
+  /* Override save: local cache first, then push the whole document to Cloud. */
+  save=function(){
+    saveCacheOnly();
+
+    if(applyingRemote)return;
+
+    if(cloudEnabled){
+      clearTimeout(pendingPush);
+      pendingPush=setTimeout(()=>writeCloudData(false),500);
+    }
+  };
+
+  /* Auto-enable Cloud Sync by default so same link shows same data. */
+  async function autoStartCloudSync(){
+    if(autoStarted)return;
+    autoStarted=true;
+
+    const saved=localStorage.getItem(CLOUD_ENABLED_KEY);
+    if(saved===null)localStorage.setItem(CLOUD_ENABLED_KEY,'1');
+
+    if(localStorage.getItem(CLOUD_ENABLED_KEY)==='1'){
+      await enableCloudSync();
+    }else{
+      setCloudStatus('Cloud Sync: ปิดอยู่','off');
+    }
+  }
+
+  window.addEventListener('online',()=>autoStartCloudSync());
+  window.addEventListener('offline',()=>setCloudStatus('Cloud Sync: ออฟไลน์ ใช้ข้อมูลในเครื่อง','off'));
+
+  setTimeout(autoStartCloudSync,700);
+})();
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
 </script>
