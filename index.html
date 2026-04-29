@@ -2863,7 +2863,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.7'
+      appVersion:'v7.8'
     },{merge:true});
 
     cloudSaving=false;
@@ -3006,7 +3006,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.7'
+      appVersion:'v7.8'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -3540,7 +3540,7 @@ async function pushCloudSilent(){
       updatedAtClient:Date.now(),
       updatedBy:tmcClientId,
       hash:localHash,
-      appVersion:'v7.7'
+      appVersion:'v7.8'
     });
 
     __rtLastLocalHash=localHash;
@@ -3795,7 +3795,7 @@ save=function(){
         updatedBy:clientId,
         updatedAtClient:Date.now(),
         updatedAt:window.__fs.serverTimestamp(),
-        appVersion:'v7.7'
+        appVersion:'v7.8'
       });
 
       lastHash=h;
@@ -4070,6 +4070,135 @@ setTimeout(()=>{
     }catch(err){}
   }
 },300);
+
+
+/* v7.8 references save + cloud overwrite fix */
+let __tmcLastLocalWriteAt=0;
+
+function ensureReferencesArray(){
+  if(!db.references || !Array.isArray(db.references))db.references=[];
+}
+
+ensureReferencesArray();
+
+if(typeof list==='function'){
+  const __oldList_v78=list;
+  list=function(t){
+    if(t==='reference'){
+      ensureReferencesArray();
+      return db.references;
+    }
+    return __oldList_v78(t);
+  };
+}
+
+function readReferenceFormObject(){
+  return {
+    title:v('refTitle')||'Untitled Research',
+    authors:v('refAuthors'),
+    year:v('refYear'),
+    journal:v('refJournal'),
+    url:v('refUrl'),
+    tags:v('refTagsInput'),
+    note:v('refNote')
+  };
+}
+
+if(typeof saveModal==='function'){
+  const __oldSaveModal_v78=saveModal;
+  saveModal=function(){
+    if(modalType==='reference'){
+      ensureReferencesArray();
+
+      const obj=readReferenceFormObject();
+
+      if(editType==='reference' && editIndex!==null && editIndex!==undefined){
+        db.references[editIndex]=obj;
+      }else{
+        db.references.push(obj);
+      }
+
+      __tmcLastLocalWriteAt=Date.now();
+
+      try{
+        localStorage.setItem(KEY,JSON.stringify(db));
+      }catch(err){
+        console.error(err);
+        toast('ข้อมูลเยอะเกินไป กรุณา Export สำรอง');
+      }
+
+      closeModal();
+
+      requestAnimationFrame(()=>{
+        if(typeof renderReferences==='function')renderReferences();
+        render();
+        if(page==='references'&&typeof renderReferences==='function')renderReferences();
+      });
+
+      if(cloudEnabled){
+        clearTimeout(window.__refPushTimer);
+        window.__refPushTimer=setTimeout(()=>{
+          try{
+            if(typeof pushCloudNow==='function')pushCloudNow();
+            else if(typeof pushCloudSilent==='function')pushCloudSilent();
+          }catch(err){
+            console.error('reference cloud push failed',err);
+          }
+        },250);
+      }
+
+      toast(editType?'แก้ไขแล้ว':'บันทึกแล้ว');
+      return;
+    }
+
+    __oldSaveModal_v78();
+  };
+}
+
+/* Make renderReferences always read from db.references */
+if(typeof renderReferences==='function'){
+  const __oldRenderReferences_v78=renderReferences;
+  renderReferences=function(){
+    ensureReferencesArray();
+    __oldRenderReferences_v78();
+  };
+}
+
+/* Patch cloud apply to avoid old snapshot overwriting a just-saved reference */
+if(typeof applyDataFromCloud==='function'){
+  const __oldApplyDataFromCloud_v78=applyDataFromCloud;
+  applyDataFromCloud=function(remote,reason='realtime'){
+    const incomingTime=Number((remote&&remote.__updatedAtClient)||0);
+    const justSaved=Date.now()-__tmcLastLocalWriteAt<2500;
+
+    if(justSaved && reason==='realtime'){
+      const remoteRefs=Array.isArray(remote?.references)?remote.references.length:0;
+      const localRefs=Array.isArray(db.references)?db.references.length:0;
+      if(remoteRefs<localRefs){
+        console.warn('Skipped older cloud snapshot after local reference save');
+        return;
+      }
+    }
+
+    __oldApplyDataFromCloud_v78(remote,reason);
+  };
+}
+
+/* Ensure cloud payload includes a local timestamp inside data too */
+if(typeof cleanDbForCloud==='function'){
+  const __oldCleanDbForCloud_v78=cleanDbForCloud;
+  cleanDbForCloud=function(){
+    const payload=__oldCleanDbForCloud_v78();
+    payload.__updatedAtClient=Date.now();
+    return payload;
+  };
+}
+
+/* One-time repair: if references absent from db object */
+setTimeout(()=>{
+  ensureReferencesArray();
+  if(page==='references'&&typeof renderReferences==='function')renderReferences();
+},200);
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
 </script>
