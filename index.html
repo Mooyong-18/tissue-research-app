@@ -1716,6 +1716,154 @@ select option{
   pointer-events:auto !important;
 }
 
+
+/* v7.3 position polish: FAB, tabs, dashboard spacing */
+:root{
+  --bottom-nav-h:76px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+
+/* make page content not hide behind floating tab + Safari toolbar */
+.scroll{
+  padding-bottom:calc(var(--bottom-nav-h) + var(--safe-bottom) + 92px) !important;
+}
+
+/* Dashboard / card spacing */
+.titlebar{
+  padding-bottom:18px !important;
+}
+.stats{
+  gap:12px !important;
+  margin-bottom:18px !important;
+}
+.card{
+  margin-bottom:18px !important;
+}
+
+/* Bottom tab centered and not too tall */
+.tabs{
+  position:fixed !important;
+  left:14px !important;
+  right:14px !important;
+  bottom:calc(var(--safe-bottom) + 10px) !important;
+  width:auto !important;
+  height:var(--bottom-nav-h) !important;
+  padding:0 8px !important;
+  border-radius:28px !important;
+  z-index:100 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  overflow:hidden !important;
+}
+
+/* Do not show tab when modal is open */
+body.modal-open .tabs{
+  display:none !important;
+}
+
+.tab{
+  flex:1 1 0 !important;
+  min-width:0 !important;
+  height:100% !important;
+  padding:10px 2px 8px !important;
+  justify-content:center !important;
+  align-items:center !important;
+}
+
+/* Floating Add button: fixed to bottom-right above tabs */
+.fab{
+  position:fixed !important;
+  left:auto !important;
+  right:22px !important;
+  bottom:calc(var(--bottom-nav-h) + var(--safe-bottom) + 24px) !important;
+  width:62px !important;
+  height:62px !important;
+  min-width:62px !important;
+  min-height:62px !important;
+  border-radius:22px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  margin:0 !important;
+  transform:none !important;
+  z-index:130 !important;
+  font-size:34px !important;
+  line-height:1 !important;
+  box-shadow:0 14px 34px rgba(4,120,87,.34) !important;
+}
+
+/* Do not show FAB when modal is open */
+body.modal-open .fab{
+  display:none !important;
+}
+
+/* Cloud sync card: keep it above bottom nav and more readable */
+.cloud-status{
+  margin:0 0 12px !important;
+}
+.cloud-actions{
+  padding:0 0 16px !important;
+  gap:10px !important;
+}
+
+/* iPhone / mobile tuning */
+@media(max-width:430px){
+  :root{
+    --bottom-nav-h:72px;
+  }
+
+  .scroll{
+    padding-left:16px !important;
+    padding-right:16px !important;
+    padding-bottom:calc(var(--bottom-nav-h) + var(--safe-bottom) + 96px) !important;
+  }
+
+  .tabs{
+    left:12px !important;
+    right:12px !important;
+    bottom:calc(var(--safe-bottom) + 8px) !important;
+    height:var(--bottom-nav-h) !important;
+    border-radius:26px !important;
+    padding:0 6px !important;
+  }
+
+  .tab{
+    font-size:10px !important;
+    gap:2px !important;
+  }
+
+  .tab i{
+    font-size:21px !important;
+  }
+
+  .fab{
+    right:20px !important;
+    bottom:calc(var(--bottom-nav-h) + var(--safe-bottom) + 20px) !important;
+    width:60px !important;
+    height:60px !important;
+    min-width:60px !important;
+    min-height:60px !important;
+    border-radius:21px !important;
+  }
+
+  .stats{
+    gap:10px !important;
+  }
+}
+
+/* very narrow screens */
+@media(max-width:360px){
+  .tabs{
+    left:8px !important;
+    right:8px !important;
+  }
+
+  .fab{
+    right:16px !important;
+  }
+}
+
 </style>
 </head>
 
@@ -2687,7 +2835,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.2'
+      appVersion:'v7.3'
     },{merge:true});
 
     cloudSaving=false;
@@ -2830,7 +2978,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.2'
+      appVersion:'v7.3'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -3263,6 +3411,22 @@ setTimeout(()=>{
     });
   }
 },0);
+
+
+/* v7.3 runtime position stabilizer */
+function stabilizeFloatingUI(){
+  const fab=document.querySelector('.fab');
+  if(fab){
+    fab.style.left='auto';
+    fab.style.right=window.innerWidth<=430?'20px':'22px';
+    fab.style.transform='none';
+  }
+}
+
+window.addEventListener('resize',stabilizeFloatingUI);
+window.addEventListener('orientationchange',()=>setTimeout(stabilizeFloatingUI,250));
+setTimeout(stabilizeFloatingUI,0);
+setTimeout(stabilizeFloatingUI,500);
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
 </script>
