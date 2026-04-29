@@ -2316,7 +2316,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v6.6'
+      appVersion:'v6.7'
     },{merge:true});
 
     cloudSaving=false;
@@ -2425,6 +2425,170 @@ if(cloudEnabled){
 }else{
   setTimeout(()=>setCloudStatus('Cloud Sync: ปิดอยู่','off'),300);
 }
+
+
+/* v6.7 Cloud Sync loop fix */
+let __cloudLastHash='';
+let __cloudApplyingRemote=false;
+let __cloudManualAction=false;
+
+function cloudHash(obj){
+  try{return JSON.stringify(obj)}
+  catch(err){return String(Date.now())}
+}
+
+function saveLocalOnly(){
+  try{
+    localStorage.setItem(KEY,JSON.stringify(db));
+  }catch(err){
+    console.error(err);
+    toast('ข้อมูล/รูปภาพเยอะเกินไป กรุณา Export สำรองหรือลดรูปภาพ');
+  }
+}
+
+async function pushCloudSilent(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  const payload=cleanDbForCloud();
+  const h=cloudHash(payload);
+  if(h===__cloudLastHash&&!__cloudManualAction)return;
+
+  try{
+    cloudSaving=true;
+    await window.__fs.setDoc(cloudDocRef,{
+      data:payload,
+      updatedAt:window.__fs.serverTimestamp(),
+      appVersion:'v6.7'
+    },{merge:true});
+
+    __cloudLastHash=h;
+    cloudSaving=false;
+    setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+
+    if(__cloudManualAction){
+      toast('อัปโหลดขึ้น Cloud แล้ว');
+    }
+  }catch(err){
+    cloudSaving=false;
+    console.error(err);
+    setCloudStatus('Cloud Sync: อัปโหลดไม่สำเร็จ','off');
+    if(__cloudManualAction)toast('อัปโหลด Cloud ไม่สำเร็จ');
+  }finally{
+    __cloudManualAction=false;
+  }
+}
+
+pushCloudNow=async function(){
+  __cloudManualAction=true;
+  await pushCloudSilent();
+};
+
+pullCloudNow=async function(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  try{
+    const snap=await window.__fs.getDoc(cloudDocRef);
+    if(!snap.exists()){
+      toast('ยังไม่มีข้อมูลบน Cloud');
+      return;
+    }
+
+    const remote=snap.data().data||{};
+    const h=cloudHash(remote);
+
+    __cloudApplyingRemote=true;
+    db={...db,...remote};
+    saveLocalOnly();
+    __cloudApplyingRemote=false;
+
+    __cloudLastHash=h;
+    render();
+    setCloudStatus('Cloud Sync: โหลดข้อมูลแล้ว','on');
+    toast('โหลดข้อมูลจาก Cloud แล้ว');
+  }catch(err){
+    __cloudApplyingRemote=false;
+    console.error(err);
+    setCloudStatus('Cloud Sync: โหลดไม่สำเร็จ','off');
+    toast('โหลด Cloud ไม่สำเร็จ');
+  }
+};
+
+enableCloudSync=async function(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  cloudEnabled=true;
+  localStorage.setItem('tissue_cloud_sync_enabled','1');
+  setCloudStatus('Cloud Sync: เปิดใช้งานแล้ว','on');
+
+  if(cloudUnsubscribe)cloudUnsubscribe();
+
+  cloudUnsubscribe=window.__fs.onSnapshot(cloudDocRef,(snap)=>{
+    if(!snap.exists()){
+      if(!cloudLoadedOnce){
+        __cloudManualAction=false;
+        pushCloudSilent();
+      }
+      return;
+    }
+
+    const remote=snap.data().data||{};
+    const h=cloudHash(remote);
+
+    if(h===__cloudLastHash){
+      setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+      return;
+    }
+
+    if(cloudSaving)return;
+
+    cloudLoadedOnce=true;
+    __cloudLastHash=h;
+    __cloudApplyingRemote=true;
+
+    db={...db,...remote};
+    saveLocalOnly();
+    __cloudApplyingRemote=false;
+
+    render();
+    if(page==='references'&&typeof renderReferences==='function')renderReferences();
+    setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+  },err=>{
+    console.error(err);
+    setCloudStatus('Cloud Sync: realtime error','off');
+  });
+
+  toast('เปิด Cloud Sync แล้ว');
+};
+
+disableCloudSync=function(){
+  cloudEnabled=false;
+  localStorage.setItem('tissue_cloud_sync_enabled','0');
+
+  if(cloudUnsubscribe){
+    cloudUnsubscribe();
+    cloudUnsubscribe=null;
+  }
+
+  setCloudStatus('Cloud Sync: ปิดอยู่','off');
+  toast('ปิด Cloud Sync แล้ว');
+};
+
+save=function(){
+  saveLocalOnly();
+
+  if(__cloudApplyingRemote)return;
+
+  if(cloudEnabled&&cloudReady&&!cloudSaving){
+    clearTimeout(window.__cloudSaveTimer);
+    window.__cloudSaveTimer=setTimeout(()=>{
+      __cloudManualAction=false;
+      pushCloudSilent();
+    },1200);
+  }
+};
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
 </script>
