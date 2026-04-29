@@ -1582,6 +1582,140 @@ input,textarea,select{
   z-index:10001 !important;
 }
 
+
+/* v7.1 Safe Click Mode: stable buttons on iOS/Safari */
+html,body,.app{
+  pointer-events:auto !important;
+}
+
+.app{
+  position:relative !important;
+  isolation:isolate !important;
+}
+
+/* Decorative layers can cause click blocking on iOS. Keep them completely non-interactive. */
+.app::before,
+.app::after{
+  pointer-events:none !important;
+}
+
+/* Put real app content above decorative layers */
+.header,
+.titlebar,
+.scroll,
+.tabs,
+.fab,
+.toast,
+.pull-refresh{
+  position:relative !important;
+  z-index:20 !important;
+}
+
+/* Every card / row / control should accept touch */
+.page,
+.page.active,
+.card,
+.stat,
+.mini-card,
+.row,
+.card-head,
+.card-body,
+.sheet,
+.sheet-head,
+.sheet-body,
+.sheet-foot{
+  pointer-events:auto !important;
+}
+
+button,
+.btn,
+.icon-btn,
+.tab,
+.small,
+.row,
+input,
+textarea,
+select,
+label,
+a,
+.fab{
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+}
+
+input,textarea,select{
+  -webkit-user-select:text !important;
+  user-select:text !important;
+}
+
+/* Modal only receives touch when open */
+.modal{
+  pointer-events:none !important;
+  z-index:9999 !important;
+}
+
+.modal.show{
+  pointer-events:auto !important;
+  display:flex !important;
+}
+
+.modal.show .sheet,
+.modal.show .sheet *{
+  pointer-events:auto !important;
+}
+
+.sheet-foot{
+  position:sticky !important;
+  bottom:0 !important;
+  z-index:10000 !important;
+  background:var(--card) !important;
+}
+
+body.modal-open .tabs,
+body.modal-open .fab{
+  display:none !important;
+}
+
+body:not(.modal-open) .tabs{
+  display:flex !important;
+}
+
+body:not(.modal-open) .fab{
+  display:grid !important;
+}
+
+.tabs{
+  z-index:100 !important;
+}
+
+.fab{
+  z-index:120 !important;
+}
+
+.toast{
+  pointer-events:none !important;
+}
+
+/* Emergency: if an old decorative layer is above content, this prevents it from catching taps */
+body::before,
+body::after{
+  pointer-events:none !important;
+}
+
+
+/* v7.2 native dropdown behavior */
+select,
+.select{
+  pointer-events:auto !important;
+  touch-action:auto !important;
+  -webkit-user-select:auto !important;
+  user-select:auto !important;
+}
+
+select option{
+  pointer-events:auto !important;
+}
+
 </style>
 </head>
 
@@ -1717,7 +1851,7 @@ input,textarea,select{
   <span id="pullText">&#xE14;&#xE36;&#xE07;&#xE40;&#xE1E;&#xE37;&#xE48;&#xE2D;&#xE23;&#xE35;&#xE40;&#xE1F;&#xE23;&#xE0A;</span>
 </div>
 
-<div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="handle"></div><div class="sheet-head"><div class="sheet-title" id="modalTitle">&#xE40;&#xE1E;&#xE34;&#xE48;&#xE21;&#xE02;&#xE49;&#xE2D;&#xE21;&#xE39;&#xE25;</div><button class="btn ghost btn-sm" onclick="closeModal()">&#xE22;&#xE01;&#xE40;&#xE25;&#xE34;&#xE01;</button></div><div class="sheet-body" id="modalBody"></div><div class="sheet-foot"><button type="button" class="btn" style="width:100%" onclick="saveModal()">&#x1F4BE; &#xE1A;&#xE31;&#xE19;&#xE17;&#xE36;&#xE01;</button></div></div></div>
+<div class="modal" id="modal"><div class="sheet"><div class="handle"></div><div class="sheet-head"><div class="sheet-title" id="modalTitle">&#xE40;&#xE1E;&#xE34;&#xE48;&#xE21;&#xE02;&#xE49;&#xE2D;&#xE21;&#xE39;&#xE25;</div><button class="btn ghost btn-sm" onclick="closeModal()">&#xE22;&#xE01;&#xE40;&#xE25;&#xE34;&#xE01;</button></div><div class="sheet-body" id="modalBody"></div><div class="sheet-foot"><button type="button" class="btn" style="width:100%" onclick="saveModal()">&#x1F4BE; &#xE1A;&#xE31;&#xE19;&#xE17;&#xE36;&#xE01;</button></div></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2553,7 +2687,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.0'
+      appVersion:'v7.2'
     },{merge:true});
 
     cloudSaving=false;
@@ -2696,7 +2830,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.0'
+      appVersion:'v7.2'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -2948,10 +3082,33 @@ if(typeof toast==='function'){
 }
 
 
-/* v7.0 delegated action handler: makes all buttons work reliably on mobile */
-function runInlineActionFromElement(el,event){
+
+
+/* v7.2 dropdown/select fix */
+function __tmcIsFormControl(node){
+  if(!node)return false;
+  const tag=(node.tagName||'').toUpperCase();
+  return tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||tag==='OPTION'||node.closest?.('select,input,textarea');
+}
+
+/* Stop Safe Click Router from hijacking native form controls such as dropdowns */
+document.addEventListener('pointerdown',function(e){
+  if(__tmcIsFormControl(e.target)){
+    e.stopPropagation();
+  }
+},true);
+
+document.addEventListener('click',function(e){
+  if(__tmcIsFormControl(e.target)){
+    e.stopPropagation();
+  }
+},true);
+
+/* v7.1 Safe Click Router */
+function __tmcRunAction(el){
   if(!el)return false;
   const code=el.getAttribute('onclick')||'';
+  let m;
 
   try{
     if(code.includes("showPage('dashboard')")){showPage('dashboard');return true;}
@@ -2975,11 +3132,9 @@ function runInlineActionFromElement(el,event){
     if(code.includes('togglePerformanceMode()')){togglePerformanceMode();return true;}
     if(code.includes('compactData()')){compactData();return true;}
     if(code.includes('exportReferences()')){exportReferences();return true;}
-    if(code.includes('resetData()')){resetData();return true;}
     if(code.includes('exportJSON()')){exportJSON();return true;}
-    if(code.includes('document.getElementById')){return false;}
+    if(code.includes('resetData()')){resetData();return true;}
 
-    let m;
     m=code.match(/openModal\('([^']+)'\)/);
     if(m){openModal(m[1]);return true;}
 
@@ -2998,34 +3153,30 @@ function runInlineActionFromElement(el,event){
     m=code.match(/openReference\((\d+)\)/);
     if(m){openReference(Number(m[1]));return true;}
 
-    m=code.match(/removeExpImageRow\(this\)/);
-    if(m){removeExpImageRow(el);return true;}
+    if(code.includes('addExpImageRow()')){addExpImageRow();return true;}
+    if(code.includes('removeExpImageRow(this)')){removeExpImageRow(el);return true;}
 
-    m=code.match(/addExpImageRow\(\)/);
-    if(m){addExpImageRow();return true;}
+    return false;
   }catch(err){
-    console.error('action handler error',err);
+    console.error('button action error',err);
     alert('ปุ่มทำงานผิดพลาด: '+err.message);
     return true;
   }
-
-  return false;
 }
 
-document.addEventListener('click',function(e){
-  const el=e.target.closest('[onclick]');
-  if(!el)return;
-
+function __tmcIsActionElement(el){
+  if(!el)return false;
+  if(!el.hasAttribute('onclick'))return false;
   const code=el.getAttribute('onclick')||'';
-  const shouldHandle=
-    code.includes('saveModal()')||
-    code.includes('closeModal()')||
-    code.includes('fabAction()')||
+  return (
     code.includes('showPage(')||
     code.includes('openModal(')||
     code.includes('editItem(')||
     code.includes('deleteItem(')||
     code.includes('toggleTask(')||
+    code.includes('fabAction()')||
+    code.includes('closeModal()')||
+    code.includes('saveModal()')||
     code.includes('enableCloudSync()')||
     code.includes('pushCloudNow()')||
     code.includes('pullCloudNow()')||
@@ -3033,48 +3184,84 @@ document.addEventListener('click',function(e){
     code.includes('togglePerformanceMode()')||
     code.includes('compactData()')||
     code.includes('exportReferences()')||
+    code.includes('exportJSON()')||
+    code.includes('resetData()')||
     code.includes('copyReference(')||
     code.includes('openReference(')||
-    code.includes('removeExpImageRow(this)')||
-    code.includes('addExpImageRow()');
+    code.includes('addExpImageRow()')||
+    code.includes('removeExpImageRow(this)')
+  );
+}
 
-  if(!shouldHandle)return;
+function __tmcHandleActionEvent(e){
+  if(__tmcIsFormControl(e.target))return;
+  const el=e.target.closest('[onclick]');
+  if(!__tmcIsActionElement(el))return;
 
   e.preventDefault();
   e.stopPropagation();
-  runInlineActionFromElement(el,e);
-},false);
+  if(e.stopImmediatePropagation)e.stopImmediatePropagation();
 
-/* v7.0 robust modal functions */
+  __tmcRunAction(el);
+}
+
+document.addEventListener('click',__tmcHandleActionEvent,true);
+document.addEventListener('pointerup',function(e){
+  if(__tmcIsFormControl(e.target))return;
+  const el=e.target.closest('[onclick]');
+  if(!__tmcIsActionElement(el))return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+
+  __tmcRunAction(el);
+},true);
+
+/* v7.1 Modal state hardening */
+const __tmcOriginalOpenModal=openModal;
+openModal=function(type){
+  document.body.classList.add('modal-open');
+  __tmcOriginalOpenModal(type);
+  requestAnimationFrame(()=>{
+    const modalEl=document.getElementById('modal');
+    if(modalEl)modalEl.classList.add('show');
+    document.querySelectorAll('.sheet-foot .btn').forEach(b=>b.setAttribute('type','button'));
+  });
+};
+
+const __tmcOriginalEditItem=editItem;
+editItem=function(type,i){
+  document.body.classList.add('modal-open');
+  __tmcOriginalEditItem(type,i);
+  requestAnimationFrame(()=>{
+    const modalEl=document.getElementById('modal');
+    if(modalEl)modalEl.classList.add('show');
+    document.querySelectorAll('.sheet-foot .btn').forEach(b=>b.setAttribute('type','button'));
+  });
+};
+
 closeModal=function(){
-  const m=document.getElementById('modal');
-  if(m)m.classList.remove('show');
+  const modalEl=document.getElementById('modal');
+  if(modalEl)modalEl.classList.remove('show');
   document.body.classList.remove('modal-open');
 };
 
-const __v70OpenModal=openModal;
-openModal=function(type){
-  document.body.classList.add('modal-open');
-  __v70OpenModal(type);
-  setTimeout(()=>{
-    const m=document.getElementById('modal');
-    if(m)m.classList.add('show');
-  },0);
-};
-
-const __v70EditItem=editItem;
-editItem=function(type,i){
-  document.body.classList.add('modal-open');
-  __v70EditItem(type,i);
-  setTimeout(()=>{
-    const m=document.getElementById('modal');
-    if(m)m.classList.add('show');
-  },0);
-};
-
-/* v7.0 form safety: save button is always button type */
-setTimeout(()=>{
+/* Make existing static save button safe */
+requestAnimationFrame(()=>{
   document.querySelectorAll('.sheet-foot .btn').forEach(b=>b.setAttribute('type','button'));
+});
+
+
+/* v7.2 safe backdrop close */
+setTimeout(()=>{
+  const modalEl=document.getElementById('modal');
+  if(modalEl&&!modalEl.dataset.backdropBound){
+    modalEl.dataset.backdropBound='1';
+    modalEl.addEventListener('click',function(e){
+      if(e.target===modalEl)closeModal();
+    });
+  }
 },0);
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
