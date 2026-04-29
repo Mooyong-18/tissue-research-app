@@ -1522,6 +1522,66 @@ body:not(.modal-open) .fab{
   contain:layout paint;
 }
 
+
+/* v7.0 final click stability fix */
+html,body,.app{
+  pointer-events:auto !important;
+}
+
+.app::before,
+.app::after{
+  pointer-events:none !important;
+}
+
+/* only modal overlay should capture events when shown */
+.modal{
+  pointer-events:none !important;
+}
+.modal.show{
+  pointer-events:auto !important;
+}
+.modal.show .sheet,
+.modal.show .sheet *{
+  pointer-events:auto !important;
+}
+
+/* real controls always clickable */
+button,
+.btn,
+.icon-btn,
+.tab,
+.small,
+.row,
+input,
+textarea,
+select,
+label,
+a,
+.fab{
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+  cursor:pointer;
+}
+
+/* inputs/selects must remain editable */
+input,textarea,select{
+  cursor:text;
+  -webkit-user-select:text !important;
+  user-select:text !important;
+}
+
+/* toast should never block screen */
+.toast{
+  pointer-events:none !important;
+}
+
+/* ensure modal footer save button is above iOS browser overlay */
+.sheet-foot{
+  position:sticky !important;
+  bottom:0 !important;
+  z-index:10001 !important;
+}
+
 </style>
 </head>
 
@@ -2493,7 +2553,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v6.9'
+      appVersion:'v7.0'
     },{merge:true});
 
     cloudSaving=false;
@@ -2636,7 +2696,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v6.9'
+      appVersion:'v7.0'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -2768,36 +2828,6 @@ save=function(){
 };
 
 
-/* v6.8 click fallback for mobile Safari */
-document.addEventListener('click',function(e){
-  const target=e.target.closest('[onclick]');
-  if(!target)return;
-
-  const code=target.getAttribute('onclick')||'';
-
-  try{
-    if(code.includes("showPage('dashboard')")){e.preventDefault();showPage('dashboard');return;}
-    if(code.includes("showPage('cultures')")){e.preventDefault();showPage('cultures');return;}
-    if(code.includes("showPage('experiments')")){e.preventDefault();showPage('experiments');return;}
-    if(code.includes("showPage('formulas')")){e.preventDefault();showPage('formulas');return;}
-    if(code.includes("showPage('costs')")){e.preventDefault();showPage('costs');return;}
-    if(code.includes("showPage('settings')")){e.preventDefault();showPage('settings');return;}
-    if(code.includes("showPage('reports')")){e.preventDefault();showPage('reports');return;}
-    if(code.includes("showPage('references')")){e.preventDefault();showPage('references');return;}
-
-    if(code.includes('fabAction()')){e.preventDefault();fabAction();return;}
-    if(code.includes('closeModal()')){e.preventDefault();closeModal();return;}
-    if(code.includes('saveModal()')){e.preventDefault();saveModal();return;}
-    if(code.includes('enableCloudSync()')){e.preventDefault();enableCloudSync();return;}
-    if(code.includes('pushCloudNow()')){e.preventDefault();pushCloudNow();return;}
-    if(code.includes('pullCloudNow()')){e.preventDefault();pullCloudNow();return;}
-    if(code.includes('disableCloudSync()')){e.preventDefault();disableCloudSync();return;}
-  }catch(err){
-    console.error('click fallback error',err);
-  }
-},true);
-
-
 /* v6.8 modal state override */
 const __v68OpenModal=openModal;
 openModal=function(type){
@@ -2916,6 +2946,136 @@ if(typeof toast==='function'){
     if(t)t.style.pointerEvents='none';
   };
 }
+
+
+/* v7.0 delegated action handler: makes all buttons work reliably on mobile */
+function runInlineActionFromElement(el,event){
+  if(!el)return false;
+  const code=el.getAttribute('onclick')||'';
+
+  try{
+    if(code.includes("showPage('dashboard')")){showPage('dashboard');return true;}
+    if(code.includes("showPage('cultures')")){showPage('cultures');return true;}
+    if(code.includes("showPage('experiments')")){showPage('experiments');return true;}
+    if(code.includes("showPage('formulas')")){showPage('formulas');return true;}
+    if(code.includes("showPage('costs')")){showPage('costs');return true;}
+    if(code.includes("showPage('settings')")){showPage('settings');return true;}
+    if(code.includes("showPage('reports')")){showPage('reports');return true;}
+    if(code.includes("showPage('references')")){showPage('references');return true;}
+
+    if(code.includes('fabAction()')){fabAction();return true;}
+    if(code.includes('closeModal()')){closeModal();return true;}
+    if(code.includes('saveModal()')){saveModal();return true;}
+
+    if(code.includes('enableCloudSync()')){enableCloudSync();return true;}
+    if(code.includes('pushCloudNow()')){pushCloudNow();return true;}
+    if(code.includes('pullCloudNow()')){pullCloudNow();return true;}
+    if(code.includes('disableCloudSync()')){disableCloudSync();return true;}
+
+    if(code.includes('togglePerformanceMode()')){togglePerformanceMode();return true;}
+    if(code.includes('compactData()')){compactData();return true;}
+    if(code.includes('exportReferences()')){exportReferences();return true;}
+    if(code.includes('resetData()')){resetData();return true;}
+    if(code.includes('exportJSON()')){exportJSON();return true;}
+    if(code.includes('document.getElementById')){return false;}
+
+    let m;
+    m=code.match(/openModal\('([^']+)'\)/);
+    if(m){openModal(m[1]);return true;}
+
+    m=code.match(/editItem\('([^']+)',\s*(\d+)\)/);
+    if(m){editItem(m[1],Number(m[2]));return true;}
+
+    m=code.match(/deleteItem\('([^']+)',\s*(\d+)\)/);
+    if(m){deleteItem(m[1],Number(m[2]));return true;}
+
+    m=code.match(/toggleTask\((\d+),\s*(\d+)\)/);
+    if(m){toggleTask(Number(m[1]),Number(m[2]));return true;}
+
+    m=code.match(/copyReference\((\d+)\)/);
+    if(m){copyReference(Number(m[1]));return true;}
+
+    m=code.match(/openReference\((\d+)\)/);
+    if(m){openReference(Number(m[1]));return true;}
+
+    m=code.match(/removeExpImageRow\(this\)/);
+    if(m){removeExpImageRow(el);return true;}
+
+    m=code.match(/addExpImageRow\(\)/);
+    if(m){addExpImageRow();return true;}
+  }catch(err){
+    console.error('action handler error',err);
+    alert('ปุ่มทำงานผิดพลาด: '+err.message);
+    return true;
+  }
+
+  return false;
+}
+
+document.addEventListener('click',function(e){
+  const el=e.target.closest('[onclick]');
+  if(!el)return;
+
+  const code=el.getAttribute('onclick')||'';
+  const shouldHandle=
+    code.includes('saveModal()')||
+    code.includes('closeModal()')||
+    code.includes('fabAction()')||
+    code.includes('showPage(')||
+    code.includes('openModal(')||
+    code.includes('editItem(')||
+    code.includes('deleteItem(')||
+    code.includes('toggleTask(')||
+    code.includes('enableCloudSync()')||
+    code.includes('pushCloudNow()')||
+    code.includes('pullCloudNow()')||
+    code.includes('disableCloudSync()')||
+    code.includes('togglePerformanceMode()')||
+    code.includes('compactData()')||
+    code.includes('exportReferences()')||
+    code.includes('copyReference(')||
+    code.includes('openReference(')||
+    code.includes('removeExpImageRow(this)')||
+    code.includes('addExpImageRow()');
+
+  if(!shouldHandle)return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  runInlineActionFromElement(el,e);
+},false);
+
+/* v7.0 robust modal functions */
+closeModal=function(){
+  const m=document.getElementById('modal');
+  if(m)m.classList.remove('show');
+  document.body.classList.remove('modal-open');
+};
+
+const __v70OpenModal=openModal;
+openModal=function(type){
+  document.body.classList.add('modal-open');
+  __v70OpenModal(type);
+  setTimeout(()=>{
+    const m=document.getElementById('modal');
+    if(m)m.classList.add('show');
+  },0);
+};
+
+const __v70EditItem=editItem;
+editItem=function(type,i){
+  document.body.classList.add('modal-open');
+  __v70EditItem(type,i);
+  setTimeout(()=>{
+    const m=document.getElementById('modal');
+    if(m)m.classList.add('show');
+  },0);
+};
+
+/* v7.0 form safety: save button is always button type */
+setTimeout(()=>{
+  document.querySelectorAll('.sheet-foot .btn').forEach(b=>b.setAttribute('type','button'));
+},0);
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
 </script>
