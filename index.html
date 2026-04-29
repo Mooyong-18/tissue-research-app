@@ -2863,7 +2863,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.6'
+      appVersion:'v7.7'
     },{merge:true});
 
     cloudSaving=false;
@@ -3006,7 +3006,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.6'
+      appVersion:'v7.7'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -3540,7 +3540,7 @@ async function pushCloudSilent(){
       updatedAtClient:Date.now(),
       updatedBy:tmcClientId,
       hash:localHash,
-      appVersion:'v7.6'
+      appVersion:'v7.7'
     });
 
     __rtLastLocalHash=localHash;
@@ -3795,7 +3795,7 @@ save=function(){
         updatedBy:clientId,
         updatedAtClient:Date.now(),
         updatedAt:window.__fs.serverTimestamp(),
-        appVersion:'v7.6'
+        appVersion:'v7.7'
       });
 
       lastHash=h;
@@ -3928,6 +3928,148 @@ save=function(){
 
   setTimeout(autoStartCloudSync,700);
 })();
+
+
+/* v7.7 duplicate save fix */
+let __tmcLastActionCode='';
+let __tmcLastActionAt=0;
+let __tmcSaveLock=false;
+
+function __tmcActionAllowed(code){
+  const now=Date.now();
+  if(code===__tmcLastActionCode && now-__tmcLastActionAt<650){
+    return false;
+  }
+  __tmcLastActionCode=code;
+  __tmcLastActionAt=now;
+  return true;
+}
+
+/* Override router runner with debounce */
+if(typeof __tmcRunAction==='function'){
+  const __oldTmcRunAction=__tmcRunAction;
+  __tmcRunAction=function(el){
+    if(!el)return false;
+    const code=el.getAttribute('onclick')||'';
+    if(!__tmcActionAllowed(code))return true;
+    return __oldTmcRunAction(el);
+  };
+}
+
+/* Save button guard: prevents double insert from pointerup+click */
+if(typeof saveModal==='function'){
+  const __oldSaveModal_v77=saveModal;
+  saveModal=function(){
+    if(__tmcSaveLock){
+      console.warn('Duplicate save prevented');
+      return;
+    }
+    __tmcSaveLock=true;
+    try{
+      __oldSaveModal_v77();
+    }finally{
+      setTimeout(()=>{__tmcSaveLock=false;},900);
+    }
+  };
+}
+
+/* Reset save lock when modal opens/closes */
+if(typeof openModal==='function'){
+  const __oldOpenModal_v77=openModal;
+  openModal=function(type){
+    __tmcSaveLock=false;
+    __oldOpenModal_v77(type);
+  };
+}
+if(typeof editItem==='function'){
+  const __oldEditItem_v77=editItem;
+  editItem=function(type,i){
+    __tmcSaveLock=false;
+    __oldEditItem_v77(type,i);
+  };
+}
+if(typeof closeModal==='function'){
+  const __oldCloseModal_v77=closeModal;
+  closeModal=function(){
+    __tmcSaveLock=false;
+    __oldCloseModal_v77();
+  };
+}
+
+/* Dedupe helpers for costs page */
+function __dedupeArrayByKey(arr,keyFn){
+  const seen=new Set();
+  const out=[];
+  for(const item of (arr||[])){
+    const key=keyFn(item);
+    if(seen.has(key))continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
+function dedupeCostData(){
+  let changed=false;
+
+  const oldM=(db.materials||[]).length;
+  db.materials=__dedupeArrayByKey(db.materials||[],m=>[
+    'm',
+    m.name||'',
+    m.category||'',
+    m.lot||'',
+    m.price||0,
+    m.unit||'',
+    m.totalQty||0,
+    m.useQty||0,
+    m.useUnit||''
+  ].join('|'));
+  if(db.materials.length!==oldM)changed=true;
+
+  const oldE=(db.equipment||[]).length;
+  db.equipment=__dedupeArrayByKey(db.equipment||[],e=>[
+    'e',
+    e.name||'',
+    e.category||'',
+    e.price||0,
+    e.unit||'',
+    e.lifeMonths||0
+  ].join('|'));
+  if(db.equipment.length!==oldE)changed=true;
+
+  return changed;
+}
+
+/* Clean duplicates before saving and rendering */
+if(typeof save==='function'){
+  const __oldSave_v77=save;
+  save=function(){
+    dedupeCostData();
+    __oldSave_v77();
+  };
+}
+
+if(typeof renderCosts==='function'){
+  const __oldRenderCosts_v77=renderCosts;
+  renderCosts=function(){
+    if(dedupeCostData()){
+      try{
+        localStorage.setItem(KEY,JSON.stringify(db));
+      }catch(err){}
+    }
+    __oldRenderCosts_v77();
+  };
+}
+
+/* Clean once at startup */
+setTimeout(()=>{
+  if(dedupeCostData()){
+    try{
+      localStorage.setItem(KEY,JSON.stringify(db));
+      render();
+    }catch(err){}
+  }
+},300);
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
 </script>
