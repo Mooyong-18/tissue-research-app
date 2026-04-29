@@ -2835,7 +2835,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.3'
+      appVersion:'v7.4'
     },{merge:true});
 
     cloudSaving=false;
@@ -2978,7 +2978,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v7.3'
+      appVersion:'v7.4'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -3427,6 +3427,210 @@ window.addEventListener('resize',stabilizeFloatingUI);
 window.addEventListener('orientationchange',()=>setTimeout(stabilizeFloatingUI,250));
 setTimeout(stabilizeFloatingUI,0);
 setTimeout(stabilizeFloatingUI,500);
+
+
+/* v7.4 realtime cross-device sync fix */
+let tmcClientId=localStorage.getItem('tmc_client_id');
+if(!tmcClientId){
+  tmcClientId='client_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9);
+  localStorage.setItem('tmc_client_id',tmcClientId);
+}
+
+let __rtLastRemoteHash='';
+let __rtLastLocalHash='';
+let __rtApplyingRemote=false;
+let __rtPushTimer=null;
+let __rtSnapshotReady=false;
+
+function stableHash(obj){
+  try{return JSON.stringify(obj)}
+  catch(err){return String(Date.now())}
+}
+
+function normalizeCloudData(raw){
+  const data=raw||{};
+  return {
+    goals:Array.isArray(data.goals)?data.goals:[],
+    cultures:Array.isArray(data.cultures)?data.cultures:[],
+    timelines:Array.isArray(data.timelines)?data.timelines:[],
+    experiments:Array.isArray(data.experiments)?data.experiments:[],
+    formulas:Array.isArray(data.formulas)?data.formulas:[],
+    materials:Array.isArray(data.materials)?data.materials:[],
+    equipment:Array.isArray(data.equipment)?data.equipment:[],
+    references:Array.isArray(data.references)?data.references:[]
+  };
+}
+
+function applyRemoteData(remoteData,source='snapshot'){
+  const normalized=normalizeCloudData(remoteData);
+  const remoteHash=stableHash(normalized);
+
+  if(remoteHash===__rtLastLocalHash&&source==='snapshot'){
+    setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+    return;
+  }
+
+  __rtApplyingRemote=true;
+  db={...db,...normalized};
+  saveLocalOnly();
+  __rtApplyingRemote=false;
+
+  __rtLastRemoteHash=remoteHash;
+  __rtLastLocalHash=remoteHash;
+
+  requestAnimationFrame(()=>{
+    render();
+    if(page==='references'&&typeof renderReferences==='function')renderReferences();
+    if(page==='costs'&&typeof renderCosts==='function')renderCosts();
+    if(page==='formulas'&&typeof renderFormulas==='function')renderFormulas();
+  });
+
+  setCloudStatus(source==='pull'?'Cloud Sync: โหลดข้อมูลแล้ว':'Cloud Sync: realtime updated','on');
+}
+
+function cleanDbForCloud(){
+  return normalizeCloudData(db);
+}
+
+async function pushCloudSilent(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  const payload=cleanDbForCloud();
+  const localHash=stableHash(payload);
+
+  if(localHash===__rtLastRemoteHash&&!__cloudManualAction){
+    setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+    return;
+  }
+
+  try{
+    cloudSaving=true;
+    await window.__fs.setDoc(cloudDocRef,{
+      data:payload,
+      updatedAt:window.__fs.serverTimestamp(),
+      updatedAtClient:Date.now(),
+      updatedBy:tmcClientId,
+      hash:localHash,
+      appVersion:'v7.4'
+    });
+
+    __rtLastLocalHash=localHash;
+    __rtLastRemoteHash=localHash;
+    cloudSaving=false;
+    setCloudStatus('Cloud Sync: อัปโหลดแล้ว','on');
+
+    if(__cloudManualAction)toast('อัปโหลดขึ้น Cloud แล้ว');
+  }catch(err){
+    cloudSaving=false;
+    console.error(err);
+    setCloudStatus('Cloud Sync: อัปโหลดไม่สำเร็จ','off');
+    if(__cloudManualAction)toast('อัปโหลด Cloud ไม่สำเร็จ');
+  }finally{
+    __cloudManualAction=false;
+  }
+}
+
+pushCloudNow=async function(){
+  __cloudManualAction=true;
+  await pushCloudSilent();
+};
+
+pullCloudNow=async function(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  try{
+    const snap=await window.__fs.getDoc(cloudDocRef);
+    if(!snap.exists()){
+      toast('ยังไม่มีข้อมูลบน Cloud');
+      return;
+    }
+
+    const remote=snap.data().data||{};
+    applyRemoteData(remote,'pull');
+    toast('โหลดข้อมูลจาก Cloud แล้ว');
+  }catch(err){
+    console.error(err);
+    setCloudStatus('Cloud Sync: โหลดไม่สำเร็จ','off');
+    toast('โหลด Cloud ไม่สำเร็จ');
+  }
+};
+
+enableCloudSync=async function(){
+  const ok=await initCloud();
+  if(!ok)return;
+
+  cloudEnabled=true;
+  localStorage.setItem('tissue_cloud_sync_enabled','1');
+  setCloudStatus('Cloud Sync: กำลังฟังข้อมูล realtime...','on');
+
+  if(cloudUnsubscribe)cloudUnsubscribe();
+
+  cloudUnsubscribe=window.__fs.onSnapshot(cloudDocRef,(snap)=>{
+    if(!snap.exists()){
+      if(!__rtSnapshotReady){
+        __cloudManualAction=false;
+        pushCloudSilent();
+      }
+      __rtSnapshotReady=true;
+      return;
+    }
+
+    __rtSnapshotReady=true;
+    const doc=snap.data()||{};
+    const remote=doc.data||{};
+    const remoteHash=doc.hash||stableHash(normalizeCloudData(remote));
+
+    if(remoteHash===__rtLastRemoteHash){
+      setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+      return;
+    }
+
+    if(doc.updatedBy===tmcClientId&&remoteHash===__rtLastLocalHash){
+      __rtLastRemoteHash=remoteHash;
+      setCloudStatus('Cloud Sync: ข้อมูลล่าสุด','on');
+      return;
+    }
+
+    applyRemoteData(remote,'snapshot');
+  },err=>{
+    console.error(err);
+    setCloudStatus('Cloud Sync: realtime error','off');
+  });
+
+  toast('เปิด Cloud Sync แล้ว');
+};
+
+disableCloudSync=function(){
+  cloudEnabled=false;
+  localStorage.setItem('tissue_cloud_sync_enabled','0');
+
+  if(cloudUnsubscribe){
+    cloudUnsubscribe();
+    cloudUnsubscribe=null;
+  }
+
+  setCloudStatus('Cloud Sync: ปิดอยู่','off');
+  toast('ปิด Cloud Sync แล้ว');
+};
+
+save=function(){
+  saveLocalOnly();
+
+  if(__rtApplyingRemote)return;
+
+  const localPayload=cleanDbForCloud();
+  __rtLastLocalHash=stableHash(localPayload);
+
+  if(cloudEnabled&&cloudReady&&!cloudSaving){
+    clearTimeout(__rtPushTimer);
+    __rtPushTimer=setTimeout(()=>{
+      __cloudManualAction=false;
+      pushCloudSilent();
+    },650);
+  }
+};
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
 </script>
