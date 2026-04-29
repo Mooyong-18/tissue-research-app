@@ -1345,6 +1345,121 @@ body,
   padding:0 18px 16px;
 }
 
+
+/* v6.8 interaction fix: prevent background/overlay from blocking all buttons */
+html,
+body{
+  pointer-events:auto !important;
+}
+
+.app{
+  position:relative !important;
+  isolation:isolate !important;
+  pointer-events:auto !important;
+}
+
+/* Decorative background layers must stay behind content and never receive touches */
+.app::before,
+.app::after{
+  pointer-events:none !important;
+  z-index:-2 !important;
+}
+
+.app::after{
+  z-index:-1 !important;
+}
+
+/* Main UI layers must be above decorative layers */
+.header,
+.titlebar,
+.scroll,
+.tabs,
+.fab,
+.toast,
+.pull-refresh{
+  position:relative !important;
+  z-index:20 !important;
+  pointer-events:auto !important;
+}
+
+.scroll,
+.page,
+.page.active,
+.card,
+.stat,
+.mini-card,
+.row,
+.card-head,
+.card-body,
+.sheet,
+.sheet-body,
+.sheet-foot{
+  pointer-events:auto !important;
+}
+
+/* Controls */
+button,
+.btn,
+.icon-btn,
+.tab,
+.small,
+.row,
+input,
+textarea,
+select,
+label,
+a,
+.fab{
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+  user-select:auto !important;
+  -webkit-user-select:auto !important;
+}
+
+/* Modal should not block page unless open */
+.modal{
+  pointer-events:none !important;
+  z-index:9999 !important;
+}
+
+.modal.show{
+  pointer-events:auto !important;
+  display:flex !important;
+}
+
+.modal.show .sheet,
+.modal.show .sheet *{
+  pointer-events:auto !important;
+}
+
+/* Hide navigation only while modal open */
+body.modal-open .tabs,
+body.modal-open .fab{
+  display:none !important;
+}
+
+body:not(.modal-open) .tabs{
+  display:flex !important;
+}
+
+body:not(.modal-open) .fab{
+  display:grid !important;
+}
+
+/* Keep FAB and tabs clickable */
+.tabs{
+  z-index:100 !important;
+}
+
+.fab{
+  z-index:120 !important;
+}
+
+/* Toast must never block clicks */
+.toast{
+  pointer-events:none !important;
+}
+
 </style>
 </head>
 
@@ -2316,7 +2431,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v6.7'
+      appVersion:'v6.8'
     },{merge:true});
 
     cloudSaving=false;
@@ -2459,7 +2574,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v6.7'
+      appVersion:'v6.8'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -2588,6 +2703,56 @@ save=function(){
       pushCloudSilent();
     },1200);
   }
+};
+
+
+/* v6.8 click fallback for mobile Safari */
+document.addEventListener('click',function(e){
+  const target=e.target.closest('[onclick]');
+  if(!target)return;
+
+  const code=target.getAttribute('onclick')||'';
+
+  try{
+    if(code.includes("showPage('dashboard')")){e.preventDefault();showPage('dashboard');return;}
+    if(code.includes("showPage('cultures')")){e.preventDefault();showPage('cultures');return;}
+    if(code.includes("showPage('experiments')")){e.preventDefault();showPage('experiments');return;}
+    if(code.includes("showPage('formulas')")){e.preventDefault();showPage('formulas');return;}
+    if(code.includes("showPage('costs')")){e.preventDefault();showPage('costs');return;}
+    if(code.includes("showPage('settings')")){e.preventDefault();showPage('settings');return;}
+    if(code.includes("showPage('reports')")){e.preventDefault();showPage('reports');return;}
+    if(code.includes("showPage('references')")){e.preventDefault();showPage('references');return;}
+
+    if(code.includes('fabAction()')){e.preventDefault();fabAction();return;}
+    if(code.includes('closeModal()')){e.preventDefault();closeModal();return;}
+    if(code.includes('saveModal()')){e.preventDefault();saveModal();return;}
+    if(code.includes('enableCloudSync()')){e.preventDefault();enableCloudSync();return;}
+    if(code.includes('pushCloudNow()')){e.preventDefault();pushCloudNow();return;}
+    if(code.includes('pullCloudNow()')){e.preventDefault();pullCloudNow();return;}
+    if(code.includes('disableCloudSync()')){e.preventDefault();disableCloudSync();return;}
+  }catch(err){
+    console.error('click fallback error',err);
+  }
+},true);
+
+
+/* v6.8 modal state override */
+const __v68OpenModal=openModal;
+openModal=function(type){
+  document.body.classList.add('modal-open');
+  __v68OpenModal(type);
+};
+
+const __v68EditItem=editItem;
+editItem=function(type,i){
+  document.body.classList.add('modal-open');
+  __v68EditItem(type,i);
+};
+
+closeModal=function(){
+  const m=document.getElementById('modal');
+  if(m)m.classList.remove('show');
+  document.body.classList.remove('modal-open');
 };
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
