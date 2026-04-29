@@ -1460,6 +1460,68 @@ body:not(.modal-open) .fab{
   pointer-events:none !important;
 }
 
+
+/* v6.9 stability + speed improvements */
+:root{
+  --shadow-lite:0 1px 3px rgba(0,0,0,.055);
+}
+
+/* Lighter rendering on mobile */
+@media(max-width:540px){
+  .card,.stat,.mini-card,.icon-btn{
+    box-shadow:var(--shadow-lite) !important;
+  }
+
+  .app::before{
+    opacity:.10 !important;
+    filter:contrast(1.02) saturate(1.0) brightness(1.02) !important;
+  }
+}
+
+/* Optional speed mode: can be toggled in Settings */
+.perf-mode .app::before{
+  display:none !important;
+}
+
+.perf-mode .card,
+.perf-mode .stat,
+.perf-mode .mini-card,
+.perf-mode .icon-btn,
+.perf-mode .tabs{
+  box-shadow:none !important;
+}
+
+.perf-mode *{
+  transition:none !important;
+  animation:none !important;
+}
+
+/* Reduce off-screen rendering work */
+.card,
+.stat,
+.mini-card,
+.row{
+  content-visibility:auto;
+  contain-intrinsic-size:150px;
+}
+
+.page:not(.active){
+  content-visibility:hidden;
+}
+
+.scroll{
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+.preview img,
+.tl-img,
+.xy-img,
+.logo-icon img{
+  content-visibility:auto;
+  contain:layout paint;
+}
+
 </style>
 </head>
 
@@ -1956,7 +2018,7 @@ function readExpImage(e,input){
   const img=card.querySelector('.xy-img');
   const hidden=card.querySelector('.exp-src');
 
-  resizeImageFile(file,720,720,.68).then(dataUrl=>{
+  resizeImageFile(file,640,640,.64).then(dataUrl=>{
     hidden.value=dataUrl;
     img.src=dataUrl;
     img.loading='lazy';
@@ -2051,7 +2113,7 @@ function readImage(e){
   let file=e.target.files[0];
   if(!file)return;
 
-  resizeImageFile(file,720,720,.68).then(dataUrl=>{
+  resizeImageFile(file,640,640,.64).then(dataUrl=>{
     tempImage=dataUrl;
     let p=document.getElementById('imgPreview');
     if(p)p.innerHTML=`<img src="${tempImage}" loading="lazy">`;
@@ -2431,7 +2493,7 @@ async function pushCloudNow(){
     await window.__fs.setDoc(cloudDocRef,{
       data:cleanDbForCloud(),
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v6.8'
+      appVersion:'v6.9'
     },{merge:true});
 
     cloudSaving=false;
@@ -2574,7 +2636,7 @@ async function pushCloudSilent(){
     await window.__fs.setDoc(cloudDocRef,{
       data:payload,
       updatedAt:window.__fs.serverTimestamp(),
-      appVersion:'v6.8'
+      appVersion:'v6.9'
     },{merge:true});
 
     __cloudLastHash=h;
@@ -2754,6 +2816,106 @@ closeModal=function(){
   if(m)m.classList.remove('show');
   document.body.classList.remove('modal-open');
 };
+
+
+/* v6.9 runtime stability + speed patch */
+function renderCurrentPage(){
+  if(page==='dashboard')renderDashboard();
+  else if(page==='cultures')renderCultures();
+  else if(page==='experiments')renderExperiments();
+  else if(page==='formulas')renderFormulas();
+  else if(page==='costs')renderCosts();
+  else if(page==='reports')renderReports();
+  else if(page==='references'&&typeof renderReferences==='function')renderReferences();
+}
+
+const __v69RenderAll=render;
+render=function(){
+  try{
+    renderDashboard();
+    if(page!=='dashboard')renderCurrentPage();
+  }catch(err){
+    console.error('render error',err);
+  }
+};
+
+const __v69ShowPage=showPage;
+showPage=function(p){
+  __v69ShowPage(p);
+  requestAnimationFrame(()=>{
+    try{renderCurrentPage();}catch(err){console.error(err);}
+  });
+};
+
+function compactData(){
+  try{
+    db.timelines=(db.timelines||[]).slice(-250);
+    db.experiments=(db.experiments||[]).map(e=>{
+      let imgs=Array.isArray(e.images)?e.images.slice(-24):[];
+      return {...e,images:imgs,image:imgs[0]?.src||e.image||''};
+    });
+    saveLocalOnly?saveLocalOnly():save();
+    render();
+    toast('จัดข้อมูลให้เบาขึ้นแล้ว');
+  }catch(err){
+    console.error(err);
+    toast('จัดข้อมูลไม่สำเร็จ');
+  }
+}
+
+function togglePerformanceMode(){
+  document.documentElement.classList.toggle('perf-mode');
+  localStorage.setItem('tissue_perf_mode',document.documentElement.classList.contains('perf-mode')?'1':'0');
+  toast(document.documentElement.classList.contains('perf-mode')?'เปิดโหมดเร็ว':'ปิดโหมดเร็ว');
+}
+
+if(localStorage.getItem('tissue_perf_mode')==='1'){
+  document.documentElement.classList.add('perf-mode');
+}
+
+/* Resize newly uploaded images smaller to reduce localStorage lag */
+if(typeof resizeImageFile==='function'){
+  const __v69ResizeImageFile=resizeImageFile;
+  resizeImageFile=function(file,maxW=640,maxH=640,quality=.64){
+    return __v69ResizeImageFile(file,640,640,.64);
+  };
+}
+
+/* Debounced rendering after save to reduce UI freeze */
+let __v69RenderTimer=null;
+function scheduleRender(){
+  clearTimeout(__v69RenderTimer);
+  __v69RenderTimer=setTimeout(()=>{
+    requestAnimationFrame(()=>render());
+  },80);
+}
+
+/* Safer Cloud auto-save: less frequent and no repeated toast */
+if(typeof pushCloudSilent==='function'){
+  const __v69PushCloudSilent=pushCloudSilent;
+  pushCloudSilent=async function(){
+    clearTimeout(window.__cloudHardDelay);
+    return new Promise(resolve=>{
+      window.__cloudHardDelay=setTimeout(async()=>{
+        try{
+          await __v69PushCloudSilent();
+        }finally{
+          resolve();
+        }
+      },400);
+    });
+  };
+}
+
+/* Keep toast short and non-blocking */
+if(typeof toast==='function'){
+  const __v69Toast=toast;
+  toast=function(msg){
+    __v69Toast(msg);
+    const t=document.getElementById('toast');
+    if(t)t.style.pointerEvents='none';
+  };
+}
 
 try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E02\u0E49\u0E2D\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14: '+err.message);}
 </script>
