@@ -5020,3 +5020,759 @@ try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E0
 </script>
 </body>
 </html>
+
+<script>
+/* =========================================================
+   TMC PATCH v8.3
+   แก้ 2 จุด:
+   1) ต้นทุนอัตโนมัติ fCostPreview อัปเดตแบบ realtime
+   2) หน้าเพิ่มการทดลอง: ตาราง X/Y แบบเพิ่ม-ลบ-แก้ไขได้
+      และแต่ละช่องใส่ข้อความ + รูปภาพได้
+========================================================= */
+
+/* ---------- Helper ---------- */
+function tmcEsc(s){
+  return String(s ?? '').replace(/[&<>"']/g, m => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[m]));
+}
+
+function tmcBaht(n){
+  if(typeof baht === 'function') return baht(Number(n) || 0);
+  return (Number(n) || 0).toFixed(2);
+}
+
+function tmcV(id){
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+/* ---------- Inject CSS for editable XY table ---------- */
+(function(){
+  if(document.getElementById('tmcPatchV83Style')) return;
+
+  const style = document.createElement('style');
+  style.id = 'tmcPatchV83Style';
+  style.textContent = `
+    .tmc-table-tools{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-bottom:10px;
+    }
+
+    .tmc-xy-wrap{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:var(--card);
+      max-height:420px;
+    }
+
+    .tmc-xy-table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width:520px;
+    }
+
+    .tmc-xy-table th,
+    .tmc-xy-table td{
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding:8px;
+      vertical-align:top;
+      background:var(--card);
+    }
+
+    .tmc-xy-table th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:var(--bg);
+    }
+
+    .tmc-xy-table th:first-child{
+      left:0;
+      z-index:3;
+    }
+
+    .tmc-xy-row-head{
+      position:sticky;
+      left:0;
+      z-index:1;
+      background:var(--bg) !important;
+      width:115px;
+      min-width:115px;
+    }
+
+    .tmc-axis-input{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:var(--card);
+      color:var(--text);
+      padding:8px;
+      font-size:12px;
+      font-weight:800;
+      outline:0;
+    }
+
+    .tmc-cell{
+      min-width:180px;
+    }
+
+    .tmc-cell textarea{
+      width:100%;
+      min-height:64px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:var(--card);
+      color:var(--text);
+      padding:8px;
+      font-size:12px;
+      resize:vertical;
+      outline:0;
+    }
+
+    .tmc-cell input[type="file"]{
+      width:100%;
+      margin-top:6px;
+      font-size:11px;
+    }
+
+    .tmc-cell img{
+      display:none;
+      width:100%;
+      max-height:120px;
+      object-fit:cover;
+      border-radius:10px;
+      border:1px solid var(--line);
+      margin-top:6px;
+    }
+
+    .tmc-cell img.show{
+      display:block;
+    }
+
+    .tmc-mini-actions{
+      display:flex;
+      gap:4px;
+      justify-content:center;
+      margin-top:6px;
+    }
+
+    .tmc-help{
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.4;
+      margin-top:8px;
+    }
+
+    @media(max-width:420px){
+      .tmc-table-tools{
+        grid-template-columns:1fr;
+      }
+
+      .tmc-xy-table{
+        min-width:500px;
+      }
+
+      .tmc-cell{
+        min-width:165px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+/* =========================================================
+   1) FIX FORMULA REALTIME COST
+========================================================= */
+
+function tmcParseFormulaItems(text){
+  return String(text || '')
+    .split(/\n|,/)
+    .map(x => x.trim())
+    .filter(Boolean)
+    .map(line => {
+      const m = line.match(/^(.+?)\s*=\s*([0-9.]+)\s*$/);
+      if(!m) return null;
+      return {
+        name: m[1].trim(),
+        qty: Number(m[2]) || 0
+      };
+    })
+    .filter(Boolean);
+}
+
+function tmcMaterialCost(name, qty){
+  const mat = (db.materials || []).find(m =>
+    String(m.name || '').trim().toLowerCase() === String(name || '').trim().toLowerCase()
+  );
+
+  if(!mat) return 0;
+
+  const price = Number(mat.price || mat.cost || 0);
+  const totalQty = Number(mat.totalQty || 0);
+
+  if(totalQty > 0){
+    return (price / totalQty) * (Number(qty) || 0);
+  }
+
+  return 0;
+}
+
+function tmcVesselCost(formula){
+  const vesselName = formula.vesselName || '';
+  const vesselQty = Number(formula.vesselQty || 1);
+
+  if(!vesselName || vesselName === 'ไม่รวมภาชนะ') return 0;
+
+  const item =
+    (db.materials || []).find(m => String(m.name || '').trim() === String(vesselName).trim()) ||
+    (db.equipment || []).find(e => String(e.name || '').trim() === String(vesselName).trim());
+
+  if(!item) return 0;
+
+  const price = Number(item.price || item.cost || 0);
+  const totalQty = Number(item.totalQty || 0);
+
+  if(totalQty > 0){
+    return (price / totalQty) * vesselQty;
+  }
+
+  return price * vesselQty;
+}
+
+function tmcFormulaDraft(){
+  return {
+    code: tmcV('fCode') || 'F-New',
+    name: (document.getElementById('fName')?.value || 'New Medium').trim() || 'New Medium',
+    ph: Number(tmcV('fPh')) || 5.7,
+    items: tmcV('fItems'),
+    bottleMl: Number(tmcV('fBottle')) || 250,
+    vesselName: tmcV('fVessel'),
+    vesselQty: Number(tmcV('fVesselQty')) || 1
+  };
+}
+
+function tmcFormulaBreakdown(formula){
+  const items = tmcParseFormulaItems(formula.items);
+  const costPerL = items.reduce((sum, item) => {
+    return sum + tmcMaterialCost(item.name, item.qty);
+  }, 0);
+
+  const costPerMl = costPerL / 1000;
+  const bottleMl = Number(formula.bottleMl) || 250;
+  const mediaPerBottle = costPerMl * bottleMl;
+  const vessel = tmcVesselCost(formula);
+  const totalPerBottle = mediaPerBottle + vessel;
+  const totalPerMl = bottleMl > 0 ? totalPerBottle / bottleMl : 0;
+
+  return {
+    costPerL,
+    costPerMl,
+    mediaPerBottle,
+    vessel,
+    totalPerBottle,
+    totalPerMl
+  };
+}
+
+function previewFormula(){
+  const input = document.getElementById('fCostPreview');
+  if(!input) return;
+
+  const draft = tmcFormulaDraft();
+  const b = tmcFormulaBreakdown(draft);
+
+  input.value =
+    `${tmcBaht(b.costPerL)} ฿/L · ` +
+    `${tmcBaht(b.costPerMl)} ฿/ml · ` +
+    `อาหาร ${tmcBaht(b.mediaPerBottle)} ฿ + ` +
+    `ภาชนะ ${tmcBaht(b.vessel)} ฿ · ` +
+    `รวม ${tmcBaht(b.totalPerBottle)} ฿/ขวด`;
+}
+
+function bindFormulaRealtime(){
+  const body = document.getElementById('modalBody');
+  if(!body) return;
+
+  body.removeEventListener('input', previewFormula, true);
+  body.removeEventListener('change', previewFormula, true);
+
+  body.addEventListener('input', function(e){
+    if(['fItems','fBottle','fVesselQty','fPh','fCode','fName'].includes(e.target.id)){
+      previewFormula();
+    }
+  }, true);
+
+  body.addEventListener('change', function(e){
+    if(['fVessel','pickMat','pickQty'].includes(e.target.id)){
+      previewFormula();
+    }
+  }, true);
+
+  setTimeout(previewFormula, 0);
+}
+
+function addIngredientLine(){
+  const name = document.getElementById('pickMat')?.value || '';
+  const qty = document.getElementById('pickQty')?.value || '';
+  const ta = document.getElementById('fItems');
+
+  if(!name || !qty || !ta) return;
+
+  ta.value = (ta.value ? ta.value.trim() + '\n' : '') + name + '=' + qty;
+  document.getElementById('pickQty').value = '';
+
+  previewFormula();
+}
+
+/* =========================================================
+   2) EXPERIMENT EDITABLE XY TABLE
+========================================================= */
+
+function tmcDefaultXYTable(){
+  return {
+    cols: ['Day 0', 'Day 7'],
+    rows: ['F1', 'F2'],
+    cells: {
+      '0-0': { text:'', src:'' },
+      '0-1': { text:'', src:'' },
+      '1-0': { text:'', src:'' },
+      '1-1': { text:'', src:'' }
+    }
+  };
+}
+
+function tmcNormalizeXYTable(exp){
+  if(exp && exp.xyTable && Array.isArray(exp.xyTable.cols) && Array.isArray(exp.xyTable.rows)){
+    return {
+      cols: exp.xyTable.cols.length ? exp.xyTable.cols : ['Day 0'],
+      rows: exp.xyTable.rows.length ? exp.xyTable.rows : ['F1'],
+      cells: exp.xyTable.cells || {}
+    };
+  }
+
+  const imgs = Array.isArray(exp?.xyCells) ? exp.xyCells
+            : Array.isArray(exp?.images) ? exp.images
+            : [];
+
+  if(imgs.length){
+    const cols = [...new Set(imgs.map(x => x.x || x.day || 'Day'))];
+    const rows = [...new Set(imgs.map(x => x.y || x.set || 'Set'))];
+    const cells = {};
+
+    imgs.forEach(item => {
+      const c = cols.indexOf(item.x || item.day || 'Day');
+      const r = rows.indexOf(item.y || item.set || 'Set');
+      cells[`${r}-${c}`] = {
+        text: item.text || item.note || '',
+        src: item.src || item.image || ''
+      };
+    });
+
+    return { cols, rows, cells };
+  }
+
+  return tmcDefaultXYTable();
+}
+
+function tmcGetCellKey(r, c){
+  return `${r}-${c}`;
+}
+
+function tmcRenderXYTable(data){
+  const wrap = document.getElementById('tmcXYTableBox');
+  if(!wrap) return;
+
+  const cols = data.cols || ['Day 0'];
+  const rows = data.rows || ['F1'];
+  const cells = data.cells || {};
+
+  let html = `
+    <div class="tmc-xy-wrap">
+      <table class="tmc-xy-table">
+        <thead>
+          <tr>
+            <th>
+              <div style="font-size:11px;color:var(--muted);font-weight:900">Y \\ X</div>
+            </th>
+  `;
+
+  cols.forEach((col, c) => {
+    html += `
+      <th>
+        <input class="tmc-axis-input tmc-col-name" data-col="${c}" value="${tmcEsc(col)}" placeholder="แกน X">
+        <div class="tmc-mini-actions">
+          <button type="button" class="small del" onclick="tmcDeleteXYCol(${c})">ลบ</button>
+        </div>
+      </th>
+    `;
+  });
+
+  html += `
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  rows.forEach((row, r) => {
+    html += `
+      <tr>
+        <td class="tmc-xy-row-head">
+          <input class="tmc-axis-input tmc-row-name" data-row="${r}" value="${tmcEsc(row)}" placeholder="แกน Y">
+          <div class="tmc-mini-actions">
+            <button type="button" class="small del" onclick="tmcDeleteXYRow(${r})">ลบ</button>
+          </div>
+        </td>
+    `;
+
+    cols.forEach((col, c) => {
+      const cell = cells[tmcGetCellKey(r,c)] || { text:'', src:'' };
+
+      html += `
+        <td class="tmc-cell" data-row="${r}" data-col="${c}">
+          <textarea class="tmc-cell-text" placeholder="ใส่ข้อความในช่องนี้">${tmcEsc(cell.text || '')}</textarea>
+          <input class="tmc-cell-file" type="file" accept="image/*" onchange="tmcReadXYCellImage(event,this)">
+          <img class="tmc-cell-img ${cell.src ? 'show' : ''}" src="${cell.src || ''}">
+          <input class="tmc-cell-src" type="hidden" value="${cell.src || ''}">
+        </td>
+      `;
+    });
+
+    html += `</tr>`;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  wrap.innerHTML = html;
+}
+
+function tmcGetXYDataFromForm(){
+  const box = document.getElementById('tmcXYTableBox');
+  if(!box) return tmcDefaultXYTable();
+
+  const cols = Array.from(box.querySelectorAll('.tmc-col-name')).map((el, i) =>
+    el.value.trim() || `X${i + 1}`
+  );
+
+  const rows = Array.from(box.querySelectorAll('.tmc-row-name')).map((el, i) =>
+    el.value.trim() || `Y${i + 1}`
+  );
+
+  const cells = {};
+
+  box.querySelectorAll('.tmc-cell').forEach(td => {
+    const r = Number(td.dataset.row);
+    const c = Number(td.dataset.col);
+    const text = td.querySelector('.tmc-cell-text')?.value.trim() || '';
+    const src = td.querySelector('.tmc-cell-src')?.value || '';
+
+    cells[tmcGetCellKey(r,c)] = { text, src };
+  });
+
+  return { cols, rows, cells };
+}
+
+function tmcSetXYDataToMemory(data){
+  window.__tmcXYDraft = JSON.parse(JSON.stringify(data || tmcDefaultXYTable()));
+}
+
+function tmcRefreshXYFromFormThenRender(){
+  tmcSetXYDataToMemory(tmcGetXYDataFromForm());
+  tmcRenderXYTable(window.__tmcXYDraft);
+}
+
+function tmcAddXYCol(){
+  const data = tmcGetXYDataFromForm();
+  data.cols.push('Day ' + data.cols.length);
+  tmcSetXYDataToMemory(data);
+  tmcRenderXYTable(data);
+}
+
+function tmcAddXYRow(){
+  const data = tmcGetXYDataFromForm();
+  data.rows.push('ชุด ' + (data.rows.length + 1));
+  tmcSetXYDataToMemory(data);
+  tmcRenderXYTable(data);
+}
+
+function tmcDeleteXYCol(index){
+  const data = tmcGetXYDataFromForm();
+  if(data.cols.length <= 1){
+    toast('ต้องเหลือแกน X อย่างน้อย 1 ช่อง');
+    return;
+  }
+
+  data.cols.splice(index, 1);
+
+  const newCells = {};
+  data.rows.forEach((_, r) => {
+    data.cols.forEach((_, c) => {
+      const oldC = c >= index ? c + 1 : c;
+      newCells[tmcGetCellKey(r,c)] = data.cells[tmcGetCellKey(r,oldC)] || { text:'', src:'' };
+    });
+  });
+
+  data.cells = newCells;
+  tmcSetXYDataToMemory(data);
+  tmcRenderXYTable(data);
+}
+
+function tmcDeleteXYRow(index){
+  const data = tmcGetXYDataFromForm();
+  if(data.rows.length <= 1){
+    toast('ต้องเหลือแกน Y อย่างน้อย 1 ช่อง');
+    return;
+  }
+
+  data.rows.splice(index, 1);
+
+  const newCells = {};
+  data.rows.forEach((_, r) => {
+    const oldR = r >= index ? r + 1 : r;
+    data.cols.forEach((_, c) => {
+      newCells[tmcGetCellKey(r,c)] = data.cells[tmcGetCellKey(oldR,c)] || { text:'', src:'' };
+    });
+  });
+
+  data.cells = newCells;
+  tmcSetXYDataToMemory(data);
+  tmcRenderXYTable(data);
+}
+
+function tmcClearXYTable(){
+  const data = tmcDefaultXYTable();
+  tmcSetXYDataToMemory(data);
+  tmcRenderXYTable(data);
+}
+
+async function tmcReadXYCellImage(e, input){
+  const file = e.target.files?.[0];
+  if(!file) return;
+
+  const td = input.closest('.tmc-cell');
+  const img = td.querySelector('.tmc-cell-img');
+  const hidden = td.querySelector('.tmc-cell-src');
+
+  try{
+    const src = typeof resizeImageFile === 'function'
+      ? await resizeImageFile(file, 640, 640, .64)
+      : await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+
+    hidden.value = src;
+    img.src = src;
+    img.classList.add('show');
+  }catch(err){
+    console.error(err);
+    toast('อ่านรูปภาพไม่สำเร็จ');
+  }
+}
+
+function tmcFlattenXYImages(data){
+  const out = [];
+
+  data.rows.forEach((rowName, r) => {
+    data.cols.forEach((colName, c) => {
+      const cell = data.cells[tmcGetCellKey(r,c)] || {};
+      if(cell.text || cell.src){
+        out.push({
+          x: colName,
+          y: rowName,
+          text: cell.text || '',
+          note: cell.text || '',
+          src: cell.src || ''
+        });
+      }
+    });
+  });
+
+  return out;
+}
+
+function tmcInitExperimentTable(){
+  if(modalType !== 'experiment') return;
+
+  const body = document.getElementById('modalBody');
+  if(!body) return;
+
+  const old1 = document.getElementById('expImageTable')?.closest('.group');
+  if(old1) old1.remove();
+
+  const old2 = document.getElementById('expXYTableV82')?.closest('.group');
+  if(old2) old2.remove();
+
+  if(document.getElementById('tmcXYTableSection')) return;
+
+  const exp = editType === 'experiment' ? (db.experiments?.[editIndex] || {}) : {};
+  const data = tmcNormalizeXYTable(exp);
+  tmcSetXYDataToMemory(data);
+
+  const section = document.createElement('div');
+  section.id = 'tmcXYTableSection';
+  section.className = 'group';
+  section.innerHTML = `
+    <label class="label">ตารางการทดลอง แกน X / แกน Y</label>
+
+    <div class="tmc-table-tools">
+      <button type="button" class="btn ghost btn-sm" onclick="tmcAddXYCol()">+ เพิ่มแกน X</button>
+      <button type="button" class="btn ghost btn-sm" onclick="tmcAddXYRow()">+ เพิ่มแกน Y</button>
+      <button type="button" class="btn ghost btn-sm" onclick="tmcClearXYTable()">ล้างตาราง</button>
+      <button type="button" class="btn ghost btn-sm" onclick="tmcRefreshXYFromFormThenRender()">รีเฟรชตาราง</button>
+    </div>
+
+    <div id="tmcXYTableBox"></div>
+
+    <div class="tmc-help">
+      วิธีใช้: แก้ชื่อแกน X/Y ได้โดยพิมพ์ในหัวตาราง แต่ละช่องสามารถใส่ข้อความและแนบรูปภาพได้
+      เช่น X = Day 7, Y = สูตร F1 แล้วใส่รูป + หมายเหตุของช่องนั้น
+    </div>
+  `;
+
+  const summary = document.getElementById('eSummary')?.closest('.group');
+  if(summary) body.insertBefore(section, summary);
+  else body.appendChild(section);
+
+  tmcRenderXYTable(data);
+}
+
+/* ให้ saveModal เดิมยังทำงาน แต่เพิ่มการบันทึก xyTable เข้า experiment */
+(function(){
+  if(window.__tmcSaveModalV83Patched) return;
+  window.__tmcSaveModalV83Patched = true;
+
+  const oldSaveModal = saveModal;
+
+  saveModal = function(){
+    if(modalType === 'formula'){
+      const draft = tmcFormulaDraft();
+      const b = tmcFormulaBreakdown(draft);
+      const wasEdit = editType === 'formula';
+      const idx = editIndex;
+
+      oldSaveModal();
+
+      const arr = db.formulas || [];
+      const target = wasEdit ? arr[idx] : arr[arr.length - 1];
+
+      if(target){
+        target.name = draft.name;
+        target.ph = draft.ph;
+        target.items = draft.items;
+        target.bottleMl = draft.bottleMl;
+        target.vesselName = draft.vesselName;
+        target.vesselQty = draft.vesselQty;
+
+        target.cost = b.costPerL;
+        target.perMl = b.costPerMl;
+        target.mediaBottle = b.mediaPerBottle;
+        target.vesselCost = b.vessel;
+        target.perBottle = b.totalPerBottle;
+        target.totalPerMl = b.totalPerMl;
+
+        save();
+        render();
+      }
+
+      return;
+    }
+
+    if(modalType === 'experiment'){
+      const xyTable = tmcGetXYDataFromForm();
+      const flatImages = tmcFlattenXYImages(xyTable);
+
+      const wasEdit = editType === 'experiment';
+      const idx = editIndex;
+
+      oldSaveModal();
+
+      const arr = db.experiments || [];
+      const target = wasEdit ? arr[idx] : arr[arr.length - 1];
+
+      if(target){
+        target.xyTable = xyTable;
+        target.xyCells = flatImages;
+        target.images = flatImages;
+        target.image = flatImages[0]?.src || target.image || '';
+
+        save();
+        render();
+      }
+
+      return;
+    }
+
+    oldSaveModal();
+  };
+})();
+
+/* ให้ฟังก์ชันเก่าที่ saveModal เรียก ใช้ข้อมูลจากตารางใหม่ */
+function getExpImagesFromForm(){
+  const data = document.getElementById('tmcXYTableBox')
+    ? tmcGetXYDataFromForm()
+    : tmcDefaultXYTable();
+
+  return tmcFlattenXYImages(data);
+}
+
+/* Patch open/edit modal */
+(function(){
+  if(window.__tmcOpenEditV83Patched) return;
+  window.__tmcOpenEditV83Patched = true;
+
+  const oldOpenModal = openModal;
+  openModal = function(type){
+    oldOpenModal(type);
+
+    if(type === 'formula'){
+      setTimeout(bindFormulaRealtime, 50);
+      setTimeout(previewFormula, 120);
+    }
+
+    if(type === 'experiment'){
+      setTimeout(tmcInitExperimentTable, 80);
+    }
+  };
+
+  const oldEditItem = editItem;
+  editItem = function(type, i){
+    oldEditItem(type, i);
+
+    if(type === 'formula'){
+      setTimeout(bindFormulaRealtime, 50);
+      setTimeout(previewFormula, 120);
+    }
+
+    if(type === 'experiment'){
+      setTimeout(tmcInitExperimentTable, 80);
+    }
+  };
+})();
+
+/* expose to inline buttons */
+window.tmcAddXYCol = tmcAddXYCol;
+window.tmcAddXYRow = tmcAddXYRow;
+window.tmcDeleteXYCol = tmcDeleteXYCol;
+window.tmcDeleteXYRow = tmcDeleteXYRow;
+window.tmcClearXYTable = tmcClearXYTable;
+window.tmcRefreshXYFromFormThenRender = tmcRefreshXYFromFormThenRender;
+window.tmcReadXYCellImage = tmcReadXYCellImage;
+window.previewFormula = previewFormula;
+window.bindFormulaRealtime = bindFormulaRealtime;
+window.addIngredientLine = addIngredientLine;
+</script>
