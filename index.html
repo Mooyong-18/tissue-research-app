@@ -5995,128 +5995,124 @@ window.addIngredientLine = addIngredientLine;
 </script>
 
 <!-- =========================================================
-TMC Experiment Export Module v9.2 FIXED PDF PAGE RENDER
-แก้ปัญหา PDF หน้ากระดาษเบี้ยว/ข้อความซ้อน/ล้นกรอบ
+TMC Experiment Export Module v10.0 TEMPLATE PDF
+ใช้เท็มเพลทรายงานแบบภาพตัวอย่างในการสร้าง PDF
+แก้ปัญหาหน้ากระดาษเบี้ยว ตัวอักษรซ้อน และข้อความล้นกรอบ
 ========================================================= -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
+  /* ===== Export UI in app ===== */
   .tmc-export-toolbar{padding:14px 14px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--card),rgba(4,120,87,.035))}
-  .tmc-export-title{font-weight:900;color:var(--green);font-size:15px;margin-bottom:4px}.tmc-export-sub{font-size:12px;color:var(--muted);line-height:1.35;margin-bottom:10px}
-  .tmc-export-format-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.tmc-export-format-btn{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);padding:9px 6px;font-weight:900;font-size:12px}.tmc-export-format-btn.active{background:var(--green-soft);color:var(--green);border-color:rgba(4,120,87,.35);box-shadow:0 0 0 2px rgba(4,120,87,.06)}
-  .tmc-export-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tmc-export-action-row .btn{min-height:42px}.tmc-exp-row{display:grid;grid-template-columns:42px 1fr auto;gap:12px;align-items:start;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--card)}.tmc-exp-row:last-child{border-bottom:0}.tmc-exp-row-icon{width:38px;height:38px;border-radius:12px;background:var(--green-soft);display:grid;place-items:center}.tmc-exp-main{min-width:0}.tmc-exp-title{font-weight:900;font-size:15px;line-height:1.25;margin-bottom:4px}.tmc-exp-sub{font-size:12px;color:var(--muted);line-height:1.45}.tmc-exp-right{display:grid;justify-items:end;gap:6px;min-width:86px}.tmc-exp-img{width:70px;height:48px;border-radius:10px;object-fit:cover;border:1px solid var(--line);margin-top:7px}.tmc-exp-row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.tmc-exp-export-btn{border:1px solid rgba(4,120,87,.25);background:var(--green-soft);color:var(--green);border-radius:10px;padding:6px 8px;font-size:11px;font-weight:900}
+  .tmc-export-title{font-weight:900;color:var(--green);font-size:15px;margin-bottom:4px}
+  .tmc-export-sub{font-size:12px;color:var(--muted);line-height:1.35;margin-bottom:10px}
+  .tmc-export-format-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+  .tmc-export-format-btn{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);padding:9px 6px;font-weight:900;font-size:12px}
+  .tmc-export-format-btn.active{background:var(--green-soft);color:var(--green);border-color:rgba(4,120,87,.35);box-shadow:0 0 0 2px rgba(4,120,87,.06)}
+  .tmc-export-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tmc-export-action-row .btn{min-height:42px}
+  .tmc-exp-row{display:grid;grid-template-columns:42px 1fr auto;gap:12px;align-items:start;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--card)}
+  .tmc-exp-row:last-child{border-bottom:0}.tmc-exp-row-icon{width:38px;height:38px;border-radius:12px;background:var(--green-soft);display:grid;place-items:center}.tmc-exp-main{min-width:0}.tmc-exp-title{font-weight:900;font-size:15px;line-height:1.25;margin-bottom:4px}.tmc-exp-sub{font-size:12px;color:var(--muted);line-height:1.45}.tmc-exp-right{display:grid;justify-items:end;gap:6px;min-width:86px}.tmc-exp-img{width:70px;height:48px;border-radius:10px;object-fit:cover;border:1px solid var(--line);margin-top:7px}.tmc-exp-row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.tmc-exp-export-btn{border:1px solid rgba(4,120,87,.25);background:var(--green-soft);color:var(--green);border-radius:10px;padding:6px 8px;font-size:11px;font-weight:900}
   .tmc-export-modal{position:fixed;inset:0;z-index:100000;display:none;align-items:flex-end;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:0}.tmc-export-modal.show{display:flex}.tmc-export-sheet{width:100%;max-width:540px;max-height:92vh;margin:0 auto;background:var(--card);border-radius:28px 28px 0 0;overflow:hidden;box-shadow:0 -18px 60px rgba(0,0,0,.25)}.tmc-export-head{padding:12px 18px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:2}.tmc-export-handle{width:36px;height:4px;border-radius:99px;background:rgba(0,0,0,.18);margin:0 auto 12px}.tmc-export-head-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.tmc-export-head h2{font-size:18px;margin:0;color:var(--text)}.tmc-export-close{border:1px solid var(--line);background:rgba(0,0,0,.04);color:var(--text);border-radius:12px;padding:8px 12px;font-weight:900}.tmc-export-search{width:100%;border:1px solid var(--line);border-radius:14px;background:rgba(0,0,0,.035);color:var(--text);padding:12px 14px;font-size:15px;margin-top:12px;outline:0}.tmc-export-body{padding:14px 18px;overflow:auto;max-height:calc(92vh - 185px)}.tmc-export-selectbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:16px;margin-bottom:10px}.tmc-export-list{display:grid;gap:10px}.tmc-export-item{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:start;padding:13px;border:1px solid var(--line);border-radius:16px;background:var(--card)}.tmc-export-check{width:20px;height:20px}.tmc-export-item-title{font-size:14px;font-weight:900;line-height:1.3}.tmc-export-item-meta{font-size:12px;color:var(--muted);line-height:1.45;margin-top:3px}.tmc-export-status{border-radius:999px;padding:5px 8px;font-size:11px;font-weight:900;background:var(--green-soft);color:var(--green);white-space:nowrap}.tmc-export-scope{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.tmc-export-scope label{border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12px;color:var(--text);display:flex;gap:8px;align-items:center;background:var(--card)}.tmc-export-footer{padding:12px 18px calc(env(safe-area-inset-bottom,0px) + 12px);border-top:1px solid var(--line);background:var(--card)}
-
-  /* ===== PDF REPORT TEMPLATE v10: one-page professional report ===== */
-  .tmc-report-wrap{position:fixed;left:0;top:0;width:1086px;background:#fff;color:#0f172a;z-index:-1000;pointer-events:none;opacity:1}
-  .tmc-report-export-root{width:1086px;background:#fff;color:#0f172a}
-  .tmc-report-page{width:1086px;min-height:1448px;background:#fff;color:#0f172a;margin:0;padding:0;display:block;overflow:visible;page-break-after:always;break-after:page}
-  .tmc-report-page:last-child{page-break-after:auto;break-after:auto}
-  .tmc-report,.tmc-report *{box-sizing:border-box;max-width:100%;overflow-wrap:anywhere;word-break:normal}
-  .tmc-report{width:1086px;min-height:1448px;padding:34px 36px 28px;background:#fff;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;font-size:12px;line-height:1.45;overflow:hidden;display:flex;flex-direction:column;gap:12px;position:relative}
-  .tmc-report:before{content:"";position:absolute;right:0;top:0;width:335px;height:145px;background:radial-gradient(circle at 80% 25%,rgba(4,120,87,.16),transparent 18%),radial-gradient(circle at 58% 34%,rgba(4,120,87,.10),transparent 10%),linear-gradient(135deg,transparent 35%,rgba(4,120,87,.055));pointer-events:none}
-  .tmc-r-header{display:grid;grid-template-columns:260px 1fr 260px;gap:16px;align-items:start;border-bottom:2px solid #98cdbd;padding:0 0 16px;position:relative;z-index:1}
-  .tmc-r-logo{display:flex;gap:12px;align-items:center}.tmc-r-logo-mark{width:52px;height:52px;border:2px solid #d7eee7;border-radius:14px;display:grid;place-items:center;color:#047857;font-size:30px;background:#f5fffb}.tmc-r-brand{font-size:24px;font-weight:950;color:#065f46;line-height:1.05}.tmc-r-brand-sub{font-size:18px;font-weight:850;color:#475569;line-height:1.1;margin-top:3px}
-  .tmc-r-title{text-align:center}.tmc-r-title h1{margin:0;font-size:28px;color:#065f46;line-height:1.05;font-weight:950}.tmc-r-title div{font-size:15px;color:#64748b;font-weight:800;margin-top:5px}
-  .tmc-r-art{height:64px;position:relative}.tmc-r-art:before{content:"";position:absolute;right:35px;top:1px;width:62px;height:62px;border:4px solid rgba(4,120,87,.12);border-radius:16px 16px 28px 28px;transform:rotate(8deg)}.tmc-r-art:after{content:"";position:absolute;right:22px;bottom:1px;width:118px;height:58px;border:4px solid rgba(4,120,87,.10);border-top:0;border-radius:0 0 70px 70px}
-  .tmc-r-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.tmc-r-meta-card{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;border-right:1px solid #dbe8e2;min-height:58px;padding-right:10px}.tmc-r-meta-card:last-child{border-right:0}.tmc-r-ico{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#047857;background:#edfdf6;font-size:19px}.tmc-r-meta-card b{display:block;color:#64748b;font-size:10.5px;margin-bottom:3px}.tmc-r-meta-card span{display:block;color:#0f172a;font-size:11.5px;font-weight:850;line-height:1.3}.tmc-r-pill{display:inline-flex!important;width:max-content;background:#dff8ec;color:#047857;border-radius:999px;padding:3px 9px;font-size:10.5px!important;font-weight:950!important}
-  .tmc-r-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.tmc-r-grid3{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .tmc-r-card{border:1px solid #cfe3dc;border-radius:13px;background:#fff;overflow:hidden;min-width:0}.tmc-r-card.pad{padding:14px}.tmc-r-card-title{display:flex;align-items:center;gap:8px;color:#047857;font-size:16px;font-weight:950;margin:0 0 10px}.tmc-r-card-title .tmc-r-title-ico{width:24px;height:24px;border-radius:999px;background:#e8f8f0;color:#047857;display:grid;place-items:center;font-size:13px;flex:0 0 24px}
-  .tmc-r-kv{width:100%;border-collapse:collapse;table-layout:fixed}.tmc-r-kv th,.tmc-r-kv td{border-bottom:1px solid #eef2f7;vertical-align:top;padding:6px 4px;font-size:11.4px;line-height:1.45}.tmc-r-kv tr:last-child th,.tmc-r-kv tr:last-child td{border-bottom:0}.tmc-r-kv th{width:132px;color:#334155;font-weight:950;text-align:left}.tmc-r-kv td{color:#0f172a;white-space:pre-wrap}.tmc-r-kv.medium th{width:125px}.tmc-r-kv.medium td{text-align:center}.tmc-r-muted{color:#64748b}.tmc-r-text{font-size:11.3px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}.tmc-r-steps{margin:0;padding-left:20px}.tmc-r-steps li{font-size:11.2px;line-height:1.55;margin-bottom:3px}.tmc-r-bullets{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin:0;padding-left:20px}.tmc-r-bullets li{font-size:11px;line-height:1.45}
-  .tmc-r-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:10.6px;line-height:1.35;border:1px solid #cfe3dc;border-radius:10px;overflow:hidden}.tmc-r-table th{background:#047857;color:#fff;padding:8px 5px;border-right:1px solid rgba(255,255,255,.28);text-align:center;font-weight:950}.tmc-r-table th:last-child{border-right:0}.tmc-r-table td{padding:7px 5px;border-top:1px solid #e5eee9;border-right:1px solid #e5eee9;vertical-align:top;white-space:pre-wrap}.tmc-r-table td:last-child{border-right:0}.tmc-r-table td:nth-child(1){width:48px;text-align:center;font-weight:900}.tmc-r-table td:nth-child(2){width:180px}.tmc-r-table td:nth-child(3){width:110px;text-align:center}.tmc-r-table td:nth-child(4){width:auto}.tmc-r-badge{display:inline-flex;border-radius:999px;padding:3px 9px;background:#e5f8ed;color:#047857;font-size:10px;font-weight:950}.tmc-r-badge.red{background:#fee2e2;color:#dc2626}.tmc-r-badge.amber{background:#fef3c7;color:#b45309}
-  .tmc-r-bottom{display:grid;grid-template-columns:1.05fr .95fr;gap:12px;align-items:stretch}.tmc-r-images{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.tmc-r-imgbox img{width:100%;height:96px;object-fit:cover;border:1px solid #dbe8e2;border-radius:10px;display:block;background:#f8fafc}.tmc-r-imgbox div{font-size:9.6px;line-height:1.25;color:#64748b;text-align:center;margin-top:4px;min-height:26px;overflow:hidden}.tmc-r-empty{border:1px dashed #cbd5e1;border-radius:10px;height:96px;display:grid;place-items:center;color:#94a3b8;background:#f8fafc;font-size:11px}
-  .tmc-r-summary{height:100%;border:1.5px solid #047857;background:linear-gradient(135deg,#f2fff8,#ffffff);border-radius:13px;padding:14px}.tmc-r-summary h3{display:flex;align-items:center;gap:8px;color:#047857;font-size:16px;margin:0 0 10px}.tmc-r-summary p{font-size:11.5px;line-height:1.55;white-space:pre-wrap;margin:0 0 8px}.tmc-r-check{display:flex;gap:7px;align-items:flex-start;font-size:11.2px;line-height:1.45;margin-top:6px}.tmc-r-check i{font-style:normal;color:#047857;font-weight:950}.tmc-r-footer{margin-top:auto;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #dbe8e2;padding-top:8px;font-size:10.5px;color:#64748b}.tmc-r-leaf{color:#047857;font-weight:900}
   @media(max-width:420px){.tmc-export-format-row{grid-template-columns:repeat(2,1fr)}.tmc-export-action-row{grid-template-columns:1fr}.tmc-exp-row{grid-template-columns:38px 1fr}.tmc-exp-right{grid-column:2;justify-items:start}.tmc-export-item{grid-template-columns:28px 1fr}.tmc-export-status{grid-column:2;justify-self:start}.tmc-export-scope{grid-template-columns:1fr}}
+
+  /* ===== PDF template renderer: 1086 x 1448 px, fixed one page per experiment ===== */
+  .tmc-pdf-host{position:fixed;left:0;top:0;width:1086px;background:#fff;z-index:-9999;opacity:1;pointer-events:none;overflow:hidden;color:#0f172a}
+  .tmc-pdf-page,.tmc-pdf-page *{box-sizing:border-box;max-width:100%;overflow-wrap:break-word;word-break:normal}
+  .tmc-pdf-page{width:1086px;height:1448px;background:#fff;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;padding:30px 36px 24px;position:relative;overflow:hidden;display:grid;grid-template-rows:auto auto auto auto auto auto 1fr auto;gap:12px}
+  .tmc-pdf-watermark{position:absolute;right:0;top:0;width:330px;height:150px;background:radial-gradient(circle at 84% 22%,rgba(4,120,87,.16),transparent 16%),radial-gradient(circle at 56% 30%,rgba(4,120,87,.10),transparent 11%),linear-gradient(135deg,transparent 38%,rgba(4,120,87,.06));pointer-events:none}
+  .tmc-pdf-head{display:grid;grid-template-columns:270px 1fr 270px;gap:16px;align-items:start;border-bottom:2px solid #9ccfc0;padding-bottom:15px;position:relative;z-index:1}
+  .tmc-pdf-logo{display:flex;gap:12px;align-items:center}.tmc-pdf-logo-mark{width:52px;height:52px;border:2px solid #d7eee7;border-radius:14px;display:grid;place-items:center;font-size:30px;color:#047857;background:#f5fffb}.tmc-pdf-brand{font-size:24px;font-weight:950;line-height:1.04;color:#065f46}.tmc-pdf-brand-sub{font-size:18px;font-weight:850;line-height:1.1;color:#475569;margin-top:3px}
+  .tmc-pdf-title{text-align:center}.tmc-pdf-title h1{margin:0;color:#065f46;font-size:28px;line-height:1.05;font-weight:950}.tmc-pdf-title div{margin-top:5px;color:#64748b;font-size:15px;font-weight:800}.tmc-pdf-art{height:64px;position:relative}.tmc-pdf-art:before{content:"";position:absolute;right:50px;top:1px;width:62px;height:62px;border:4px solid rgba(4,120,87,.12);border-radius:16px 16px 28px 28px;transform:rotate(8deg)}.tmc-pdf-art:after{content:"";position:absolute;right:22px;bottom:1px;width:118px;height:58px;border:4px solid rgba(4,120,87,.10);border-top:0;border-radius:0 0 70px 70px}
+  .tmc-pdf-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;min-height:58px}.tmc-pdf-meta-card{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;border-right:1px solid #dbe8e2;padding-right:10px}.tmc-pdf-meta-card:last-child{border-right:0}.tmc-pdf-ico{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#edfdf6;color:#047857;font-size:19px}.tmc-pdf-meta-card b{display:block;color:#64748b;font-size:10.5px;margin-bottom:3px}.tmc-pdf-meta-card span{display:block;color:#0f172a;font-size:11.5px;font-weight:850;line-height:1.28}.tmc-pdf-pill{display:inline-flex!important;width:max-content;background:#dff8ec;color:#047857;border-radius:999px;padding:3px 9px;font-size:10.5px!important;font-weight:950!important}
+  .tmc-pdf-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.tmc-pdf-grid-bottom{display:grid;grid-template-columns:1.05fr .95fr;gap:12px;min-height:220px}
+  .tmc-pdf-card{border:1px solid #cfe3dc;border-radius:13px;background:#fff;overflow:hidden;min-width:0}.tmc-pdf-card.pad{padding:14px}.tmc-pdf-card-title{display:flex;align-items:center;gap:8px;color:#047857;font-size:16px;font-weight:950;margin:0 0 10px;line-height:1.25}.tmc-pdf-title-ico{width:24px;height:24px;border-radius:999px;background:#e8f8f0;color:#047857;display:grid;place-items:center;font-size:13px;flex:0 0 24px}
+  .tmc-pdf-kv{width:100%;border-collapse:collapse;table-layout:fixed}.tmc-pdf-kv th,.tmc-pdf-kv td{border-bottom:1px solid #eef2f7;vertical-align:top;padding:6px 4px;font-size:11.3px;line-height:1.45}.tmc-pdf-kv tr:last-child th,.tmc-pdf-kv tr:last-child td{border-bottom:0}.tmc-pdf-kv th{width:130px;color:#334155;font-weight:950;text-align:left}.tmc-pdf-kv td{color:#0f172a;white-space:pre-wrap}.tmc-pdf-kv.center td{text-align:center}.tmc-pdf-text{font-size:11.2px;line-height:1.55;white-space:pre-wrap;color:#0f172a}.tmc-pdf-steps{margin:0;padding-left:20px}.tmc-pdf-steps li{font-size:11.1px;line-height:1.53;margin-bottom:2px}.tmc-pdf-bullets{display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;margin:0;padding-left:20px}.tmc-pdf-bullets li{font-size:10.8px;line-height:1.42}
+  .tmc-pdf-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:10.4px;line-height:1.35;border:1px solid #cfe3dc;border-radius:10px;overflow:hidden}.tmc-pdf-table th{background:#047857;color:#fff;padding:8px 5px;border-right:1px solid rgba(255,255,255,.28);text-align:center;font-weight:950}.tmc-pdf-table th:last-child{border-right:0}.tmc-pdf-table td{padding:7px 5px;border-top:1px solid #e5eee9;border-right:1px solid #e5eee9;vertical-align:top;white-space:pre-wrap}.tmc-pdf-table td:last-child{border-right:0}.tmc-pdf-table td:nth-child(1),.tmc-pdf-table th:nth-child(1){width:54px;text-align:center}.tmc-pdf-badge{display:inline-flex;border-radius:999px;padding:3px 9px;background:#e5f8ed;color:#047857;font-size:10px;font-weight:950}.tmc-pdf-note{font-size:10px;color:#64748b;margin-top:6px}
+  .tmc-pdf-images{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.tmc-pdf-imgbox img{width:100%;height:96px;object-fit:cover;border:1px solid #dbe8e2;border-radius:10px;display:block;background:#f8fafc}.tmc-pdf-imgbox div{font-size:9.5px;line-height:1.25;color:#64748b;text-align:center;margin-top:4px;min-height:26px;max-height:26px;overflow:hidden}.tmc-pdf-empty{height:96px;border:1px dashed #cbd5e1;border-radius:10px;display:grid;place-items:center;background:#f8fafc;color:#94a3b8;font-size:11px}
+  .tmc-pdf-summary{height:100%;border:1.5px solid #047857;background:linear-gradient(135deg,#f2fff8,#ffffff);border-radius:13px;padding:14px;overflow:hidden}.tmc-pdf-summary h3{display:flex;gap:8px;align-items:center;color:#047857;font-size:16px;margin:0 0 10px}.tmc-pdf-summary p{font-size:11.5px;line-height:1.55;white-space:pre-wrap;margin:0 0 8px}.tmc-pdf-check{display:flex;gap:7px;align-items:flex-start;font-size:11.1px;line-height:1.42;margin-top:6px}.tmc-pdf-check i{font-style:normal;color:#047857;font-weight:950}.tmc-pdf-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #dbe8e2;padding-top:8px;font-size:10.5px;color:#64748b}.tmc-pdf-leaf{color:#047857;font-weight:900}
 </style>
 <script>
 (function(){
-  if(window.__TMC_EXPORT_V92__) return;
-  window.__TMC_EXPORT_V92__ = true;
+  if(window.__TMC_EXPORT_TEMPLATE_V10__) return;
+  window.__TMC_EXPORT_TEMPLATE_V10__ = true;
 
   let exportFormat = 'pdf';
 
   function esc(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function txt(v, fallback='-'){return (v===undefined||v===null||v==='') ? fallback : String(v);}
   function safeName(v){return String(v||'TMC_export').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,80);}
+  function clamp(v,n){const s=txt(v,''); return s.length>n ? s.slice(0,n-1)+'…' : s;}
   function experiments(){window.db = window.db || {}; db.experiments = Array.isArray(db.experiments) ? db.experiments : []; return db.experiments;}
   function expTitle(e,i){return txt(e.name || e.title || e.experimentName, `การทดลองที่ ${i+1}`);}
   function expCode(e,i){return txt(e.code || e.id || e.expCode, `EXP-${String(i+1).padStart(3,'0')}`);}
-  function expMedia(e){return txt(e.media || e.medium || e.formula || e.food);}
-  function expSets(e){return txt(e.sets || e.groups || e.treatmentsText || e.treatment);}
+  function expMedia(e){return txt(e.media || e.medium || e.formula || e.food, '-');}
+  function expSets(e){return txt(e.sets || e.groups || e.treatmentsText || e.treatment, '-');}
   function expStatus(e){return txt(e.status || e.state, 'บันทึกแล้ว');}
-  function expDate(e){return txt(e.date || e.startDate || e.createdAt || e.updatedAt);}
+  function expDate(e){return txt(e.date || e.startDate || e.createdAt || e.updatedAt, '-');}
   function expImages(e){
     if(Array.isArray(e.images)) return e.images.filter(x=>x && (x.src || x.image || x.url));
     if(Array.isArray(e.xyCells)) return e.xyCells.filter(x=>x && (x.src || x.image || x.url));
     if(e.image) return [{x:'รูปภาพ',y:'',note:'',src:e.image}];
     return [];
   }
+  function imgSrc(x){return x?.src || x?.image || x?.url || '';}
+  function nowThai(){try{return new Date().toLocaleString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return new Date().toLocaleString();}}
+  function toastSafe(msg){ if(typeof toast==='function') toast(msg); else alert(msg); }
+  function wait(ms){return new Promise(r=>setTimeout(r,ms));}
   function blobDownload(filename, content, mime){
     const blob = new Blob([content], {type:mime});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 800);
-  }
-  function nowThai(){
-    try{return new Date().toLocaleString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return new Date().toLocaleString();}
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),800);
   }
 
-  function toolbarHTML(){
-    return `
-      <div class="tmc-export-toolbar">
-        <div class="tmc-export-title">⬇ Export การทดลอง</div>
-        <div class="tmc-export-sub">เลือก Export รายการเดียวจากปุ่มในการ์ด หรือเลือกหลายรายการเพื่อ Export พร้อมกัน</div>
-        <div class="tmc-export-format-row" id="tmcExpFormatBar">
-          <button type="button" class="tmc-export-format-btn active" data-format="pdf">PDF</button>
-          <button type="button" class="tmc-export-format-btn" data-format="excel">Excel</button>
-          <button type="button" class="tmc-export-format-btn" data-format="csv">CSV</button>
-          <button type="button" class="tmc-export-format-btn" data-format="json">JSON</button>
-        </div>
-        <div class="tmc-export-action-row">
-          <button type="button" class="btn" onclick="tmcOpenExportPicker(event)">☑ เลือกการทดลองเพื่อ Export</button>
-          <button type="button" class="btn ghost" onclick="tmcExportAllExperiments(event)">⬇ Export ทั้งหมด</button>
-        </div>
-      </div>`;
-  }
+  function toolbarHTML(){return `
+    <div class="tmc-export-toolbar">
+      <div class="tmc-export-title">⬇ Export การทดลอง</div>
+      <div class="tmc-export-sub">เลือก Export รายการเดียวจากปุ่มในการ์ด หรือเลือกหลายรายการเพื่อ Export พร้อมกัน</div>
+      <div class="tmc-export-format-row" id="tmcExpFormatBar">
+        <button type="button" class="tmc-export-format-btn active" data-format="pdf">PDF</button>
+        <button type="button" class="tmc-export-format-btn" data-format="excel">Excel</button>
+        <button type="button" class="tmc-export-format-btn" data-format="csv">CSV</button>
+        <button type="button" class="tmc-export-format-btn" data-format="json">JSON</button>
+      </div>
+      <div class="tmc-export-action-row">
+        <button type="button" class="btn" onclick="tmcOpenExportPicker(event)">☑ เลือกการทดลองเพื่อ Export</button>
+        <button type="button" class="btn ghost" onclick="tmcExportAllExperiments(event)">⬇ Export ทั้งหมด</button>
+      </div>
+    </div>`;}
 
   function experimentRowHTML(e,i){
-    const imgs=expImages(e);
-    const first=imgs[0]?.src || imgs[0]?.image || imgs[0]?.url || '';
+    const imgs=expImages(e); const first=imgSrc(imgs[0]);
     const img=first ? `<img class="tmc-exp-img" src="${esc(first)}" loading="lazy">` : '';
     const imgCount=imgs.length ? ` · รูป ${imgs.length} รายการ` : '';
-    return `
-      <div class="tmc-exp-row">
-        <div class="tmc-exp-row-icon">🔬</div>
-        <div class="tmc-exp-main">
-          <div class="tmc-exp-title">${esc(expCode(e,i))} · ${esc(expTitle(e,i))}</div>
-          <div class="tmc-exp-sub">อาหาร: ${esc(expMedia(e))} · ชุด: ${esc(expSets(e))}${esc(imgCount)}</div>
-          ${img}
+    return `<div class="tmc-exp-row">
+      <div class="tmc-exp-row-icon">🔬</div>
+      <div class="tmc-exp-main">
+        <div class="tmc-exp-title">${esc(expCode(e,i))} · ${esc(expTitle(e,i))}</div>
+        <div class="tmc-exp-sub">อาหาร: ${esc(expMedia(e))} · ชุด: ${esc(expSets(e))}${esc(imgCount)}</div>
+        ${img}
+      </div>
+      <div class="tmc-exp-right">
+        <div class="mono">${esc(txt(e.survival,0))}%</div>
+        <div class="tmc-exp-row-actions">
+          <button type="button" class="tmc-exp-export-btn" onclick="tmcExportOneExperiment(event,${i})">⬇ Export</button>
+          <button type="button" class="small" onclick="event.stopPropagation();editItem('experiment',${i})">✎</button>
+          <button type="button" class="small del" onclick="event.stopPropagation();deleteItem('experiment',${i})">🗑</button>
         </div>
-        <div class="tmc-exp-right">
-          <div class="mono">${esc(txt(e.survival,0))}%</div>
-          <div class="tmc-exp-row-actions">
-            <button type="button" class="tmc-exp-export-btn" onclick="tmcExportOneExperiment(event,${i})">⬇ Export</button>
-            <button type="button" class="small" onclick="event.stopPropagation();editItem('experiment',${i})">✎</button>
-            <button type="button" class="small del" onclick="event.stopPropagation();deleteItem('experiment',${i})">🗑</button>
-          </div>
-        </div>
-      </div>`;
+      </div>
+    </div>`;
   }
 
-  const oldRenderExperiments = window.renderExperiments;
   window.renderExperiments = function(){
     const listEl = document.getElementById('experimentList');
-    if(!listEl){ if(typeof oldRenderExperiments==='function') oldRenderExperiments(); return; }
+    if(!listEl) return;
     const arr = experiments();
     const body = arr.length ? arr.map(experimentRowHTML).join('') : '<div class="card-body">ยังไม่มีการทดลอง</div>';
     listEl.innerHTML = toolbarHTML() + body;
     bindFormatButtons(document.getElementById('tmcExpFormatBar'));
   };
-  renderExperiments = window.renderExperiments;
+  try{ renderExperiments = window.renderExperiments; }catch(e){}
 
   function bindFormatButtons(root){
     if(!root || root.dataset.bound) return;
@@ -6127,9 +6123,7 @@ TMC Experiment Export Module v9.2 FIXED PDF PAGE RENDER
         btn.classList.add('active');
         exportFormat = btn.dataset.format;
         const picker=document.getElementById('tmcPickerFormatBar');
-        if(picker){
-          picker.querySelectorAll('[data-format]').forEach(b=>b.classList.toggle('active', b.dataset.format===exportFormat));
-        }
+        if(picker) picker.querySelectorAll('[data-format]').forEach(b=>b.classList.toggle('active', b.dataset.format===exportFormat));
       });
     });
   }
@@ -6148,244 +6142,136 @@ TMC Experiment Export Module v9.2 FIXED PDF PAGE RENDER
     blobDownload('TMC_experiment_export.xls',html,'application/vnd.ms-excel;charset=utf-8;');
     toastSafe('Export Excel แล้ว');
   }
-  function exportJSONFile(arr){
-    blobDownload('TMC_experiment_export.json',JSON.stringify({app:'Tissue Me Chua R&D Lab',exportedAt:new Date().toISOString(),count:arr.length,experiments:arr},null,2),'application/json;charset=utf-8;');
-    toastSafe('Export JSON แล้ว');
-  }
+  function exportJSONFile(arr){blobDownload('TMC_experiment_export.json',JSON.stringify({app:'Tissue Me Chua R&D Lab',exportedAt:new Date().toISOString(),count:arr.length,experiments:arr},null,2),'application/json;charset=utf-8;');toastSafe('Export JSON แล้ว');}
 
-  function tableRowsFromText(text){
-    const lines=String(text||'').split('\n').map(x=>x.trim()).filter(Boolean);
-    if(!lines.length) return '<tr><td colspan="4">ยังไม่มีข้อมูลตารางการทดลอง</td></tr>';
-    return lines.map((x,i)=>`<tr><td>${i+1}</td><td colspan="3">${esc(x)}</td></tr>`).join('');
+  function listItems(v, fallback, max=6, chars=560){
+    const raw=clamp(v||'',chars);
+    let lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    if(!lines.length) lines=fallback;
+    return lines.slice(0,max).map(x=>`<li>${esc(String(x).replace(/^\d+[.)]\s*/,'').replace(/^[-•]\s*/,''))}</li>`).join('');
   }
-  function xyRows(e){
-    const cells = Array.isArray(e.xyCells) ? e.xyCells : expImages(e);
-    if(!cells.length) return tableRowsFromText(e.table);
-    return cells.map((c,i)=>`<tr><td>${i+1}</td><td>${esc(c.x || '-')}</td><td>${esc(c.y || '-')}</td><td>${esc(c.note || '')}</td></tr>`).join('');
+  function criteriaItems(e){
+    return listItems(e.criteria, [
+      'อัตราการปนเปื้อนของอาหารเพาะเลี้ยง',
+      'คะแนนการควบแน่นของไอน้ำภายในขวด',
+      'การลดลงของน้ำหนักขวดเพื่อประเมินการระเหยและการระบายอากาศ',
+      'คะแนนความแห้งหรือการหดตัวของอาหารเพาะเลี้ยง'
+    ], 6, 650);
+  }
+  function stepItems(e){
+    return listItems(e.steps, [
+      'เตรียมอาหารเพาะเลี้ยงสูตรเดียวกันและกำหนดปริมาตรอาหารให้เท่ากันทุกขวด',
+      'ปิดฝาขวดตามเงื่อนไขของแต่ละชุดทดลอง',
+      'ชั่งน้ำหนักขวดทั้งหมดใน Day 0',
+      'วางขวดทั้งหมดในสภาพแวดล้อมเดียวกัน',
+      'ตรวจติดตามผลตามวันที่กำหนดและถ่ายภาพในตำแหน่งเดิม',
+      'สรุปผลและเปรียบเทียบระหว่างชุดทดลอง'
+    ], 6, 650);
+  }
+  function tableRows(e){
+    const cells=Array.isArray(e.xyCells) ? e.xyCells : [];
+    if(cells.length){
+      return cells.slice(0,6).map((c,i)=>`<tr><td>${i+1}</td><td>${esc(c.x||'-')}</td><td>${esc(c.y||'-')}</td><td>${esc(clamp(c.note||'',120))}</td><td><span class="tmc-pdf-badge">บันทึกแล้ว</span></td></tr>`).join('');
+    }
+    const lines=String(e.table||'').split('\n').map(x=>x.trim()).filter(Boolean);
+    if(lines.length){return lines.slice(0,6).map((x,i)=>`<tr><td>${i+1}</td><td colspan="3">${esc(clamp(x,200))}</td><td><span class="tmc-pdf-badge">บันทึกแล้ว</span></td></tr>`).join('');}
+    return '<tr><td colspan="5">ยังไม่มีข้อมูลตารางการทดลอง</td></tr>';
   }
   function imageBoxes(e){
     const imgs=expImages(e).slice(0,4);
-    const boxes=[];
+    let html='';
     for(let i=0;i<4;i++){
-      const img=imgs[i];
-      if(img && (img.src||img.image||img.url)){
-        boxes.push(`<div class="tmc-r-imgbox"><img src="${esc(img.src||img.image||img.url)}"><div>${esc(img.x||`ภาพที่ ${i+1}`)}${esc(img.y?(' · '+img.y):'')}<br>${esc(img.note||'')}</div></div>`);
-      }else{
-        boxes.push(`<div class="tmc-r-imgbox"><div class="tmc-r-empty">ไม่มีรูป</div><div>ภาพประกอบ ${i+1}</div></div>`);
-      }
+      const im=imgs[i];
+      if(im){html+=`<div class="tmc-pdf-imgbox"><img src="${esc(imgSrc(im))}"><div>${esc(clamp(im.note || im.y || im.x || 'ภาพประกอบการทดลอง',34))}</div></div>`;}
+      else{html+=`<div class="tmc-pdf-imgbox"><div class="tmc-pdf-empty">ไม่มีรูป</div><div>ภาพประกอบ ${i+1}</div></div>`;}
     }
-    return `<div class="tmc-r-images">${boxes.join('')}</div>`;
-  }
-
-  function clampText(v,max){
-    const t=txt(v,'').replace(/\s+\n/g,'\n').trim();
-    if(!max || t.length<=max) return t;
-    return t.slice(0,max-1).trim()+'…';
-  }
-  function listFromText(v,maxItems=6,maxChars=520){
-    const raw=clampText(v,maxChars);
-    const lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);
-    if(!lines.length) return '<li>ยังไม่มีข้อมูล</li>';
-    return lines.slice(0,maxItems).map(x=>`<li>${esc(x.replace(/^\d+[.)]\s*/,''))}</li>`).join('');
-  }
-  function criteriaBullets(v){
-    const raw=clampText(v,620);
-    const lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);
-    if(lines.length) return lines.slice(0,6).map(x=>`<li>${esc(x.replace(/^[-•]\s*/,''))}</li>`).join('');
-    return `<li>อัตราการปนเปื้อนของอาหารเพาะเลี้ยง</li><li>คะแนนการควบแน่นของไอน้ำ</li><li>การลดลงของน้ำหนักขวด</li><li>คะแนนความแห้งของอาหาร</li>`;
-  }
-  function reportTableRows(e){
-    const cells = Array.isArray(e.xyCells) ? e.xyCells : [];
-    if(cells.length){
-      return cells.slice(0,8).map((c,i)=>`<tr><td>${i+1}</td><td>${esc(c.x || '-')}</td><td>${esc(c.y || '-')}</td><td>${esc(c.note || '')}</td><td><span class="tmc-r-badge">บันทึกแล้ว</span></td></tr>`).join('');
-    }
-    const lines=String(e.table||'').split('\n').map(x=>x.trim()).filter(Boolean);
-    if(lines.length){
-      return lines.slice(0,8).map((x,i)=>`<tr><td>${i+1}</td><td colspan="3">${esc(x)}</td><td><span class="tmc-r-badge">บันทึกแล้ว</span></td></tr>`).join('');
-    }
-    return `<tr><td colspan="5">ยังไม่มีข้อมูลตารางการทดลอง</td></tr>`;
+    return `<div class="tmc-pdf-images">${html}</div>`;
   }
 
   function reportPage(e,i,total){
-    const title=expTitle(e,i);
-    const code=expCode(e,i);
-    const media=expMedia(e);
-    const sets=expSets(e);
-    const status=expStatus(e);
-    const date=expDate(e);
-    const survival=txt(e.survival,0);
-    const summary=clampText(e.summary || e.result || e.conclusion || 'ยังไม่มีการบันทึกสรุปผลการทดลอง', 520);
-    return `
-      <section class="tmc-report-page">
-        <div class="tmc-report">
-          <header class="tmc-r-header">
-            <div class="tmc-r-logo">
-              <div class="tmc-r-logo-mark">⚗️</div>
-              <div><div class="tmc-r-brand">Tissue Me Chua</div><div class="tmc-r-brand-sub">R&amp;D Lab</div></div>
-            </div>
-            <div class="tmc-r-title"><h1>Experiment Export Report</h1><div>รายงานผลการทดลอง</div></div>
-            <div class="tmc-r-art"></div>
-          </header>
-
-          <section class="tmc-r-meta">
-            <div class="tmc-r-meta-card"><div class="tmc-r-ico">📅</div><div><b>วันที่ส่งออก</b><span>${esc(nowThai())}</span></div></div>
-            <div class="tmc-r-meta-card"><div class="tmc-r-ico">🧪</div><div><b>รหัสการทดลอง</b><span>${esc(code)}</span></div></div>
-            <div class="tmc-r-meta-card"><div class="tmc-r-ico">✅</div><div><b>สถานะการทดลอง</b><span class="tmc-r-pill">${esc(status)}</span></div></div>
-            <div class="tmc-r-meta-card"><div class="tmc-r-ico">👤</div><div><b>ผู้บันทึก</b><span>R&amp;D Team</span></div></div>
-          </section>
-
-          <section class="tmc-r-grid2">
-            <div class="tmc-r-card pad">
-              <h2 class="tmc-r-card-title"><span class="tmc-r-title-ico">1</span>ข้อมูลการทดลอง</h2>
-              <table class="tmc-r-kv">
-                <tr><th>ชื่อการทดลอง</th><td>${esc(clampText(title,160))}</td></tr>
-                <tr><th>วัตถุประสงค์</th><td>${esc(clampText(e.objective || e.purpose || title,210))}</td></tr>
-                <tr><th>วันที่เริ่มต้น</th><td>${esc(date || '-')}</td></tr>
-                <tr><th>สถานที่ดำเนินการ</th><td>Tissue Me Chua R&amp;D Lab</td></tr>
-                <tr><th>ผู้ดำเนินการ</th><td>R&amp;D Team</td></tr>
-                <tr><th>หมายเหตุ</th><td>${esc(clampText(e.note || '-',120))}</td></tr>
-              </table>
-            </div>
-
-            <div class="tmc-r-card pad">
-              <h2 class="tmc-r-card-title"><span class="tmc-r-title-ico">2</span>อาหารที่ใช้ในการทดลอง</h2>
-              <table class="tmc-r-kv medium">
-                <tr><th>สูตรอาหาร</th><td>${esc(clampText(media,210))}</td></tr>
-                <tr><th>ชุดทดลอง</th><td>${esc(clampText(sets,220))}</td></tr>
-                <tr><th>อัตรารอด/คะแนน</th><td>${esc(survival)}%</td></tr>
-                <tr><th>จำนวนรูปภาพ</th><td>${expImages(e).length} รูป</td></tr>
-                <tr><th>วันที่ติดตามผล</th><td>Day 0, 3, 7, 14, 21, 30</td></tr>
-              </table>
-            </div>
-          </section>
-
-          <section class="tmc-r-grid3">
-            <div class="tmc-r-card pad">
-              <h2 class="tmc-r-card-title"><span class="tmc-r-title-ico">3</span>ชุดทดลอง</h2>
-              <table class="tmc-r-kv">
-                <tr><th>จำนวนชุดทดลอง</th><td>${esc(clampText(sets,260))}</td></tr>
-                <tr><th>จำนวนซ้ำ</th><td>${esc(e.replicate || e.replication || '5–10 ขวด/ชุดทดลอง')}</td></tr>
-                <tr><th>รวมจำนวนขวด</th><td>${esc(e.totalBottle || e.totalBottles || '-')}</td></tr>
-                <tr><th>สภาพแวดล้อม</th><td>${esc(clampText(e.environment || 'วางในสภาพแวดล้อมเดียวกัน ควบคุมอุณหภูมิ แสง และตำแหน่งวางให้ใกล้เคียงกัน',180))}</td></tr>
-              </table>
-            </div>
-
-            <div class="tmc-r-card pad">
-              <h2 class="tmc-r-card-title"><span class="tmc-r-title-ico">4</span>ขั้นตอนการทดลอง</h2>
-              <ol class="tmc-r-steps">${listFromText(e.steps,6,560)}</ol>
-            </div>
-          </section>
-
-          <section class="tmc-r-card pad">
-            <h2 class="tmc-r-card-title"><span class="tmc-r-title-ico">5</span>เกณฑ์การประเมิน</h2>
-            <ul class="tmc-r-bullets">${criteriaBullets(e.criteria)}</ul>
-          </section>
-
-          <section class="tmc-r-card pad">
-            <h2 class="tmc-r-card-title"><span class="tmc-r-title-ico">6</span>ตารางการทดลอง</h2>
-            <table class="tmc-r-table">
-              <thead><tr><th>#</th><th>แกน X / วัน</th><th>แกน Y / ชุดทดลอง</th><th>รายละเอียด / หมายเหตุ</th><th>ผลประเมิน</th></tr></thead>
-              <tbody>${reportTableRows(e)}</tbody>
-            </table>
-            <div class="tmc-r-muted" style="font-size:10px;margin-top:6px;">หมายเหตุ: ข้อมูลในตารางดึงจากตารางการทดลองที่บันทึกในแอป</div>
-          </section>
-
-          <section class="tmc-r-bottom">
-            <div class="tmc-r-card pad">
-              <h2 class="tmc-r-card-title"><span class="tmc-r-title-ico">📷</span>ภาพประกอบการทดลอง</h2>
-              ${imageBoxes(e)}
-            </div>
-            <div class="tmc-r-summary">
-              <h3>⭐ สรุปผลการทดลอง</h3>
-              <p>${esc(summary)}</p>
-              <div class="tmc-r-check"><i>✓</i><span>บันทึกผลการทดลองตามข้อมูลที่เลือก Export</span></div>
-              <div class="tmc-r-check"><i>✓</i><span>รวมข้อมูลสรุป ตารางการทดลอง และภาพประกอบไว้ในรายงาน</span></div>
-              <div class="tmc-r-check"><i>✓</i><span>เหมาะสำหรับเก็บเป็นหลักฐานและใช้ประกอบการวิเคราะห์ต่อ</span></div>
-            </div>
-          </section>
-
-          <footer class="tmc-r-footer"><span><span class="tmc-r-leaf">⌁</span> Tissue Me Chua R&amp;D Lab</span><span>หน้า ${i+1} จาก ${total}</span></footer>
-        </div>
-      </section>`;
+    const title=expTitle(e,i), code=expCode(e,i), media=expMedia(e), sets=expSets(e), status=expStatus(e), date=expDate(e);
+    const summary=clamp(e.summary || e.result || e.conclusion || 'ยังไม่มีการบันทึกสรุปผลการทดลอง', 520);
+    return `<section class="tmc-pdf-page">
+      <div class="tmc-pdf-watermark"></div>
+      <header class="tmc-pdf-head">
+        <div class="tmc-pdf-logo"><div class="tmc-pdf-logo-mark">⚗️</div><div><div class="tmc-pdf-brand">Tissue Me Chua</div><div class="tmc-pdf-brand-sub">R&amp;D Lab</div></div></div>
+        <div class="tmc-pdf-title"><h1>Experiment Export Report</h1><div>รายงานผลการทดลอง</div></div>
+        <div class="tmc-pdf-art"></div>
+      </header>
+      <section class="tmc-pdf-meta">
+        <div class="tmc-pdf-meta-card"><div class="tmc-pdf-ico">📅</div><div><b>วันที่ส่งออก</b><span>${esc(nowThai())}</span></div></div>
+        <div class="tmc-pdf-meta-card"><div class="tmc-pdf-ico">🧪</div><div><b>รหัสการทดลอง</b><span>${esc(code)}</span></div></div>
+        <div class="tmc-pdf-meta-card"><div class="tmc-pdf-ico">✅</div><div><b>สถานะการทดลอง</b><span class="tmc-pdf-pill">${esc(status)}</span></div></div>
+        <div class="tmc-pdf-meta-card"><div class="tmc-pdf-ico">👤</div><div><b>ผู้บันทึก</b><span>R&amp;D Team</span></div></div>
+      </section>
+      <section class="tmc-pdf-grid2">
+        <div class="tmc-pdf-card pad"><h2 class="tmc-pdf-card-title"><span class="tmc-pdf-title-ico">1</span>ข้อมูลการทดลอง</h2><table class="tmc-pdf-kv"><tr><th>ชื่อการทดลอง</th><td>${esc(clamp(title,160))}</td></tr><tr><th>วัตถุประสงค์</th><td>${esc(clamp(e.objective || e.purpose || title,210))}</td></tr><tr><th>วันที่เริ่มต้น</th><td>${esc(date)}</td></tr><tr><th>สถานที่ดำเนินการ</th><td>Tissue Me Chua R&amp;D Lab</td></tr><tr><th>ผู้ดำเนินการ</th><td>R&amp;D Team</td></tr><tr><th>หมายเหตุ</th><td>${esc(clamp(e.note || '-',120))}</td></tr></table></div>
+        <div class="tmc-pdf-card pad"><h2 class="tmc-pdf-card-title"><span class="tmc-pdf-title-ico">2</span>อาหารที่ใช้ในการทดลอง</h2><table class="tmc-pdf-kv center"><tr><th>สูตรอาหาร</th><td>${esc(clamp(media,220))}</td></tr><tr><th>ชุดทดลอง</th><td>${esc(clamp(sets,260))}</td></tr><tr><th>อัตรารอด/คะแนน</th><td>${esc(txt(e.survival,0))}%</td></tr><tr><th>จำนวนรูปภาพ</th><td>${expImages(e).length} รูป</td></tr><tr><th>วันที่ติดตามผล</th><td>Day 0, 3, 7, 14, 21, 30</td></tr></table></div>
+      </section>
+      <section class="tmc-pdf-grid2">
+        <div class="tmc-pdf-card pad"><h2 class="tmc-pdf-card-title"><span class="tmc-pdf-title-ico">3</span>ชุดทดลอง</h2><table class="tmc-pdf-kv"><tr><th>จำนวนชุดทดลอง</th><td>${esc(clamp(sets,260))}</td></tr><tr><th>จำนวนซ้ำ</th><td>${esc(e.replicate || e.replication || '5–10 ขวด/ชุดทดลอง')}</td></tr><tr><th>รวมจำนวนขวด</th><td>${esc(e.totalBottle || e.totalBottles || '-')}</td></tr><tr><th>สภาพแวดล้อม</th><td>${esc(clamp(e.environment || 'วางในสภาพแวดล้อมเดียวกัน ควบคุมอุณหภูมิ แสง และตำแหน่งวางให้ใกล้เคียงกัน',180))}</td></tr></table></div>
+        <div class="tmc-pdf-card pad"><h2 class="tmc-pdf-card-title"><span class="tmc-pdf-title-ico">4</span>ขั้นตอนการทดลอง</h2><ol class="tmc-pdf-steps">${stepItems(e)}</ol></div>
+      </section>
+      <section class="tmc-pdf-card pad"><h2 class="tmc-pdf-card-title"><span class="tmc-pdf-title-ico">5</span>เกณฑ์การประเมิน</h2><ul class="tmc-pdf-bullets">${criteriaItems(e)}</ul></section>
+      <section class="tmc-pdf-card pad"><h2 class="tmc-pdf-card-title"><span class="tmc-pdf-title-ico">6</span>ตารางการทดลอง</h2><table class="tmc-pdf-table"><thead><tr><th>#</th><th>แกน X / วัน</th><th>แกน Y / ชุดทดลอง</th><th>รายละเอียด / หมายเหตุ</th><th>ผลประเมิน</th></tr></thead><tbody>${tableRows(e)}</tbody></table><div class="tmc-pdf-note">หมายเหตุ: ข้อมูลในตารางดึงจากตารางการทดลองที่บันทึกในแอป</div></section>
+      <section class="tmc-pdf-grid-bottom">
+        <div class="tmc-pdf-card pad"><h2 class="tmc-pdf-card-title"><span class="tmc-pdf-title-ico">📷</span>ภาพประกอบการทดลอง</h2>${imageBoxes(e)}</div>
+        <div class="tmc-pdf-summary"><h3>⭐ สรุปผลการทดลอง</h3><p>${esc(summary)}</p><div class="tmc-pdf-check"><i>✓</i><span>รวมข้อมูลสรุป ตารางการทดลอง และภาพประกอบไว้ในรายงาน</span></div><div class="tmc-pdf-check"><i>✓</i><span>เหมาะสำหรับเก็บเป็นหลักฐานและใช้ประกอบการวิเคราะห์ต่อ</span></div><div class="tmc-pdf-check"><i>✓</i><span>สร้างจากเท็มเพลทรายงานมาตรฐานของ Tissue Me Chua R&amp;D Lab</span></div></div>
+      </section>
+      <footer class="tmc-pdf-footer"><span><span class="tmc-pdf-leaf">⌁</span> Tissue Me Chua R&amp;D Lab</span><span>หน้า ${i+1} จาก ${total}</span></footer>
+    </section>`;
   }
-  function buildReport(arr){
-    return `<div class="tmc-report-wrap"><div id="tmcReportExport" class="tmc-report-export-root">${arr.map((e,i)=>reportPage(e,i,arr.length)).join('')}</div></div>`;
-  }
+  function buildReport(arr){return `<div id="tmcPdfPages">${arr.map((e,i)=>reportPage(e,i,arr.length)).join('')}</div>`;}
+
   async function exportPDF(arr){
+    arr=(arr||[]).filter(Boolean);
+    if(!arr.length){toastSafe('ยังไม่ได้เลือกการทดลอง');return;}
     const holder=document.createElement('div');
+    holder.className='tmc-pdf-host';
     holder.innerHTML=buildReport(arr);
     document.body.appendChild(holder);
-    const pages=Array.from(holder.querySelectorAll('.tmc-report-page'));
     const file=arr.length===1 ? `${safeName(expCode(arr[0],0))}_${safeName(expTitle(arr[0],0))}.pdf` : `TMC_experiments_${arr.length}_items.pdf`;
-
     try{
       if(typeof window.html2canvas !== 'function') throw new Error('html2canvas not loaded');
       const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
       if(!jsPDFCtor) throw new Error('jsPDF not loaded');
-
-      await new Promise(r=>setTimeout(r,160));
-
-      const pageW = 1086;
-      const pageH = 1448;
+      await document.fonts?.ready?.catch(()=>{});
+      await wait(180);
+      const pageW=1086, pageH=1448;
       const pdf = new jsPDFCtor({orientation:'portrait',unit:'px',format:[pageW,pageH],compress:true});
-      let isFirstPage = true;
-
-      for(const page of pages){
-        const report = page.querySelector('.tmc-report') || page;
-        const canvas = await html2canvas(report,{
+      const pages=Array.from(holder.querySelectorAll('.tmc-pdf-page'));
+      for(let i=0;i<pages.length;i++){
+        const canvas = await html2canvas(pages[i],{
           scale:2,
           width:pageW,
-          height:Math.max(report.scrollHeight, pageH),
+          height:pageH,
           windowWidth:pageW,
-          windowHeight:Math.max(report.scrollHeight, pageH),
+          windowHeight:pageH,
           scrollX:0,
           scrollY:0,
-          x:0,
-          y:0,
+          backgroundColor:'#ffffff',
           useCORS:true,
           allowTaint:true,
-          backgroundColor:'#ffffff',
           logging:false
         });
-
-        const sliceH = Math.floor(pageH * canvas.width / pageW);
-        let sy = 0;
-
-        while(sy < canvas.height){
-          const currentSliceH = Math.min(sliceH, canvas.height - sy);
-          const slice = document.createElement('canvas');
-          slice.width = canvas.width;
-          slice.height = currentSliceH;
-          const ctx = slice.getContext('2d');
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0,0,slice.width,slice.height);
-          ctx.drawImage(canvas,0,sy,canvas.width,currentSliceH,0,0,canvas.width,currentSliceH);
-
-          if(!isFirstPage) pdf.addPage([pageW,pageH],'portrait');
-          const imgData = slice.toDataURL('image/jpeg',0.98);
-          const renderH = currentSliceH * pageW / canvas.width;
-          pdf.addImage(imgData,'JPEG',0,0,pageW,renderH,undefined,'FAST');
-          isFirstPage = false;
-          sy += sliceH;
-        }
+        if(i>0) pdf.addPage([pageW,pageH],'portrait');
+        pdf.addImage(canvas.toDataURL('image/jpeg',0.98),'JPEG',0,0,pageW,pageH,undefined,'FAST');
       }
-
       pdf.save(file);
       toastSafe('Export PDF แล้ว');
     }catch(err){
       console.error(err);
-      const target=holder.querySelector('#tmcReportExport');
       const w=window.open('','_blank');
       if(w){
-        w.document.write('<html><head><meta charset="utf-8"><title>'+file+'</title><style>'+document.querySelector('style')?.innerHTML+'</style></head><body style="margin:0;background:#fff;">'+target.innerHTML+'</body></html>');
+        const styles=Array.from(document.querySelectorAll('style')).map(x=>x.innerHTML).join('\n');
+        w.document.write(`<html><head><meta charset="utf-8"><title>${esc(file)}</title><style>${styles}</style></head><body style="margin:0;background:#fff;">${holder.innerHTML}</body></html>`);
         w.document.close();
-        setTimeout(()=>w.print(),500);
+        setTimeout(()=>w.print(),700);
       }
       toastSafe('เปิดหน้าพิมพ์ PDF แทน');
-    }finally{
-      holder.remove();
-    }
+    }finally{holder.remove();}
   }
+
   async function exportExperiments(arr,format){
     arr=(arr||[]).filter(Boolean);
     if(!arr.length){toastSafe('ยังไม่ได้เลือกการทดลอง');return;}
@@ -6402,28 +6288,7 @@ TMC Experiment Export Module v9.2 FIXED PDF PAGE RENDER
     modal=document.createElement('div');
     modal.id='tmcExportPickerModal';
     modal.className='tmc-export-modal';
-    modal.innerHTML=`
-      <div class="tmc-export-sheet">
-        <div class="tmc-export-head">
-          <div class="tmc-export-handle"></div>
-          <div class="tmc-export-head-row"><h2>⬇ เลือกการทดลองที่ต้องการ Export</h2><button type="button" class="tmc-export-close" id="tmcExportClose">ยกเลิก</button></div>
-          <input class="tmc-export-search" id="tmcExportSearch" placeholder="ค้นหาชื่อการทดลอง, รหัส, สูตรอาหาร...">
-        </div>
-        <div class="tmc-export-body">
-          <div class="tmc-export-selectbar"><label style="display:flex;gap:8px;align-items:center;font-weight:900"><input type="checkbox" id="tmcExportSelectAll"> เลือกทั้งหมด</label><span id="tmcExportCount" style="color:var(--green);font-weight:900">เลือก 0 รายการ</span></div>
-          <div class="tmc-export-list" id="tmcExportList"></div>
-          <div style="font-size:13px;font-weight:900;color:var(--muted);margin:16px 0 8px">รูปแบบไฟล์ที่ต้องการ Export</div>
-          <div class="tmc-export-format-row" id="tmcPickerFormatBar">
-            <button type="button" class="tmc-export-format-btn active" data-format="pdf">PDF</button>
-            <button type="button" class="tmc-export-format-btn" data-format="excel">Excel</button>
-            <button type="button" class="tmc-export-format-btn" data-format="csv">CSV</button>
-            <button type="button" class="tmc-export-format-btn" data-format="json">JSON</button>
-          </div>
-          <div style="font-size:13px;font-weight:900;color:var(--muted);margin:16px 0 8px">ขอบเขตข้อมูลที่ต้องการ Export</div>
-          <div class="tmc-export-scope"><label><input type="checkbox" checked> ข้อมูลสรุป</label><label><input type="checkbox" checked> ตารางการทดลอง</label><label><input type="checkbox" checked> รูปภาพ</label><label><input type="checkbox" checked> ผลการประเมิน</label></div>
-        </div>
-        <div class="tmc-export-footer"><button type="button" class="btn" style="width:100%;min-height:46px" id="tmcExportSelectedBtn">⬇ Export ที่เลือก (0 รายการ)</button></div>
-      </div>`;
+    modal.innerHTML=`<div class="tmc-export-sheet"><div class="tmc-export-head"><div class="tmc-export-handle"></div><div class="tmc-export-head-row"><h2>⬇ เลือกการทดลองที่ต้องการ Export</h2><button type="button" class="tmc-export-close" id="tmcExportClose">ยกเลิก</button></div><input class="tmc-export-search" id="tmcExportSearch" placeholder="ค้นหาชื่อการทดลอง, รหัส, สูตรอาหาร..."></div><div class="tmc-export-body"><div class="tmc-export-selectbar"><label style="display:flex;gap:8px;align-items:center;font-weight:900"><input type="checkbox" id="tmcExportSelectAll"> เลือกทั้งหมด</label><span id="tmcExportCount" style="color:var(--green);font-weight:900">เลือก 0 รายการ</span></div><div class="tmc-export-list" id="tmcExportList"></div><div style="font-size:13px;font-weight:900;color:var(--muted);margin:16px 0 8px">รูปแบบไฟล์ที่ต้องการ Export</div><div class="tmc-export-format-row" id="tmcPickerFormatBar"><button type="button" class="tmc-export-format-btn active" data-format="pdf">PDF</button><button type="button" class="tmc-export-format-btn" data-format="excel">Excel</button><button type="button" class="tmc-export-format-btn" data-format="csv">CSV</button><button type="button" class="tmc-export-format-btn" data-format="json">JSON</button></div><div style="font-size:13px;font-weight:900;color:var(--muted);margin:16px 0 8px">ขอบเขตข้อมูลที่ต้องการ Export</div><div class="tmc-export-scope"><label><input type="checkbox" checked> ข้อมูลสรุป</label><label><input type="checkbox" checked> ตารางการทดลอง</label><label><input type="checkbox" checked> รูปภาพ</label><label><input type="checkbox" checked> ผลการประเมิน</label></div></div><div class="tmc-export-footer"><button type="button" class="btn" style="width:100%;min-height:46px" id="tmcExportSelectedBtn">⬇ Export ที่เลือก (0 รายการ)</button></div></div>`;
     document.body.appendChild(modal);
     const close=()=>{modal.classList.remove('show'); if(!document.getElementById('modal')?.classList.contains('show')) document.body.classList.remove('modal-open');};
     modal.querySelector('#tmcExportClose').addEventListener('click',close);
@@ -6462,7 +6327,6 @@ TMC Experiment Export Module v9.2 FIXED PDF PAGE RENDER
     all.checked=checks.length>0 && n===checks.length;
     all.indeterminate=n>0 && n<checks.length;
   }
-  function toastSafe(msg){ if(typeof toast==='function') toast(msg); else alert(msg); }
 
   window.tmcExportOneExperiment=function(ev,i){ if(ev) ev.stopPropagation(); exportExperiments([experiments()[i]], exportFormat); };
   window.tmcExportAllExperiments=function(ev){ if(ev) ev.stopPropagation(); exportExperiments(experiments(), exportFormat); };
