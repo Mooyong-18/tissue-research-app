@@ -6709,5 +6709,1055 @@ TMC Experiment Export Module v10.0 TEMPLATE PDF
   try{ if(typeof page !== 'undefined' && page==='experiments') renderExperiments(); }catch(err){ console.error(err); }
 })();
 </script>
+  <!-- =========================================================
+TMC A4 PDF EXPORT PATCH v11
+แก้ PDF เพี้ยน / สัดส่วนไม่พอดี A4 / ตัวหนังสือล้นกรอบ
+วางก่อน </body>
+========================================================= -->
+
+<style>
+/* ================================
+   TMC PDF A4 PATCH
+   A4 ratio = 794 x 1123 px
+================================ */
+
+.tmc-a4-host{
+  position:fixed;
+  left:-99999px;
+  top:0;
+  width:794px;
+  background:#fff;
+  z-index:-1;
+  opacity:1;
+  pointer-events:none;
+}
+
+.tmc-a4-page{
+  width:794px;
+  height:1123px;
+  background:#ffffff;
+  color:#111827;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,sans-serif;
+  box-sizing:border-box;
+  padding:48px 52px 42px;
+  position:relative;
+  overflow:hidden;
+}
+
+.tmc-a4-header{
+  display:grid;
+  grid-template-columns:220px 1fr 160px;
+  gap:22px;
+  align-items:start;
+  border-bottom:2px solid #8ccfbd;
+  padding-bottom:22px;
+  margin-bottom:18px;
+}
+
+.tmc-a4-brand{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  min-width:0;
+}
+
+.tmc-a4-logo{
+  width:48px;
+  height:48px;
+  border-radius:14px;
+  border:1px solid #cdeee4;
+  background:#f7fffb;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:25px;
+  flex:0 0 auto;
+}
+
+.tmc-a4-brand-name{
+  font-size:24px;
+  line-height:1;
+  font-weight:950;
+  color:#006b4f;
+  white-space:nowrap;
+}
+
+.tmc-a4-brand-sub{
+  font-size:15px;
+  line-height:1.1;
+  font-weight:900;
+  color:#334155;
+  margin-top:3px;
+}
+
+.tmc-a4-title{
+  text-align:center;
+  color:#006b4f;
+}
+
+.tmc-a4-title h1{
+  margin:0;
+  font-size:29px;
+  line-height:.98;
+  font-weight:950;
+  letter-spacing:-.8px;
+}
+
+.tmc-a4-title p{
+  margin:10px 0 0;
+  font-size:14px;
+  font-weight:850;
+  color:#64748b;
+}
+
+.tmc-a4-mark{
+  height:76px;
+  border-radius:28px;
+  opacity:.13;
+  background:
+    radial-gradient(circle at 70% 20%, #006b4f 0 5px, transparent 6px),
+    radial-gradient(circle at 40% 60%, #006b4f 0 30px, transparent 31px);
+}
+
+.tmc-a4-meta{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  border-bottom:1px solid #dceee8;
+  padding-bottom:14px;
+  margin-bottom:16px;
+}
+
+.tmc-a4-meta-item{
+  display:grid;
+  grid-template-columns:34px 1fr;
+  gap:8px;
+  align-items:center;
+  padding:0 12px;
+  border-right:1px solid #dceee8;
+  min-width:0;
+}
+
+.tmc-a4-meta-item:first-child{
+  padding-left:0;
+}
+
+.tmc-a4-meta-item:last-child{
+  border-right:0;
+  padding-right:0;
+}
+
+.tmc-a4-meta-icon{
+  width:30px;
+  height:30px;
+  border-radius:10px;
+  background:#e9f8f2;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:17px;
+}
+
+.tmc-a4-meta-label{
+  font-size:9.5px;
+  line-height:1.15;
+  font-weight:900;
+  color:#64748b;
+}
+
+.tmc-a4-meta-value{
+  margin-top:3px;
+  font-size:11.5px;
+  line-height:1.18;
+  font-weight:950;
+  color:#0f172a;
+  word-break:break-word;
+}
+
+.tmc-a4-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  align-items:start;
+}
+
+.tmc-a4-card{
+  border:1.4px solid #b9ddd3;
+  border-radius:15px;
+  padding:15px;
+  min-height:205px;
+  overflow:hidden;
+  box-sizing:border-box;
+  background:#fff;
+}
+
+.tmc-a4-card.tall{
+  min-height:245px;
+}
+
+.tmc-a4-card-title{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:0 0 12px;
+  color:#006b4f;
+  font-size:16px;
+  line-height:1.1;
+  font-weight:950;
+}
+
+.tmc-a4-no{
+  width:24px;
+  height:24px;
+  border-radius:999px;
+  background:#dcf7ec;
+  color:#006b4f;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:950;
+  flex:0 0 auto;
+}
+
+.tmc-a4-table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+
+.tmc-a4-table tr{
+  border-bottom:1px solid #e8f0ed;
+}
+
+.tmc-a4-table tr:last-child{
+  border-bottom:0;
+}
+
+.tmc-a4-table th,
+.tmc-a4-table td{
+  vertical-align:top;
+  padding:8px 0;
+  font-size:10.7px;
+  line-height:1.34;
+}
+
+.tmc-a4-table th{
+  width:34%;
+  text-align:left;
+  color:#475569;
+  font-weight:950;
+  padding-right:10px;
+}
+
+.tmc-a4-table td{
+  color:#111827;
+  font-weight:750;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+}
+
+.tmc-a4-text{
+  font-size:11px;
+  line-height:1.45;
+  font-weight:730;
+  color:#111827;
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+}
+
+.tmc-a4-text ol,
+.tmc-a4-text ul{
+  margin:0;
+  padding-left:18px;
+}
+
+.tmc-a4-text li{
+  margin-bottom:5px;
+}
+
+.tmc-a4-image-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.tmc-a4-img-box{
+  border:1px solid #d7e7e1;
+  border-radius:12px;
+  padding:8px;
+  overflow:hidden;
+  background:#f8fafc;
+}
+
+.tmc-a4-img-box img{
+  width:100%;
+  height:120px;
+  object-fit:cover;
+  border-radius:9px;
+  display:block;
+}
+
+.tmc-a4-img-caption{
+  font-size:9px;
+  line-height:1.25;
+  color:#64748b;
+  font-weight:800;
+  margin-top:5px;
+}
+
+.tmc-a4-footer{
+  position:absolute;
+  left:52px;
+  right:52px;
+  bottom:30px;
+  border-top:1px solid #dbe8e2;
+  padding-top:9px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  font-size:9.5px;
+  color:#64748b;
+  font-weight:800;
+}
+
+.tmc-a4-footer-url{
+  max-width:520px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+@media print{
+  @page{
+    size:A4 portrait;
+    margin:0;
+  }
+
+  body *{
+    visibility:hidden;
+  }
+
+  .tmc-a4-host,
+  .tmc-a4-host *{
+    visibility:visible;
+  }
+
+  .tmc-a4-host{
+    position:absolute;
+    left:0;
+    top:0;
+    width:794px;
+  }
+
+  .tmc-a4-page{
+    page-break-after:always;
+    break-after:page;
+  }
+}
+</style>
+
+<script>
+(function(){
+  if(window.__TMC_A4_EXPORT_PATCH_V11__) return;
+  window.__TMC_A4_EXPORT_PATCH_V11__ = true;
+
+  const oldExportExperiments = window.tmcExportExperiments;
+
+  function esc(v){
+    return String(v ?? '').replace(/[&<>"']/g, function(m){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+
+  function txt(v, fallback='-'){
+    if(v === undefined || v === null || v === '') return fallback;
+    return String(v);
+  }
+
+  function safeName(v){
+    return String(v || 'TMC_export')
+      .replace(/[\\/:*?"<>|\s]+/g,'_')
+      .slice(0,90);
+  }
+
+  function toastSafe(msg){
+    if(typeof toast === 'function') toast(msg);
+    else alert(msg);
+  }
+
+  function experiments(){
+    window.db = window.db || {};
+    db.experiments = Array.isArray(db.experiments) ? db.experiments : [];
+    return db.experiments;
+  }
+
+  function expTitle(e,i){
+    return txt(e.name || e.title || e.experimentName, `การทดลองที่ ${i + 1}`);
+  }
+
+  function expCode(e,i){
+    return txt(e.code || e.id || e.expCode, `EXP-${String(i + 1).padStart(3,'0')}`);
+  }
+
+  function expMedia(e){
+    return txt(e.media || e.medium || e.formula || e.food || e.mediaFormula, '-');
+  }
+
+  function expSets(e){
+    return txt(e.sets || e.groups || e.treatmentsText || e.treatment || e.treatmentSet, '-');
+  }
+
+  function expStatus(e){
+    return txt(e.status || e.state, 'บันทึกแล้ว');
+  }
+
+  function expDate(e){
+    return txt(e.date || e.startDate || e.createdAt || e.updatedAt, '-');
+  }
+
+  function expObjective(e){
+    return txt(e.objective || e.purpose || e.goal, '-');
+  }
+
+  function expLocation(e){
+    return txt(e.location || e.place, 'Tissue Me Chua R&D Lab');
+  }
+
+  function expOperator(e){
+    return txt(e.operator || e.owner || e.recorder || e.user, 'R&D Team');
+  }
+
+  function expNote(e){
+    return txt(e.note || e.remark || e.notes, '-');
+  }
+
+  function expMethod(e){
+    return txt(e.method || e.procedure || e.steps, '-');
+  }
+
+  function expResult(e){
+    return txt(e.result || e.results || e.observation || e.summary, '-');
+  }
+
+  function expConclusion(e){
+    return txt(e.conclusion || e.discussion || e.finalResult, '-');
+  }
+
+  function expScore(e){
+    return txt(e.score || e.survivalRate || e.rate, '0%');
+  }
+
+  function expFollowUp(e){
+    return txt(e.followUp || e.followup || e.days || e.trackingDays, 'Day 0, 3, 7, 14, 21, 30');
+  }
+
+  function expImages(e){
+    const out = [];
+
+    if(Array.isArray(e.images)){
+      e.images.forEach((x,idx)=>{
+        const src = x?.src || x?.image || x?.url || x;
+        if(src) out.push({
+          src,
+          caption: x?.caption || x?.note || `รูปภาพที่ ${idx + 1}`
+        });
+      });
+    }
+
+    if(Array.isArray(e.xyCells)){
+      e.xyCells.forEach((x,idx)=>{
+        const src = x?.src || x?.image || x?.url;
+        if(src) out.push({
+          src,
+          caption: `${x?.x || ''} ${x?.y || ''} ${x?.note || ''}`.trim() || `ตารางภาพที่ ${idx + 1}`
+        });
+      });
+    }
+
+    if(e.image){
+      out.push({
+        src:e.image,
+        caption:'รูปภาพหลัก'
+      });
+    }
+
+    return out.filter(x => x && x.src).slice(0,8);
+  }
+
+  function nowThai(){
+    try{
+      return new Date().toLocaleString('th-TH',{
+        year:'numeric',
+        month:'long',
+        day:'numeric',
+        hour:'2-digit',
+        minute:'2-digit'
+      });
+    }catch(err){
+      return new Date().toLocaleString();
+    }
+  }
+
+  function nl2br(v){
+    return esc(v).replace(/\n/g,'<br>');
+  }
+
+  function pageOne(e,i,totalPages,pageNo){
+    const imgs = expImages(e);
+
+    return `
+      <section class="tmc-a4-page">
+
+        <header class="tmc-a4-header">
+          <div class="tmc-a4-brand">
+            <div class="tmc-a4-logo">🧫</div>
+            <div>
+              <div class="tmc-a4-brand-name">Tissue Me Chua</div>
+              <div class="tmc-a4-brand-sub">R&amp;D Lab</div>
+            </div>
+          </div>
+
+          <div class="tmc-a4-title">
+            <h1>Experiment<br>Export<br>Report</h1>
+            <p>รายงานผลการทดลอง</p>
+          </div>
+
+          <div class="tmc-a4-mark"></div>
+        </header>
+
+        <div class="tmc-a4-meta">
+          <div class="tmc-a4-meta-item">
+            <div class="tmc-a4-meta-icon">📅</div>
+            <div>
+              <div class="tmc-a4-meta-label">วันที่ส่งออก</div>
+              <div class="tmc-a4-meta-value">${esc(nowThai())}</div>
+            </div>
+          </div>
+
+          <div class="tmc-a4-meta-item">
+            <div class="tmc-a4-meta-icon">🧪</div>
+            <div>
+              <div class="tmc-a4-meta-label">รหัสการทดลอง</div>
+              <div class="tmc-a4-meta-value">${esc(expCode(e,i))}</div>
+            </div>
+          </div>
+
+          <div class="tmc-a4-meta-item">
+            <div class="tmc-a4-meta-icon">✅</div>
+            <div>
+              <div class="tmc-a4-meta-label">สถานะการทดลอง</div>
+              <div class="tmc-a4-meta-value">${esc(expStatus(e))}</div>
+            </div>
+          </div>
+
+          <div class="tmc-a4-meta-item">
+            <div class="tmc-a4-meta-icon">👤</div>
+            <div>
+              <div class="tmc-a4-meta-label">ผู้บันทึก</div>
+              <div class="tmc-a4-meta-value">${esc(expOperator(e))}</div>
+            </div>
+          </div>
+        </div>
+
+        <main class="tmc-a4-grid">
+
+          <section class="tmc-a4-card tall">
+            <h3 class="tmc-a4-card-title">
+              <span class="tmc-a4-no">1</span>
+              ข้อมูลการทดลอง
+            </h3>
+            <table class="tmc-a4-table">
+              <tr>
+                <th>ชื่อการทดลอง</th>
+                <td>${nl2br(expTitle(e,i))}</td>
+              </tr>
+              <tr>
+                <th>วัตถุประสงค์</th>
+                <td>${nl2br(expObjective(e))}</td>
+              </tr>
+              <tr>
+                <th>วันที่เริ่มต้น</th>
+                <td>${esc(expDate(e))}</td>
+              </tr>
+              <tr>
+                <th>สถานที่ดำเนินการ</th>
+                <td>${esc(expLocation(e))}</td>
+              </tr>
+              <tr>
+                <th>ผู้ดำเนินการ</th>
+                <td>${esc(expOperator(e))}</td>
+              </tr>
+              <tr>
+                <th>หมายเหตุ</th>
+                <td>${nl2br(expNote(e))}</td>
+              </tr>
+            </table>
+          </section>
+
+          <section class="tmc-a4-card tall">
+            <h3 class="tmc-a4-card-title">
+              <span class="tmc-a4-no">2</span>
+              อาหารที่ใช้ในการทดลอง
+            </h3>
+            <table class="tmc-a4-table">
+              <tr>
+                <th>สูตรอาหาร</th>
+                <td>${nl2br(expMedia(e))}</td>
+              </tr>
+              <tr>
+                <th>ชุดทดลอง</th>
+                <td>${nl2br(expSets(e))}</td>
+              </tr>
+              <tr>
+                <th>อัตรารอด/คะแนน</th>
+                <td>${esc(expScore(e))}</td>
+              </tr>
+              <tr>
+                <th>จำนวนรูปภาพ</th>
+                <td>${imgs.length} รูป</td>
+              </tr>
+              <tr>
+                <th>วันที่ติดตามผล</th>
+                <td>${esc(expFollowUp(e))}</td>
+              </tr>
+            </table>
+          </section>
+
+          <section class="tmc-a4-card">
+            <h3 class="tmc-a4-card-title">
+              <span class="tmc-a4-no">3</span>
+              ชุดทดลอง
+            </h3>
+            <table class="tmc-a4-table">
+              <tr>
+                <th>จำนวนชุดทดลอง</th>
+                <td>${nl2br(expSets(e))}</td>
+              </tr>
+              <tr>
+                <th>จำนวนซ้ำ</th>
+                <td>${esc(txt(e.replicate || e.repeats, '5–10 ขวด/ชุดทดลอง'))}</td>
+              </tr>
+              <tr>
+                <th>รวมจำนวนขวด</th>
+                <td>${esc(txt(e.totalBottle || e.bottleTotal, '-'))}</td>
+              </tr>
+              <tr>
+                <th>สภาพแวดล้อม</th>
+                <td>${nl2br(txt(e.environment, 'วางในสภาพแวดล้อมเดียวกัน ควบคุมอุณหภูมิ แสง และตำแหน่งวางให้ใกล้เคียงกัน'))}</td>
+              </tr>
+            </table>
+          </section>
+
+          <section class="tmc-a4-card">
+            <h3 class="tmc-a4-card-title">
+              <span class="tmc-a4-no">4</span>
+              ขั้นตอนการทดลอง
+            </h3>
+            <div class="tmc-a4-text">${nl2br(expMethod(e))}</div>
+          </section>
+
+        </main>
+
+        <footer class="tmc-a4-footer">
+          <div class="tmc-a4-footer-url">https://mooyong-18.github.io/tissue-research-app/</div>
+          <div>หน้าที่ ${pageNo} จาก ${totalPages}</div>
+        </footer>
+
+      </section>
+    `;
+  }
+
+  function pageTwo(e,i,totalPages,pageNo){
+    const imgs = expImages(e);
+
+    const imgHtml = imgs.length
+      ? `<div class="tmc-a4-image-grid">
+          ${imgs.slice(0,6).map(img => `
+            <div class="tmc-a4-img-box">
+              <img src="${esc(img.src)}" crossorigin="anonymous">
+              <div class="tmc-a4-img-caption">${esc(img.caption || '-')}</div>
+            </div>
+          `).join('')}
+        </div>`
+      : `<div class="tmc-a4-text">ยังไม่มีรูปภาพ</div>`;
+
+    return `
+      <section class="tmc-a4-page">
+
+        <header class="tmc-a4-header">
+          <div class="tmc-a4-brand">
+            <div class="tmc-a4-logo">🧫</div>
+            <div>
+              <div class="tmc-a4-brand-name">Tissue Me Chua</div>
+              <div class="tmc-a4-brand-sub">R&amp;D Lab</div>
+            </div>
+          </div>
+
+          <div class="tmc-a4-title">
+            <h1>Experiment<br>Export<br>Report</h1>
+            <p>รายงานผลการทดลอง</p>
+          </div>
+
+          <div class="tmc-a4-mark"></div>
+        </header>
+
+        <main class="tmc-a4-grid">
+
+          <section class="tmc-a4-card">
+            <h3 class="tmc-a4-card-title">
+              <span class="tmc-a4-no">5</span>
+              ผลการทดลอง
+            </h3>
+            <div class="tmc-a4-text">${nl2br(expResult(e))}</div>
+          </section>
+
+          <section class="tmc-a4-card">
+            <h3 class="tmc-a4-card-title">
+              <span class="tmc-a4-no">6</span>
+              สรุปผล
+            </h3>
+            <div class="tmc-a4-text">${nl2br(expConclusion(e))}</div>
+          </section>
+
+          <section class="tmc-a4-card tall">
+            <h3 class="tmc-a4-card-title">
+              <span class="tmc-a4-no">7</span>
+              รูปภาพประกอบ
+            </h3>
+            ${imgHtml}
+          </section>
+
+          <section class="tmc-a4-card tall">
+            <h3 class="tmc-a4-card-title">
+              <span class="tmc-a4-no">8</span>
+              หมายเหตุเพิ่มเติม
+            </h3>
+            <div class="tmc-a4-text">${nl2br(expNote(e))}</div>
+          </section>
+
+        </main>
+
+        <footer class="tmc-a4-footer">
+          <div class="tmc-a4-footer-url">https://mooyong-18.github.io/tissue-research-app/</div>
+          <div>หน้าที่ ${pageNo} จาก ${totalPages}</div>
+        </footer>
+
+      </section>
+    `;
+  }
+
+  function buildA4Report(arr){
+    const totalPages = arr.length * 2;
+    let pageNo = 1;
+
+    return arr.map((e,i) => {
+      const p1 = pageOne(e,i,totalPages,pageNo++);
+      const p2 = pageTwo(e,i,totalPages,pageNo++);
+      return p1 + p2;
+    }).join('');
+  }
+
+  async function exportPDFA4(arr){
+    arr = (arr || []).filter(Boolean);
+
+    if(!arr.length){
+      toastSafe('ยังไม่ได้เลือกการทดลอง');
+      return;
+    }
+
+    const holder = document.createElement('div');
+    holder.className = 'tmc-a4-host';
+    holder.innerHTML = buildA4Report(arr);
+    document.body.appendChild(holder);
+
+    const fileName = arr.length === 1
+      ? `${safeName(expCode(arr[0],0))}_${safeName(expTitle(arr[0],0))}.pdf`
+      : `TMC_experiments_${arr.length}_items.pdf`;
+
+    try{
+      const html2canvasFn = window.html2canvas;
+      const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+
+      if(typeof html2canvasFn !== 'function') throw new Error('html2canvas not loaded');
+      if(!jsPDFCtor) throw new Error('jsPDF not loaded');
+
+      if(document.fonts && document.fonts.ready){
+        await document.fonts.ready.catch(()=>{});
+      }
+
+      await new Promise(resolve => setTimeout(resolve,250));
+
+      const pdf = new jsPDFCtor({
+        orientation:'portrait',
+        unit:'mm',
+        format:'a4',
+        compress:true
+      });
+
+      const pages = Array.from(holder.querySelectorAll('.tmc-a4-page'));
+
+      for(let i = 0; i < pages.length; i++){
+        const canvas = await html2canvasFn(pages[i],{
+          scale:2.4,
+          width:794,
+          height:1123,
+          windowWidth:794,
+          windowHeight:1123,
+          scrollX:0,
+          scrollY:0,
+          backgroundColor:'#ffffff',
+          useCORS:true,
+          allowTaint:true,
+          logging:false,
+          imageTimeout:15000
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg',0.98);
+
+        if(i > 0) pdf.addPage('a4','portrait');
+
+        pdf.addImage(
+          imgData,
+          'JPEG',
+          0,
+          0,
+          210,
+          297,
+          undefined,
+          'FAST'
+        );
+      }
+
+      pdf.save(fileName);
+      toastSafe('Export PDF เป็น A4 แล้ว');
+    }catch(err){
+      console.error('TMC A4 PDF Export Error:', err);
+
+      const w = window.open('','_blank');
+      if(w){
+        const styles = Array.from(document.querySelectorAll('style'))
+          .map(x => x.innerHTML)
+          .join('\n');
+
+        w.document.write(`
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>${esc(fileName)}</title>
+              <style>${styles}</style>
+            </head>
+            <body style="margin:0;background:#fff;">
+              <div class="tmc-a4-host" style="position:static;left:0;top:0;">
+                ${holder.innerHTML}
+              </div>
+            </body>
+          </html>
+        `);
+
+        w.document.close();
+        setTimeout(() => w.print(),800);
+      }
+
+      toastSafe('Export โดยตรงไม่สำเร็จ ระบบเปิดหน้าพิมพ์ PDF แทน');
+    }finally{
+      holder.remove();
+    }
+  }
+
+  function exportExperimentsA4(arr,format){
+    const f = format || 'pdf';
+
+    if(f === 'pdf'){
+      return exportPDFA4(arr);
+    }
+
+    if(typeof oldExportExperiments === 'function'){
+      return oldExportExperiments(arr,f);
+    }
+
+    toastSafe('Export รูปแบบนี้ยังไม่พร้อมใช้งาน');
+  }
+
+  function openPickerA4(ev){
+    if(ev) ev.stopPropagation();
+
+    const arr = experiments();
+
+    if(!arr.length){
+      toastSafe('ยังไม่มีข้อมูลการทดลอง');
+      return;
+    }
+
+    let modal = document.getElementById('tmcA4ExportPicker');
+
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'tmcA4ExportPicker';
+      modal.className = 'tmc-export-modal';
+
+      modal.innerHTML = `
+        <div class="tmc-export-sheet">
+          <div class="tmc-export-head">
+            <div class="tmc-export-handle"></div>
+            <div class="tmc-export-head-row">
+              <h2>⬇ เลือกการทดลองที่ต้องการ Export</h2>
+              <button type="button" class="tmc-export-close" id="tmcA4ExportClose">ยกเลิก</button>
+            </div>
+            <input class="tmc-export-search" id="tmcA4ExportSearch" placeholder="ค้นหาชื่อการทดลอง, รหัส, สูตรอาหาร">
+          </div>
+
+          <div class="tmc-export-body">
+            <div class="tmc-export-selectbar">
+              <label style="display:flex;gap:8px;align-items:center;font-weight:900">
+                <input type="checkbox" id="tmcA4ExportSelectAll">
+                เลือกทั้งหมด
+              </label>
+              <span id="tmcA4ExportCount" style="color:var(--green);font-weight:900">เลือก 0 รายการ</span>
+            </div>
+
+            <div class="tmc-export-list" id="tmcA4ExportList"></div>
+
+            <div style="font-size:13px;font-weight:900;color:var(--muted);margin:16px 0 8px">
+              รูปแบบไฟล์
+            </div>
+
+            <div class="tmc-export-format-row">
+              <button type="button" class="tmc-export-format-btn active" data-format="pdf">PDF A4</button>
+              <button type="button" class="tmc-export-format-btn" data-format="excel">Excel</button>
+              <button type="button" class="tmc-export-format-btn" data-format="csv">CSV</button>
+              <button type="button" class="tmc-export-format-btn" data-format="json">JSON</button>
+            </div>
+          </div>
+
+          <div class="tmc-export-footer">
+            <button type="button" class="btn" style="width:100%;min-height:46px" id="tmcA4ExportSelectedBtn">
+              ⬇ Export ที่เลือก (0 รายการ)
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      let currentFormat = 'pdf';
+
+      const close = () => {
+        modal.classList.remove('show');
+        if(!document.getElementById('modal')?.classList.contains('show')){
+          document.body.classList.remove('modal-open');
+        }
+      };
+
+      const updateCount = () => {
+        const checks = modal.querySelectorAll('.tmc-a4-export-check');
+        const checked = modal.querySelectorAll('.tmc-a4-export-check:checked');
+        const n = checked.length;
+
+        modal.querySelector('#tmcA4ExportCount').textContent = `เลือก ${n} จาก ${checks.length} รายการ`;
+        modal.querySelector('#tmcA4ExportSelectedBtn').textContent = `⬇ Export ที่เลือก (${n} รายการ)`;
+
+        const all = modal.querySelector('#tmcA4ExportSelectAll');
+        all.checked = checks.length > 0 && n === checks.length;
+        all.indeterminate = n > 0 && n < checks.length;
+      };
+
+      const renderList = () => {
+        const list = modal.querySelector('#tmcA4ExportList');
+        const q = (modal.querySelector('#tmcA4ExportSearch').value || '').trim().toLowerCase();
+
+        let html = '';
+
+        experiments().forEach((e,i) => {
+          const hay = `${expTitle(e,i)} ${expCode(e,i)} ${expMedia(e)} ${expSets(e)} ${expStatus(e)} ${expDate(e)}`.toLowerCase();
+          if(q && !hay.includes(q)) return;
+
+          html += `
+            <div class="tmc-export-item">
+              <input type="checkbox" class="tmc-a4-export-check" value="${i}">
+              <div>
+                <div class="tmc-export-item-title">${esc(expTitle(e,i))}</div>
+                <div class="tmc-export-item-meta">
+                  รหัส: ${esc(expCode(e,i))}<br>
+                  อาหาร/สูตร: ${esc(expMedia(e))}<br>
+                  วันที่: ${esc(expDate(e))}
+                </div>
+              </div>
+              <div class="tmc-export-status">${esc(expStatus(e))}</div>
+            </div>
+          `;
+        });
+
+        list.innerHTML = html || '<div style="padding:18px;text-align:center;color:var(--muted)">ยังไม่พบข้อมูลการทดลอง</div>';
+
+        list.querySelectorAll('.tmc-a4-export-check').forEach(ch => {
+          ch.addEventListener('change',updateCount);
+        });
+
+        updateCount();
+      };
+
+      modal.querySelector('#tmcA4ExportClose').addEventListener('click',close);
+
+      modal.addEventListener('click',e => {
+        if(e.target === modal) close();
+      });
+
+      modal.querySelector('#tmcA4ExportSearch').addEventListener('input',renderList);
+
+      modal.querySelector('#tmcA4ExportSelectAll').addEventListener('change',e => {
+        modal.querySelectorAll('.tmc-a4-export-check').forEach(ch => {
+          ch.checked = e.target.checked;
+        });
+        updateCount();
+      });
+
+      modal.querySelectorAll('.tmc-export-format-btn').forEach(btn => {
+        btn.addEventListener('click',() => {
+          modal.querySelectorAll('.tmc-export-format-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFormat = btn.dataset.format || 'pdf';
+        });
+      });
+
+      modal.querySelector('#tmcA4ExportSelectedBtn').addEventListener('click',() => {
+        const selected = Array.from(modal.querySelectorAll('.tmc-a4-export-check:checked'))
+          .map(ch => experiments()[Number(ch.value)])
+          .filter(Boolean);
+
+        if(!selected.length){
+          toastSafe('ยังไม่ได้เลือกการทดลอง');
+          return;
+        }
+
+        close();
+        exportExperimentsA4(selected,currentFormat);
+      });
+
+      modal.__tmcRenderListA4 = renderList;
+    }
+
+    modal.__tmcRenderListA4();
+    document.body.classList.add('modal-open');
+    modal.classList.add('show');
+  }
+
+  window.tmcExportExperiments = exportExperimentsA4;
+
+  window.tmcExportOneExperiment = function(ev,i){
+    if(ev) ev.stopPropagation();
+    exportExperimentsA4([experiments()[i]],'pdf');
+  };
+
+  window.tmcExportAllExperiments = function(ev){
+    if(ev) ev.stopPropagation();
+    exportExperimentsA4(experiments(),'pdf');
+  };
+
+  window.tmcOpenExportPicker = openPickerA4;
+
+})();
+</script>
 </body>
 </html>
