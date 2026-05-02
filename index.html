@@ -5996,3 +5996,869 @@ window.previewFormula = previewFormula;
 window.bindFormulaRealtime = bindFormulaRealtime;
 window.addIngredientLine = addIngredientLine;
 </script>
+
+<!-- =========================================================
+TMC Experiment Export Module
+เพิ่มระบบ Export การทดลอง: PDF / Excel / CSV / JSON
+วางโค้ดนี้ท้ายไฟล์ index.html ก่อน </body>
+========================================================= -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+  .tmc-export-zone{
+    margin-top:18px;
+    padding:16px;
+    border:1px solid rgba(0,128,96,.18);
+    border-radius:18px;
+    background:linear-gradient(180deg,#ffffff,#f7fffb);
+  }
+
+  .tmc-export-zone h3{
+    margin:0 0 6px;
+    font-size:18px;
+    color:#064e3b;
+  }
+
+  .tmc-export-zone p{
+    margin:0 0 14px;
+    font-size:13px;
+    color:#64748b;
+    line-height:1.5;
+  }
+
+  .tmc-export-formats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-bottom:12px;
+  }
+
+  .tmc-export-format{
+    border:1px solid #d8e7e1;
+    background:#fff;
+    border-radius:14px;
+    padding:10px 6px;
+    text-align:center;
+    font-size:13px;
+    font-weight:700;
+    color:#334155;
+    cursor:pointer;
+  }
+
+  .tmc-export-format.active{
+    border-color:#07845f;
+    color:#047857;
+    background:#ecfdf5;
+    box-shadow:0 0 0 2px rgba(5,150,105,.08);
+  }
+
+  .tmc-export-actions{
+    display:grid;
+    gap:10px;
+  }
+
+  .tmc-btn-export-primary{
+    border:0;
+    border-radius:16px;
+    padding:14px 16px;
+    background:#07845f;
+    color:#fff;
+    font-size:16px;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .tmc-btn-export-secondary{
+    border:1.5px solid #07845f;
+    border-radius:16px;
+    padding:13px 16px;
+    background:#fff;
+    color:#047857;
+    font-size:15px;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .tmc-export-modal{
+    position:fixed;
+    inset:0;
+    z-index:99999;
+    background:rgba(15,23,42,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+  }
+
+  .tmc-export-modal.show{
+    display:flex;
+  }
+
+  .tmc-export-sheet{
+    width:min(760px,100%);
+    max-height:90vh;
+    overflow:auto;
+    background:#fff;
+    border-radius:24px;
+    box-shadow:0 24px 80px rgba(15,23,42,.24);
+  }
+
+  .tmc-export-head{
+    position:sticky;
+    top:0;
+    background:#fff;
+    padding:18px;
+    border-bottom:1px solid #e5e7eb;
+    z-index:2;
+  }
+
+  .tmc-export-head-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  .tmc-export-head h2{
+    margin:0;
+    font-size:20px;
+    color:#0f172a;
+  }
+
+  .tmc-export-close{
+    border:1px solid #e5e7eb;
+    background:#fff;
+    border-radius:14px;
+    padding:9px 12px;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .tmc-export-search{
+    width:100%;
+    margin-top:14px;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:12px 14px;
+    font-size:15px;
+    outline:none;
+  }
+
+  .tmc-export-body{
+    padding:14px 18px 18px;
+  }
+
+  .tmc-export-selectbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:12px;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    margin-bottom:10px;
+  }
+
+  .tmc-export-list{
+    display:grid;
+    gap:10px;
+  }
+
+  .tmc-export-item{
+    display:grid;
+    grid-template-columns:28px 1fr auto;
+    gap:10px;
+    align-items:flex-start;
+    padding:14px;
+    border:1px solid #e5e7eb;
+    border-radius:18px;
+    background:#fff;
+  }
+
+  .tmc-export-item-title{
+    font-weight:850;
+    color:#0f172a;
+    font-size:15px;
+    margin-bottom:4px;
+  }
+
+  .tmc-export-item-meta{
+    font-size:12.5px;
+    color:#64748b;
+    line-height:1.45;
+  }
+
+  .tmc-export-status{
+    border-radius:999px;
+    padding:6px 9px;
+    font-size:12px;
+    font-weight:800;
+    background:#ecfdf5;
+    color:#047857;
+    white-space:nowrap;
+  }
+
+  .tmc-export-scope{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+  }
+
+  .tmc-export-scope label{
+    border:1px solid #d8e7e1;
+    border-radius:14px;
+    padding:10px;
+    font-size:13px;
+    color:#334155;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+
+  .tmc-export-footer{
+    position:sticky;
+    bottom:0;
+    background:#fff;
+    border-top:1px solid #e5e7eb;
+    padding:14px 18px;
+  }
+
+  .tmc-report{
+    width:794px;
+    min-height:1123px;
+    padding:30px;
+    background:#fff;
+    color:#0f172a;
+    font-family:Arial, "Noto Sans Thai", sans-serif;
+  }
+
+  .tmc-report-header{
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    border-bottom:3px solid #07845f;
+    padding-bottom:16px;
+    margin-bottom:18px;
+  }
+
+  .tmc-report-brand{
+    font-size:22px;
+    font-weight:900;
+    color:#065f46;
+  }
+
+  .tmc-report-sub{
+    color:#64748b;
+    font-size:13px;
+  }
+
+  .tmc-report-title{
+    text-align:right;
+  }
+
+  .tmc-report-title h1{
+    margin:0;
+    font-size:26px;
+    color:#064e3b;
+  }
+
+  .tmc-report-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+
+  .tmc-report-card{
+    border:1px solid #dbe8e2;
+    border-radius:14px;
+    padding:14px;
+    break-inside:avoid;
+  }
+
+  .tmc-report-card h2{
+    margin:0 0 10px;
+    font-size:16px;
+    color:#047857;
+  }
+
+  .tmc-report-row{
+    display:grid;
+    grid-template-columns:150px 1fr;
+    gap:10px;
+    font-size:12.5px;
+    padding:5px 0;
+    border-bottom:1px solid #f1f5f9;
+  }
+
+  .tmc-report-row b{
+    color:#334155;
+  }
+
+  .tmc-report-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+  }
+
+  .tmc-report-table th{
+    background:#07845f;
+    color:#fff;
+    padding:8px;
+    border:1px solid #087f5b;
+  }
+
+  .tmc-report-table td{
+    padding:7px;
+    border:1px solid #dbe8e2;
+    vertical-align:top;
+  }
+
+  .tmc-report-summary{
+    margin-top:14px;
+    border:1px solid #b7e4cf;
+    background:#ecfdf5;
+    border-radius:14px;
+    padding:14px;
+    font-size:13px;
+  }
+
+  .tmc-hidden-print{
+    position:fixed;
+    left:-99999px;
+    top:0;
+  }
+
+  @media(max-width:640px){
+    .tmc-export-formats{grid-template-columns:repeat(2,1fr);}
+    .tmc-export-item{grid-template-columns:28px 1fr;}
+    .tmc-export-status{grid-column:2;}
+    .tmc-export-scope{grid-template-columns:1fr;}
+  }
+</style>
+
+<script>
+(function(){
+  let TMC_EXPORT_FORMAT = 'pdf';
+
+  function tmcGetExperiments(){
+    if(window.db){
+      if(Array.isArray(db.experiments)) return db.experiments;
+      if(Array.isArray(db.trials)) return db.trials;
+      if(Array.isArray(db.projects)) return db.projects;
+    }
+    return [];
+  }
+
+  function tmcText(v, fallback='-'){
+    if(v === null || v === undefined || v === '') return fallback;
+    return String(v);
+  }
+
+  function tmcDateNow(){
+    return new Date().toLocaleString('th-TH', {
+      year:'numeric',
+      month:'long',
+      day:'numeric',
+      hour:'2-digit',
+      minute:'2-digit'
+    });
+  }
+
+  function tmcExperimentTitle(exp, index){
+    return exp.title || exp.name || exp.experimentName || exp.expName || `การทดลองที่ ${index + 1}`;
+  }
+
+  function tmcExperimentCode(exp, index){
+    return exp.code || exp.id || exp.expCode || `EXP-${String(index + 1).padStart(3,'0')}`;
+  }
+
+  function tmcExperimentStatus(exp){
+    return exp.status || exp.state || 'กำลังดำเนินการ';
+  }
+
+  function tmcExperimentDate(exp){
+    return exp.date || exp.startDate || exp.createdAt || exp.updatedAt || '-';
+  }
+
+  function tmcExperimentMedium(exp){
+    return exp.medium || exp.formula || exp.food || exp.media || '-';
+  }
+
+  function tmcExperimentTreatments(exp){
+    if(Array.isArray(exp.treatments)) return exp.treatments;
+    if(Array.isArray(exp.groups)) return exp.groups;
+    if(Array.isArray(exp.tableRows)) return exp.tableRows;
+    return [];
+  }
+
+  function tmcEscapeCSV(value){
+    const s = tmcText(value, '');
+    return '"' + s.replaceAll('"','""') + '"';
+  }
+
+  function tmcDownloadFile(filename, content, mime){
+    const blob = new Blob([content], {type:mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 500);
+  }
+
+  function tmcBuildReportHTML(experiments){
+    const rows = experiments.map((exp, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${tmcText(tmcExperimentCode(exp, i))}</td>
+        <td>${tmcText(tmcExperimentTitle(exp, i))}</td>
+        <td>${tmcText(tmcExperimentMedium(exp))}</td>
+        <td>${tmcText(tmcExperimentStatus(exp))}</td>
+        <td>${tmcText(tmcExperimentDate(exp))}</td>
+      </tr>
+    `).join('');
+
+    const first = experiments[0] || {};
+    const treatments = tmcExperimentTreatments(first);
+
+    const treatmentRows = treatments.length ? treatments.map((t, i) => `
+      <tr>
+        <td>${t.code || t.treatment || `T${i + 1}`}</td>
+        <td>${t.detail || t.name || t.description || '-'}</td>
+        <td>${t.qty || t.count || t.replicate || '-'}</td>
+        <td>${t.result || t.note || '-'}</td>
+      </tr>
+    `).join('') : `
+      <tr><td>T1</td><td>ฝาปิดปกติ ไม่เจาะรู</td><td>5–10</td><td>Day 0, 3, 7, 14, 21, 30</td></tr>
+      <tr><td>T2</td><td>ฝาเจาะรู 1 รู + Micropore 1 ชั้น</td><td>5–10</td><td>Day 0, 3, 7, 14, 21, 30</td></tr>
+      <tr><td>T3</td><td>ฝาเจาะรู 1 รู + Micropore 2 ชั้น</td><td>5–10</td><td>Day 0, 3, 7, 14, 21, 30</td></tr>
+      <tr><td>T4</td><td>ฝาเจาะรู 2 รู + Micropore 1 ชั้น</td><td>5–10</td><td>Day 0, 3, 7, 14, 21, 30</td></tr>
+      <tr><td>T5</td><td>ฝาเจาะรู 2 รู + Micropore 2 ชั้น</td><td>5–10</td><td>Day 0, 3, 7, 14, 21, 30</td></tr>
+    `;
+
+    return `
+      <div class="tmc-report">
+        <div class="tmc-report-header">
+          <div>
+            <div class="tmc-report-brand">Tissue Me Chua R&D Lab</div>
+            <div class="tmc-report-sub">Research & Development Report</div>
+          </div>
+          <div class="tmc-report-title">
+            <h1>Experiment Export Report</h1>
+            <div class="tmc-report-sub">รายงานผลการทดลอง</div>
+          </div>
+        </div>
+
+        <div class="tmc-report-grid">
+          <div class="tmc-report-card">
+            <h2>1. ข้อมูลการทดลอง</h2>
+            <div class="tmc-report-row"><b>วันที่ Export</b><span>${tmcDateNow()}</span></div>
+            <div class="tmc-report-row"><b>จำนวนการทดลอง</b><span>${experiments.length} รายการ</span></div>
+            <div class="tmc-report-row"><b>รหัสการทดลอง</b><span>${tmcText(tmcExperimentCode(first,0))}</span></div>
+            <div class="tmc-report-row"><b>ชื่อการทดลอง</b><span>${tmcText(tmcExperimentTitle(first,0))}</span></div>
+            <div class="tmc-report-row"><b>สถานะ</b><span>${tmcText(tmcExperimentStatus(first))}</span></div>
+          </div>
+
+          <div class="tmc-report-card">
+            <h2>2. อาหารที่ใช้ในการทดลอง</h2>
+            <div class="tmc-report-row"><b>สูตรอาหาร</b><span>${tmcText(tmcExperimentMedium(first))}</span></div>
+            <div class="tmc-report-row"><b>รายละเอียด</b><span>${tmcText(first.mediumDetail || first.foodDetail || first.description)}</span></div>
+            <div class="tmc-report-row"><b>หมายเหตุ</b><span>${tmcText(first.note)}</span></div>
+          </div>
+
+          <div class="tmc-report-card">
+            <h2>3. ขั้นตอนการทดลอง</h2>
+            <div style="font-size:12.5px;line-height:1.65;white-space:pre-wrap;">${tmcText(first.method || first.procedure || first.steps)}</div>
+          </div>
+
+          <div class="tmc-report-card">
+            <h2>4. เกณฑ์การประเมิน</h2>
+            <div style="font-size:12.5px;line-height:1.65;white-space:pre-wrap;">${tmcText(first.criteria || first.evaluation || first.assessment)}</div>
+          </div>
+        </div>
+
+        <div class="tmc-report-card" style="margin-top:14px;">
+          <h2>5. รายการการทดลองที่ Export</h2>
+          <table class="tmc-report-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>รหัส</th>
+                <th>ชื่อการทดลอง</th>
+                <th>อาหาร/สูตร</th>
+                <th>สถานะ</th>
+                <th>วันที่</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+
+        <div class="tmc-report-card" style="margin-top:14px;">
+          <h2>6. ตารางชุดทดลอง</h2>
+          <table class="tmc-report-table">
+            <thead>
+              <tr>
+                <th>ชุดทดลอง</th>
+                <th>รายละเอียด</th>
+                <th>จำนวนซ้ำ</th>
+                <th>วันที่ติดตามผล / ผลลัพธ์</th>
+              </tr>
+            </thead>
+            <tbody>${treatmentRows}</tbody>
+          </table>
+        </div>
+
+        <div class="tmc-report-summary">
+          <b>สรุปผลการทดลอง:</b>
+          <div style="margin-top:6px;white-space:pre-wrap;">${tmcText(first.summary || first.result || first.conclusion, 'ยังไม่มีการบันทึกสรุปผลการทดลอง')}</div>
+        </div>
+
+        <div style="margin-top:20px;font-size:11px;color:#64748b;display:flex;justify-content:space-between;">
+          <span>Tissue Me Chua R&D Lab</span>
+          <span>หน้า 1 จาก 1</span>
+        </div>
+      </div>
+    `;
+  }
+
+  async function tmcExportPDF(experiments){
+    const wrap = document.createElement('div');
+    wrap.className = 'tmc-hidden-print';
+    wrap.innerHTML = tmcBuildReportHTML(experiments);
+    document.body.appendChild(wrap);
+
+    const filename = experiments.length === 1
+      ? `${tmcExperimentCode(experiments[0],0)}_report.pdf`
+      : `TMC_experiments_${experiments.length}_items.pdf`;
+
+    const opt = {
+      margin:0,
+      filename,
+      image:{ type:'jpeg', quality:0.98 },
+      html2canvas:{ scale:2, useCORS:true },
+      jsPDF:{ unit:'px', format:[794,1123], orientation:'portrait' }
+    };
+
+    await html2pdf().set(opt).from(wrap.querySelector('.tmc-report')).save();
+    wrap.remove();
+  }
+
+  function tmcExportCSV(experiments){
+    const head = ['No','Code','Title','Medium','Status','Date','Summary'];
+    const body = experiments.map((exp,i)=>[
+      i+1,
+      tmcExperimentCode(exp,i),
+      tmcExperimentTitle(exp,i),
+      tmcExperimentMedium(exp),
+      tmcExperimentStatus(exp),
+      tmcExperimentDate(exp),
+      exp.summary || exp.result || exp.conclusion || ''
+    ].map(tmcEscapeCSV).join(','));
+
+    const csv = '\uFEFF' + head.map(tmcEscapeCSV).join(',') + '\n' + body.join('\n');
+    tmcDownloadFile('TMC_experiment_export.csv', csv, 'text/csv;charset=utf-8;');
+  }
+
+  function tmcExportExcel(experiments){
+    let html = `
+      <html><head><meta charset="utf-8"></head><body>
+      <table border="1">
+      <tr>
+        <th>No</th><th>Code</th><th>Title</th><th>Medium</th><th>Status</th><th>Date</th><th>Summary</th>
+      </tr>
+    `;
+
+    experiments.forEach((exp,i)=>{
+      html += `
+        <tr>
+          <td>${i+1}</td>
+          <td>${tmcText(tmcExperimentCode(exp,i))}</td>
+          <td>${tmcText(tmcExperimentTitle(exp,i))}</td>
+          <td>${tmcText(tmcExperimentMedium(exp))}</td>
+          <td>${tmcText(tmcExperimentStatus(exp))}</td>
+          <td>${tmcText(tmcExperimentDate(exp))}</td>
+          <td>${tmcText(exp.summary || exp.result || exp.conclusion)}</td>
+        </tr>
+      `;
+    });
+
+    html += `</table></body></html>`;
+    tmcDownloadFile('TMC_experiment_export.xls', html, 'application/vnd.ms-excel;charset=utf-8;');
+  }
+
+  function tmcExportJSON(experiments){
+    const json = JSON.stringify({
+      app:'Tissue Me Chua R&D Lab',
+      exportedAt:new Date().toISOString(),
+      count:experiments.length,
+      experiments
+    }, null, 2);
+
+    tmcDownloadFile('TMC_experiment_export.json', json, 'application/json;charset=utf-8;');
+  }
+
+  async function tmcExportExperiments(experiments, format){
+    if(!experiments || !experiments.length){
+      alert('ยังไม่ได้เลือกการทดลองสำหรับ Export');
+      return;
+    }
+
+    const f = format || TMC_EXPORT_FORMAT;
+
+    if(f === 'pdf') return tmcExportPDF(experiments);
+    if(f === 'csv') return tmcExportCSV(experiments);
+    if(f === 'excel') return tmcExportExcel(experiments);
+    if(f === 'json') return tmcExportJSON(experiments);
+  }
+
+  function tmcCreateExportZone(){
+    const zone = document.createElement('div');
+    zone.className = 'tmc-export-zone';
+    zone.innerHTML = `
+      <h3>⬇️ Export การทดลอง</h3>
+      <p>Export การทดลองนี้เป็นรายงาน หรือเลือกหลายการทดลองเพื่อ Export พร้อมกัน</p>
+
+      <div class="tmc-export-formats">
+        <button type="button" class="tmc-export-format active" data-format="pdf">PDF</button>
+        <button type="button" class="tmc-export-format" data-format="excel">Excel</button>
+        <button type="button" class="tmc-export-format" data-format="csv">CSV</button>
+        <button type="button" class="tmc-export-format" data-format="json">JSON</button>
+      </div>
+
+      <div class="tmc-export-actions">
+        <button type="button" class="tmc-btn-export-primary" id="tmcExportCurrentBtn">⬇ Export การทดลองนี้</button>
+        <button type="button" class="tmc-btn-export-secondary" id="tmcOpenExportPickerBtn">☑ เลือกการทดลองเพื่อ Export</button>
+      </div>
+    `;
+
+    zone.querySelectorAll('.tmc-export-format').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        zone.querySelectorAll('.tmc-export-format').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        TMC_EXPORT_FORMAT = btn.dataset.format;
+      });
+    });
+
+    zone.querySelector('#tmcExportCurrentBtn').addEventListener('click', ()=>{
+      const exps = tmcGetExperiments();
+      const current = window.currentExperiment || window.selectedExperiment || exps[exps.length - 1] || exps[0];
+      if(!current){
+        alert('ยังไม่มีข้อมูลการทดลองให้ Export');
+        return;
+      }
+      tmcExportExperiments([current], TMC_EXPORT_FORMAT);
+    });
+
+    zone.querySelector('#tmcOpenExportPickerBtn').addEventListener('click', ()=>{
+      tmcOpenExportPicker();
+    });
+
+    return zone;
+  }
+
+  function tmcAddExportZoneToExperimentPage(){
+    if(document.getElementById('tmcExperimentExportZone')) return;
+
+    const zone = tmcCreateExportZone();
+    zone.id = 'tmcExperimentExportZone';
+
+    const modalBody = document.getElementById('modalBody');
+    if(modalBody && /ทดลอง|experiment/i.test(modalBody.textContent || '')){
+      modalBody.appendChild(zone);
+      return;
+    }
+
+    const candidates = Array.from(document.querySelectorAll('.modal-body,.sheet-body,.detail-body,.content,main'));
+    const target = candidates.find(el => /ทดลอง|experiment/i.test(el.textContent || '')) || document.querySelector('main') || document.body;
+    target.appendChild(zone);
+  }
+
+  function tmcEnsurePickerModal(){
+    let modal = document.getElementById('tmcExportPickerModal');
+    if(modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'tmcExportPickerModal';
+    modal.className = 'tmc-export-modal';
+    modal.innerHTML = `
+      <div class="tmc-export-sheet">
+        <div class="tmc-export-head">
+          <div class="tmc-export-head-row">
+            <h2>⬇ เลือกการทดลองที่ต้องการ Export</h2>
+            <button type="button" class="tmc-export-close" id="tmcCloseExportPicker">ยกเลิก</button>
+          </div>
+          <input class="tmc-export-search" id="tmcExportSearch" placeholder="ค้นหาชื่อการทดลอง, รหัส, สูตรอาหาร...">
+        </div>
+
+        <div class="tmc-export-body">
+          <div class="tmc-export-selectbar">
+            <label style="display:flex;gap:8px;align-items:center;font-weight:800;">
+              <input type="checkbox" id="tmcExportSelectAll">
+              เลือกทั้งหมด
+            </label>
+            <span id="tmcExportCount" style="color:#047857;font-weight:800;">เลือก 0 รายการ</span>
+          </div>
+
+          <div class="tmc-export-list" id="tmcExportList"></div>
+
+          <h3 style="margin:18px 0 8px;color:#334155;font-size:15px;">รูปแบบไฟล์ที่ต้องการ Export</h3>
+          <div class="tmc-export-formats" id="tmcPickerFormats">
+            <button type="button" class="tmc-export-format active" data-format="pdf">PDF</button>
+            <button type="button" class="tmc-export-format" data-format="excel">Excel</button>
+            <button type="button" class="tmc-export-format" data-format="csv">CSV</button>
+            <button type="button" class="tmc-export-format" data-format="json">JSON</button>
+          </div>
+
+          <h3 style="margin:18px 0 8px;color:#334155;font-size:15px;">ขอบเขตข้อมูลที่ต้องการ Export</h3>
+          <div class="tmc-export-scope">
+            <label><input type="checkbox" checked> ข้อมูลสรุป</label>
+            <label><input type="checkbox" checked> ตารางการทดลอง</label>
+            <label><input type="checkbox" checked> ขั้นตอนและเกณฑ์ประเมิน</label>
+            <label><input type="checkbox" checked> ผลการประเมิน</label>
+          </div>
+        </div>
+
+        <div class="tmc-export-footer">
+          <button type="button" class="tmc-btn-export-primary" id="tmcExportSelectedBtn">⬇ Export ที่เลือก (0 รายการ)</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.querySelector('#tmcCloseExportPicker').addEventListener('click', ()=>{
+      modal.classList.remove('show');
+    });
+
+    modal.addEventListener('click', e=>{
+      if(e.target === modal) modal.classList.remove('show');
+    });
+
+    modal.querySelector('#tmcExportSearch').addEventListener('input', ()=>{
+      tmcRenderExportList();
+    });
+
+    modal.querySelector('#tmcExportSelectAll').addEventListener('change', e=>{
+      const checked = e.target.checked;
+      modal.querySelectorAll('.tmc-export-check').forEach(ch=>ch.checked = checked);
+      tmcUpdateExportCount();
+    });
+
+    modal.querySelectorAll('#tmcPickerFormats .tmc-export-format').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        modal.querySelectorAll('#tmcPickerFormats .tmc-export-format').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        TMC_EXPORT_FORMAT = btn.dataset.format;
+      });
+    });
+
+    modal.querySelector('#tmcExportSelectedBtn').addEventListener('click', ()=>{
+      const exps = tmcGetExperiments();
+      const selected = Array.from(modal.querySelectorAll('.tmc-export-check:checked'))
+        .map(ch => exps[Number(ch.value)])
+        .filter(Boolean);
+
+      tmcExportExperiments(selected, TMC_EXPORT_FORMAT);
+    });
+
+    return modal;
+  }
+
+  function tmcRenderExportList(){
+    const modal = tmcEnsurePickerModal();
+    const list = modal.querySelector('#tmcExportList');
+    const q = (modal.querySelector('#tmcExportSearch').value || '').trim().toLowerCase();
+    const exps = tmcGetExperiments();
+
+    let html = '';
+
+    exps.forEach((exp, i)=>{
+      const title = tmcExperimentTitle(exp, i);
+      const code = tmcExperimentCode(exp, i);
+      const medium = tmcExperimentMedium(exp);
+      const status = tmcExperimentStatus(exp);
+      const date = tmcExperimentDate(exp);
+
+      const hay = `${title} ${code} ${medium} ${status} ${date}`.toLowerCase();
+      if(q && !hay.includes(q)) return;
+
+      html += `
+        <div class="tmc-export-item">
+          <input type="checkbox" class="tmc-export-check" value="${i}">
+          <div>
+            <div class="tmc-export-item-title">${title}</div>
+            <div class="tmc-export-item-meta">
+              รหัส: ${code}<br>
+              อาหาร/สูตร: ${medium}<br>
+              วันที่: ${date}
+            </div>
+          </div>
+          <div class="tmc-export-status">${status}</div>
+        </div>
+      `;
+    });
+
+    if(!html){
+      html = `<div style="padding:18px;text-align:center;color:#64748b;">ยังไม่พบข้อมูลการทดลอง</div>`;
+    }
+
+    list.innerHTML = html;
+
+    list.querySelectorAll('.tmc-export-check').forEach(ch=>{
+      ch.addEventListener('change', tmcUpdateExportCount);
+    });
+
+    tmcUpdateExportCount();
+  }
+
+  function tmcUpdateExportCount(){
+    const modal = tmcEnsurePickerModal();
+    const n = modal.querySelectorAll('.tmc-export-check:checked').length;
+    const total = modal.querySelectorAll('.tmc-export-check').length;
+
+    modal.querySelector('#tmcExportCount').textContent = `เลือก ${n} จาก ${total} รายการ`;
+    modal.querySelector('#tmcExportSelectedBtn').textContent = `⬇ Export ที่เลือก (${n} รายการ)`;
+
+    const all = modal.querySelector('#tmcExportSelectAll');
+    all.checked = total > 0 && n === total;
+    all.indeterminate = n > 0 && n < total;
+  }
+
+  function tmcOpenExportPicker(){
+    const modal = tmcEnsurePickerModal();
+    tmcRenderExportList();
+    modal.classList.add('show');
+  }
+
+  window.tmcAddExportZoneToExperimentPage = tmcAddExportZoneToExperimentPage;
+  window.tmcOpenExportPicker = tmcOpenExportPicker;
+  window.tmcExportExperiments = tmcExportExperiments;
+
+  if(typeof openModal === 'function' && !window.__TMC_EXPORT_OPENMODAL_PATCHED__){
+    window.__TMC_EXPORT_OPENMODAL_PATCHED__ = true;
+    const oldOpenModal = openModal;
+    openModal = function(type){
+      oldOpenModal.apply(this, arguments);
+      if(String(type).includes('experiment') || String(type).includes('trial') || String(type).includes('ทดลอง')){
+        setTimeout(tmcAddExportZoneToExperimentPage, 120);
+        setTimeout(tmcAddExportZoneToExperimentPage, 500);
+      }
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    setTimeout(()=>{
+      const pageText = document.body.textContent || '';
+      if(/ทดลอง|experiment/i.test(pageText)){
+        tmcAddExportZoneToExperimentPage();
+      }
+    }, 800);
+  });
+
+})();
+</script>
