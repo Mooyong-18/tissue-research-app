@@ -5995,8 +5995,8 @@ window.addIngredientLine = addIngredientLine;
 </script>
 
 <!-- =========================================================
-TMC Experiment Export Module v9.0
-เพิ่มระบบ Export รายการทดลอง: PDF / Excel / CSV / JSON
+TMC Experiment Export Module v9.1 FIXED PDF LAYOUT
+แก้ปัญหา PDF ตัวหนังสือซ้อน/ล้นกรอบ
 ========================================================= -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -6005,20 +6005,35 @@ TMC Experiment Export Module v9.0
   .tmc-export-format-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.tmc-export-format-btn{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);padding:9px 6px;font-weight:900;font-size:12px}.tmc-export-format-btn.active{background:var(--green-soft);color:var(--green);border-color:rgba(4,120,87,.35);box-shadow:0 0 0 2px rgba(4,120,87,.06)}
   .tmc-export-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tmc-export-action-row .btn{min-height:42px}.tmc-exp-row{display:grid;grid-template-columns:42px 1fr auto;gap:12px;align-items:start;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--card)}.tmc-exp-row:last-child{border-bottom:0}.tmc-exp-row-icon{width:38px;height:38px;border-radius:12px;background:var(--green-soft);display:grid;place-items:center}.tmc-exp-main{min-width:0}.tmc-exp-title{font-weight:900;font-size:15px;line-height:1.25;margin-bottom:4px}.tmc-exp-sub{font-size:12px;color:var(--muted);line-height:1.45}.tmc-exp-right{display:grid;justify-items:end;gap:6px;min-width:86px}.tmc-exp-img{width:70px;height:48px;border-radius:10px;object-fit:cover;border:1px solid var(--line);margin-top:7px}.tmc-exp-row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.tmc-exp-export-btn{border:1px solid rgba(4,120,87,.25);background:var(--green-soft);color:var(--green);border-radius:10px;padding:6px 8px;font-size:11px;font-weight:900}
   .tmc-export-modal{position:fixed;inset:0;z-index:100000;display:none;align-items:flex-end;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:0}.tmc-export-modal.show{display:flex}.tmc-export-sheet{width:100%;max-width:540px;max-height:92vh;margin:0 auto;background:var(--card);border-radius:28px 28px 0 0;overflow:hidden;box-shadow:0 -18px 60px rgba(0,0,0,.25)}.tmc-export-head{padding:12px 18px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:2}.tmc-export-handle{width:36px;height:4px;border-radius:99px;background:rgba(0,0,0,.18);margin:0 auto 12px}.tmc-export-head-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.tmc-export-head h2{font-size:18px;margin:0;color:var(--text)}.tmc-export-close{border:1px solid var(--line);background:rgba(0,0,0,.04);color:var(--text);border-radius:12px;padding:8px 12px;font-weight:900}.tmc-export-search{width:100%;border:1px solid var(--line);border-radius:14px;background:rgba(0,0,0,.035);color:var(--text);padding:12px 14px;font-size:15px;margin-top:12px;outline:0}.tmc-export-body{padding:14px 18px;overflow:auto;max-height:calc(92vh - 185px)}.tmc-export-selectbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:16px;margin-bottom:10px}.tmc-export-list{display:grid;gap:10px}.tmc-export-item{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:start;padding:13px;border:1px solid var(--line);border-radius:16px;background:var(--card)}.tmc-export-check{width:20px;height:20px}.tmc-export-item-title{font-size:14px;font-weight:900;line-height:1.3}.tmc-export-item-meta{font-size:12px;color:var(--muted);line-height:1.45;margin-top:3px}.tmc-export-status{border-radius:999px;padding:5px 8px;font-size:11px;font-weight:900;background:var(--green-soft);color:var(--green);white-space:nowrap}.tmc-export-scope{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.tmc-export-scope label{border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12px;color:var(--text);display:flex;gap:8px;align-items:center;background:var(--card)}.tmc-export-footer{padding:12px 18px calc(env(safe-area-inset-bottom,0px) + 12px);border-top:1px solid var(--line);background:var(--card)}
-  .tmc-report-wrap{position:fixed;left:-99999px;top:0;background:white;color:#0f172a}.tmc-report{width:794px;min-height:1123px;padding:30px;background:#fff;color:#0f172a;font-family:Arial,"Noto Sans Thai",sans-serif}.tmc-report-page{page-break-after:always}.tmc-report-page:last-child{page-break-after:auto}.tmc-report-header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;border-bottom:3px solid #047857;padding-bottom:16px;margin-bottom:18px}.tmc-report-brand{font-size:22px;font-weight:900;color:#065f46}.tmc-report-sub{font-size:12px;color:#64748b;margin-top:3px}.tmc-report-title{text-align:right}.tmc-report-title h1{margin:0;font-size:25px;color:#064e3b}.tmc-report-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.tmc-report-meta>div,.tmc-report-card{border:1px solid #dbe8e2;border-radius:14px;padding:12px;background:#fff}.tmc-report-meta b{font-size:11px;color:#64748b;display:block;margin-bottom:4px}.tmc-report-meta span{font-size:12px;font-weight:700}.tmc-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.tmc-report-card{break-inside:avoid;margin-bottom:14px}.tmc-report-card h2{font-size:15px;color:#047857;margin:0 0 10px}.tmc-report-row{display:grid;grid-template-columns:130px 1fr;gap:10px;font-size:12px;line-height:1.45;padding:6px 0;border-bottom:1px solid #eef2f7}.tmc-report-row:last-child{border-bottom:0}.tmc-report-row b{color:#334155}.tmc-report-text{font-size:12px;line-height:1.65;white-space:pre-wrap}.tmc-report-table{width:100%;border-collapse:collapse;font-size:11.5px}.tmc-report-table th{background:#047857;color:#fff;border:1px solid #047857;padding:7px}.tmc-report-table td{border:1px solid #dbe8e2;padding:7px;vertical-align:top}.tmc-report-images{display:flex;gap:8px;flex-wrap:wrap}.tmc-report-imgbox{width:120px}.tmc-report-imgbox img{width:120px;height:88px;object-fit:cover;border:1px solid #dbe8e2;border-radius:10px}.tmc-report-imgbox div{font-size:10px;color:#64748b;margin-top:3px;line-height:1.25}.tmc-report-summary{border:1px solid #b7e4cf;background:#ecfdf5;border-radius:14px;padding:12px;font-size:12px;line-height:1.55}.tmc-report-footer{display:flex;justify-content:space-between;gap:10px;margin-top:18px;font-size:10.5px;color:#64748b}
+
+  /* ===== FIXED PDF REPORT STYLE ===== */
+  .tmc-report-wrap{position:fixed;left:-99999px;top:0;background:#fff;color:#0f172a;z-index:-1}
+  .tmc-report-page{width:794px;background:#fff;color:#0f172a;page-break-after:always;break-after:page}
+  .tmc-report-page:last-child{page-break-after:auto;break-after:auto}
+  .tmc-report,.tmc-report *{box-sizing:border-box;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+  .tmc-report{width:794px;min-height:1123px;padding:34px 36px 28px;background:#fff;color:#0f172a;font-family:Arial,"Noto Sans Thai","Tahoma",sans-serif;font-size:12px;line-height:1.55;overflow:visible}
+  .tmc-report-header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;border-bottom:3px solid #047857;padding-bottom:14px;margin-bottom:16px}
+  .tmc-report-brand{font-size:22px;font-weight:900;color:#065f46;line-height:1.1}.tmc-report-sub{font-size:11px;color:#64748b;margin-top:3px;line-height:1.35}.tmc-report-title{text-align:right;min-width:260px}.tmc-report-title h1{margin:0;font-size:24px;color:#064e3b;line-height:1.15}
+  .tmc-report-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.tmc-report-meta>div{border:1px solid #dbe8e2;border-radius:12px;padding:10px;background:#fff;min-height:58px}.tmc-report-meta b{font-size:10.5px;color:#64748b;display:block;margin-bottom:4px;line-height:1.2}.tmc-report-meta span{font-size:11.5px;font-weight:800;line-height:1.35;display:block;white-space:normal}
+  .tmc-report-section{border:1px solid #dbe8e2;border-radius:14px;padding:13px 14px;background:#fff;margin-bottom:12px;break-inside:avoid;page-break-inside:avoid;overflow:visible}.tmc-report-section.allow-break{break-inside:auto;page-break-inside:auto}.tmc-report-section h2{font-size:14.5px;color:#047857;margin:0 0 9px;line-height:1.25}
+  .tmc-report-kv{width:100%;border-collapse:collapse;table-layout:fixed}.tmc-report-kv tr{border-bottom:1px solid #eef2f7}.tmc-report-kv tr:last-child{border-bottom:0}.tmc-report-kv th{width:145px;text-align:left;vertical-align:top;color:#334155;font-size:11.5px;font-weight:900;padding:6px 8px 6px 0;line-height:1.45}.tmc-report-kv td{vertical-align:top;font-size:11.5px;padding:6px 0;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+  .tmc-report-text{font-size:11.8px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+  .tmc-report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10.8px;line-height:1.45}.tmc-report-table th{background:#047857;color:#fff;border:1px solid #047857;padding:7px 6px;text-align:center;vertical-align:middle}.tmc-report-table td{border:1px solid #dbe8e2;padding:7px 6px;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}.tmc-report-table th:nth-child(1),.tmc-report-table td:nth-child(1){width:42px;text-align:center}.tmc-report-table th:nth-child(2),.tmc-report-table td:nth-child(2){width:150px}.tmc-report-table th:nth-child(3),.tmc-report-table td:nth-child(3){width:170px}
+  .tmc-report-images{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.tmc-report-imgbox{min-width:0}.tmc-report-imgbox img{width:100%;height:86px;object-fit:cover;border:1px solid #dbe8e2;border-radius:10px;display:block}.tmc-report-imgbox div{font-size:9.5px;color:#64748b;margin-top:4px;line-height:1.25;min-height:24px}
+  .tmc-report-summary{border:1px solid #b7e4cf;background:#ecfdf5;border-radius:14px;padding:12px;font-size:11.8px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;margin-bottom:12px;break-inside:avoid;page-break-inside:avoid}.tmc-report-summary b{color:#047857;font-size:13px}.tmc-report-footer{display:flex;justify-content:space-between;gap:10px;margin-top:16px;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:8px}
   @media(max-width:420px){.tmc-export-format-row{grid-template-columns:repeat(2,1fr)}.tmc-export-action-row{grid-template-columns:1fr}.tmc-exp-row{grid-template-columns:38px 1fr}.tmc-exp-right{grid-column:2;justify-items:start}.tmc-export-item{grid-template-columns:28px 1fr}.tmc-export-status{grid-column:2;justify-self:start}.tmc-export-scope{grid-template-columns:1fr}}
 </style>
 <script>
 (function(){
-  if(window.__TMC_EXPORT_V90__) return;
-  window.__TMC_EXPORT_V90__ = true;
+  if(window.__TMC_EXPORT_V91__) return;
+  window.__TMC_EXPORT_V91__ = true;
 
   let exportFormat = 'pdf';
 
   function esc(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function txt(v, fallback='-'){return (v===undefined||v===null||v==='') ? fallback : String(v);}
   function safeName(v){return String(v||'TMC_export').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,80);}
-  function experiments(){db.experiments = Array.isArray(db.experiments) ? db.experiments : []; return db.experiments;}
+  function experiments(){window.db = window.db || {}; db.experiments = Array.isArray(db.experiments) ? db.experiments : []; return db.experiments;}
   function expTitle(e,i){return txt(e.name || e.title || e.experimentName, `การทดลองที่ ${i+1}`);}
   function expCode(e,i){return txt(e.code || e.id || e.expCode, `EXP-${String(i+1).padStart(3,'0')}`);}
   function expMedia(e){return txt(e.media || e.medium || e.formula || e.food);}
@@ -6163,36 +6178,46 @@ TMC Experiment Export Module v9.0
             <div><b>สถานะ</b><span>${esc(expStatus(e))}</span></div>
             <div><b>หน้า</b><span>${i+1} จาก ${total}</span></div>
           </div>
-          <div class="tmc-report-grid">
-            <div class="tmc-report-card">
-              <h2>1. ข้อมูลการทดลอง</h2>
-              <div class="tmc-report-row"><b>ชื่อการทดลอง</b><span>${esc(expTitle(e,i))}</span></div>
-              <div class="tmc-report-row"><b>วันที่ทดลอง</b><span>${esc(expDate(e))}</span></div>
-              <div class="tmc-report-row"><b>อัตรารอด/คะแนน</b><span>${esc(txt(e.survival,0))}%</span></div>
-              <div class="tmc-report-row"><b>หมายเหตุ</b><span>${esc(e.note||'-')}</span></div>
-            </div>
-            <div class="tmc-report-card">
-              <h2>2. อาหารที่ใช้ในการทดลอง</h2>
-              <div class="tmc-report-row"><b>สูตรอาหาร</b><span>${esc(expMedia(e))}</span></div>
-              <div class="tmc-report-row"><b>ชุดทดลอง</b><span>${esc(expSets(e))}</span></div>
-            </div>
-            <div class="tmc-report-card">
-              <h2>3. ขั้นตอนการทดลอง</h2>
-              <div class="tmc-report-text">${esc(txt(e.steps,'ยังไม่มีข้อมูลขั้นตอนการทดลอง'))}</div>
-            </div>
-            <div class="tmc-report-card">
-              <h2>4. เกณฑ์การประเมิน</h2>
-              <div class="tmc-report-text">${esc(txt(e.criteria,'ยังไม่มีข้อมูลเกณฑ์การประเมิน'))}</div>
-            </div>
+
+          <div class="tmc-report-section">
+            <h2>1. ข้อมูลการทดลอง</h2>
+            <table class="tmc-report-kv">
+              <tr><th>ชื่อการทดลอง</th><td>${esc(expTitle(e,i))}</td></tr>
+              <tr><th>วันที่ทดลอง</th><td>${esc(expDate(e))}</td></tr>
+              <tr><th>อัตรารอด/คะแนน</th><td>${esc(txt(e.survival,0))}%</td></tr>
+              <tr><th>หมายเหตุ</th><td>${esc(e.note||'-')}</td></tr>
+            </table>
           </div>
-          <div class="tmc-report-card">
+
+          <div class="tmc-report-section">
+            <h2>2. อาหารที่ใช้ในการทดลอง</h2>
+            <table class="tmc-report-kv">
+              <tr><th>สูตรอาหาร</th><td>${esc(expMedia(e))}</td></tr>
+              <tr><th>ชุดทดลอง</th><td>${esc(expSets(e))}</td></tr>
+            </table>
+          </div>
+
+          <div class="tmc-report-section allow-break">
+            <h2>3. ขั้นตอนการทดลอง</h2>
+            <div class="tmc-report-text">${esc(txt(e.steps,'ยังไม่มีข้อมูลขั้นตอนการทดลอง'))}</div>
+          </div>
+
+          <div class="tmc-report-section allow-break">
+            <h2>4. เกณฑ์การประเมิน</h2>
+            <div class="tmc-report-text">${esc(txt(e.criteria,'ยังไม่มีข้อมูลเกณฑ์การประเมิน'))}</div>
+          </div>
+
+          <div class="tmc-report-section allow-break">
             <h2>5. ตารางการทดลอง</h2>
             <table class="tmc-report-table"><thead><tr><th>#</th><th>แกน X / วัน</th><th>แกน Y / ชุดทดลอง</th><th>รายละเอียด / หมายเหตุ</th></tr></thead><tbody>${xyRows(e)}</tbody></table>
           </div>
-          <div class="tmc-report-grid">
-            <div class="tmc-report-card"><h2>6. ภาพประกอบการทดลอง</h2>${imageBoxes(e)}</div>
-            <div class="tmc-report-summary"><b>สรุปผลการทดลอง</b><br>${esc(txt(e.summary,'ยังไม่มีการบันทึกสรุปผลการทดลอง'))}</div>
+
+          <div class="tmc-report-section allow-break">
+            <h2>6. ภาพประกอบการทดลอง</h2>
+            ${imageBoxes(e)}
           </div>
+
+          <div class="tmc-report-summary"><b>สรุปผลการทดลอง</b><br>${esc(txt(e.summary,'ยังไม่มีการบันทึกสรุปผลการทดลอง'))}</div>
           <div class="tmc-report-footer"><span>Tissue Me Chua R&D Lab</span><span>${esc(expCode(e,i))}</span></div>
         </div>
       </section>`;
@@ -6208,12 +6233,20 @@ TMC Experiment Export Module v9.0
     const file=arr.length===1 ? `${safeName(expCode(arr[0],0))}_${safeName(expTitle(arr[0],0))}.pdf` : `TMC_experiments_${arr.length}_items.pdf`;
     try{
       if(typeof html2pdf !== 'function') throw new Error('html2pdf not loaded');
-      await html2pdf().set({margin:0,filename:file,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,allowTaint:true},jsPDF:{unit:'px',format:[794,1123],orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(target).save();
+      await new Promise(r=>setTimeout(r,80));
+      await html2pdf().set({
+        margin:0,
+        filename:file,
+        image:{type:'jpeg',quality:.98},
+        html2canvas:{scale:1.35,useCORS:true,allowTaint:true,letterRendering:true,backgroundColor:'#ffffff',windowWidth:794},
+        jsPDF:{unit:'px',format:[794,1123],orientation:'portrait'},
+        pagebreak:{mode:['css','legacy'],before:'.tmc-report-page'}
+      }).from(target).save();
       toastSafe('Export PDF แล้ว');
     }catch(err){
       console.error(err);
       const w=window.open('','_blank');
-      if(w){w.document.write('<html><head><title>'+file+'</title>'+document.querySelector('style')?.outerHTML+'</head><body>'+target.innerHTML+'</body></html>');w.document.close();setTimeout(()=>w.print(),500);}
+      if(w){w.document.write('<html><head><meta charset="utf-8"><title>'+file+'</title>'+document.querySelector('style')?.outerHTML+'</head><body>'+target.innerHTML+'</body></html>');w.document.close();setTimeout(()=>w.print(),500);}
       toastSafe('เปิดหน้าพิมพ์ PDF แทน');
     }finally{wrap.remove();}
   }
@@ -6300,7 +6333,7 @@ TMC Experiment Export Module v9.0
   window.tmcOpenExportPicker=function(ev){ if(ev) ev.stopPropagation(); const modal=ensurePicker(); renderPickerList(); document.body.classList.add('modal-open'); modal.classList.add('show'); };
   window.tmcExportExperiments=exportExperiments;
 
-  try{ if(page==='experiments') renderExperiments(); }catch(err){ console.error(err); }
+  try{ if(typeof page !== 'undefined' && page==='experiments') renderExperiments(); }catch(err){ console.error(err); }
 })();
 </script>
 </body>
