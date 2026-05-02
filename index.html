@@ -5023,6 +5023,226 @@ try{render();}catch(err){console.error(err);alert('\u0E40\u0E01\u0E34\u0E14\u0E0
 
 <script>
 /* =========================================================
+   FIX: Formula cost preview realtime แบบบังคับอัปเดตช่องจริง
+   วางก่อน </script> ตัวสุดท้าย
+========================================================= */
+
+function TMC_getCostPreviewInput(){
+  // 1) รองรับ id ที่เคยใช้หลายเวอร์ชัน
+  let el =
+    document.getElementById('fCostPreview') ||
+    document.getElementById('fCalc') ||
+    document.getElementById('formulaCostPreview') ||
+    document.getElementById('costPreview');
+
+  if(el) return el;
+
+  // 2) หา input/textarea ที่อยู่หลัง label คำว่า "ต้นทุนอัตโนมัติ"
+  const labels = Array.from(document.querySelectorAll('label,.label'));
+  const targetLabel = labels.find(x =>
+    (x.textContent || '').replace(/\s+/g,'').includes('ต้นทุนอัตโนมัติ')
+  );
+
+  if(targetLabel){
+    const group = targetLabel.closest('.group') || targetLabel.parentElement;
+    if(group){
+      el = group.querySelector('input,textarea');
+      if(el) return el;
+    }
+  }
+
+  // 3) fallback: หา input readonly ที่อยู่ใน modal สูตร
+  const body = document.getElementById('modalBody');
+  if(body){
+    el = body.querySelector('input[readonly],textarea[readonly]');
+    if(el) return el;
+  }
+
+  return null;
+}
+
+function TMC_num(v){
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function TMC_money(n){
+  if(typeof baht === 'function') return baht(TMC_num(n));
+  return TMC_num(n).toFixed(2);
+}
+
+function TMC_formulaDraft(){
+  const get = id => document.getElementById(id)?.value || '';
+
+  return {
+    code: get('fCode') || 'F-New',
+    name: (document.getElementById('fName')?.value || 'New Medium').trim() || 'New Medium',
+    ph: TMC_num(get('fPh')) || 5.7,
+    survival: 0,
+    tag: 'Testing',
+    items: get('fItems'),
+    bottleMl: TMC_num(get('fBottle')) || 250,
+    vesselName: get('fVessel'),
+    vesselQty: TMC_num(get('fVesselQty')) || 1
+  };
+}
+
+function TMC_previewFormulaRealtime_FORCE(){
+  // ถ้าไม่ได้อยู่ modal สูตร ไม่ต้องทำ
+  if(typeof modalType !== 'undefined' && modalType !== 'formula') return;
+
+  const calcEl = TMC_getCostPreviewInput();
+  if(!calcEl) return;
+
+  const draft = TMC_formulaDraft();
+
+  let costL = 0;
+  let costMl = 0;
+  let mediaBottle = 0;
+  let vessel = 0;
+  let totalBottle = 0;
+  let totalMl = 0;
+
+  try{ costL = TMC_num(formulaCost(draft)); }catch(e){}
+  try{ costMl = TMC_num(formulaPerMl(draft)); }catch(e){}
+  try{ mediaBottle = TMC_num(formulaMediaBottle(draft)); }catch(e){}
+  try{ vessel = TMC_num(vesselCost(draft)); }catch(e){}
+  try{ totalBottle = TMC_num(formulaBottle(draft)); }catch(e){}
+  try{ totalMl = TMC_num(formulaTotalPerMl(draft)); }catch(e){}
+
+  const text =
+    TMC_money(costL) + ' ฿/L · ' +
+    TMC_money(costMl) + ' ฿/ml · ' +
+    'อาหาร ' + TMC_money(mediaBottle) + ' ฿ + ' +
+    'ภาชนะ ' + TMC_money(vessel) + ' ฿ · ' +
+    'รวม ' + TMC_money(totalBottle) + ' ฿/ขวด';
+
+  // บังคับอัปเดตทั้ง value และ textContent เผื่อช่องเป็น input หรือ div
+  calcEl.value = text;
+  calcEl.textContent = text;
+
+  // บังคับ trigger event ให้ Safari/mobile รับรู้
+  calcEl.dispatchEvent(new Event('input', { bubbles:true }));
+  calcEl.dispatchEvent(new Event('change', { bubbles:true }));
+}
+
+function TMC_bindFormulaRealtime_FORCE(){
+  const body = document.getElementById('modalBody');
+  if(!body) return;
+
+  // ใช้ event delegation และไม่ล็อกด้วย dataset เดิม
+  body.removeEventListener('input', TMC_previewFormulaRealtime_FORCE, true);
+  body.removeEventListener('change', TMC_previewFormulaRealtime_FORCE, true);
+  body.removeEventListener('keyup', TMC_previewFormulaRealtime_FORCE, true);
+
+  body.addEventListener('input', TMC_previewFormulaRealtime_FORCE, true);
+  body.addEventListener('change', TMC_previewFormulaRealtime_FORCE, true);
+  body.addEventListener('keyup', TMC_previewFormulaRealtime_FORCE, true);
+
+  setTimeout(TMC_previewFormulaRealtime_FORCE, 0);
+  setTimeout(TMC_previewFormulaRealtime_FORCE, 100);
+  setTimeout(TMC_previewFormulaRealtime_FORCE, 300);
+}
+
+// override ชื่อเดิม ให้โค้ดเก่าที่เรียก previewFormulaRealtime ยังทำงาน
+previewFormulaRealtime = TMC_previewFormulaRealtime_FORCE;
+previewFormula = TMC_previewFormulaRealtime_FORCE;
+bindFormulaRealtime = TMC_bindFormulaRealtime_FORCE;
+
+// patch ปุ่มเพิ่มสาร ถ้ามี
+if(typeof addFormulaIngredient === 'function' && !window.__TMC_addFormulaIngredient_force_patched){
+  window.__TMC_addFormulaIngredient_force_patched = true;
+  const oldAddFormulaIngredient_FORCE = addFormulaIngredient;
+
+  addFormulaIngredient = function(){
+    oldAddFormulaIngredient_FORCE();
+    setTimeout(TMC_previewFormulaRealtime_FORCE, 0);
+    setTimeout(TMC_previewFormulaRealtime_FORCE, 120);
+  };
+}
+
+// patch openModal
+if(typeof openModal === 'function' && !window.__TMC_openModal_formula_force_patched){
+  window.__TMC_openModal_formula_force_patched = true;
+  const oldOpenModal_FORCE = openModal;
+
+  openModal = function(type){
+    oldOpenModal_FORCE(type);
+
+    if(type === 'formula'){
+      setTimeout(TMC_bindFormulaRealtime_FORCE, 0);
+      setTimeout(TMC_previewFormulaRealtime_FORCE, 100);
+      setTimeout(TMC_previewFormulaRealtime_FORCE, 350);
+    }
+  };
+}
+
+// patch editItem
+if(typeof editItem === 'function' && !window.__TMC_editItem_formula_force_patched){
+  window.__TMC_editItem_formula_force_patched = true;
+  const oldEditItem_FORCE = editItem;
+
+  editItem = function(type, i){
+    oldEditItem_FORCE(type, i);
+
+    if(type === 'formula'){
+      setTimeout(TMC_bindFormulaRealtime_FORCE, 0);
+      setTimeout(TMC_previewFormulaRealtime_FORCE, 100);
+      setTimeout(TMC_previewFormulaRealtime_FORCE, 350);
+    }
+  };
+}
+
+// patch saveModal เพื่อให้ค่าที่บันทึกตรงกับ preview
+if(typeof saveModal === 'function' && !window.__TMC_saveModal_formula_force_patched){
+  window.__TMC_saveModal_formula_force_patched = true;
+  const oldSaveModal_FORCE = saveModal;
+
+  saveModal = function(){
+    if(typeof modalType !== 'undefined' && modalType === 'formula'){
+      TMC_previewFormulaRealtime_FORCE();
+
+      const draft = TMC_formulaDraft();
+      const wasEdit = editType === 'formula';
+      const idx = editIndex;
+
+      oldSaveModal_FORCE();
+
+      const arr = db.formulas || [];
+      const target = wasEdit ? arr[idx] : arr[arr.length - 1];
+
+      if(target){
+        target.name = draft.name;
+        target.ph = draft.ph;
+        target.items = draft.items;
+        target.bottleMl = draft.bottleMl;
+        target.vesselName = draft.vesselName;
+        target.vesselQty = draft.vesselQty;
+
+        try{ target.cost = TMC_num(formulaCost(target)); }catch(e){}
+        try{ target.perMl = TMC_num(formulaPerMl(target)); }catch(e){}
+        try{ target.mediaBottle = TMC_num(formulaMediaBottle(target)); }catch(e){}
+        try{ target.vesselCost = TMC_num(vesselCost(target)); }catch(e){}
+        try{ target.perBottle = TMC_num(formulaBottle(target)); }catch(e){}
+        try{ target.totalPerMl = TMC_num(formulaTotalPerMl(target)); }catch(e){}
+
+        save();
+        render();
+      }
+
+      return;
+    }
+
+    oldSaveModal_FORCE();
+  };
+}
+
+// bind เผื่อ modal เปิดอยู่แล้ว
+setTimeout(TMC_bindFormulaRealtime_FORCE, 500);
+</script>
+
+<script>
+/* =========================================================
    TMC PATCH v8.3
    แก้ 2 จุด:
    1) ต้นทุนอัตโนมัติ fCostPreview อัปเดตแบบ realtime
