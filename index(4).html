@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f3ef" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Tissue Me Chua" />
+  <title>Tissue Me Chua — Supabase v7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#f5f3ef;--bg2:#ece8df;--card:#fff;--line:#d8d3c8;--line2:#c9c2b5;
+      --text:#1d1b18;--muted:#6d665d;--soft:#948c82;--accent:#2d6a4f;--accent2:#40916c;
+      --ok:#d8f3dc;--okText:#1b4332;--warn:#fef3c7;--warnText:#92400e;--bad:#fee2e2;--badText:#7f1d1d;
+      --info:#dbeafe;--infoText:#1e3a8a;--purple:#ede9fe;--purpleText:#4c1d95;
+      --r:16px;--rs:10px;--shadow:0 2px 12px rgba(30,25,20,.07);
+    }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:"DM Sans",system-ui,sans-serif;color:var(--text);font-size:14px;line-height:1.5}
+    button,input,select,textarea{font:inherit} button{cursor:pointer;border:0;background:none} .hidden{display:none!important}
+    .app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;padding-bottom:86px}
+    .topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:13px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .brand{font-weight:800;letter-spacing:.1px}.sub{font-size:11px;color:var(--soft);margin-top:1px}.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted)}
+    .page{display:none;padding:16px}.page.active{display:block;animation:fade .16s ease}@keyframes fade{from{opacity:.3;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+    .bottom{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:520px;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 0 max(6px,env(safe-area-inset-bottom));z-index:30}
+    .nav{padding:7px 4px;color:var(--soft);font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px}.nav b{font-size:19px;line-height:1}.nav.active{color:var(--accent)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}.card+.card{margin-top:10px}
+    .sectionTitle{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--soft);font-weight:800;margin:18px 0 10px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px;box-shadow:var(--shadow)}.stat .num{font-size:28px;font-weight:800;line-height:1}.stat .label{font-size:11px;color:var(--soft);margin-top:4px}.num.ok{color:var(--accent)}.num.warn{color:#b45309}.num.bad{color:#b91c1c}
+    .btn{border-radius:12px;padding:11px 14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:7px}.btn.primary{background:var(--accent);color:#fff}.btn.secondary{background:var(--bg2);color:var(--text)}.btn.danger{background:var(--bad);color:var(--badText)}.btn.line{border:1px solid var(--line2);background:var(--card);color:var(--text)}.btn.small{font-size:12px;padding:7px 10px;border-radius:9px}.btn.full{width:100%}.btn:disabled{opacity:.5;cursor:not-allowed}
+    label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 5px}.inp{width:100%;border:1px solid var(--line2);background:#fbfaf7;border-radius:12px;padding:11px 12px;outline:none;color:var(--text)}.inp:focus{background:#fff;border-color:var(--accent)}textarea.inp{min-height:84px;resize:vertical}select.inp{appearance:auto}
+    .row{display:flex;gap:8px;align-items:center}.row>*{min-width:0}.grow{flex:1}.muted{color:var(--muted)}.soft{color:var(--soft)}.smallText{font-size:12px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.spaced{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .culture{padding:13px;border:1px solid var(--line);background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:9px}.culture:active{transform:scale(.998)}.cultureTitle{font-weight:800;font-size:15px}.cultureMeta{font-size:12px;color:var(--muted);margin-top:3px}.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;border-radius:99px;padding:4px 8px;white-space:nowrap}.b-good{background:var(--ok);color:var(--okText)}.b-slow{background:var(--warn);color:var(--warnText)}.b-cont{background:var(--bad);color:var(--badText)}.b-sub{background:var(--purple);color:var(--purpleText)}.b-close{background:#e7e5e1;color:#57534e}.b-info{background:var(--info);color:var(--infoText)}
+    .chips{display:flex;gap:6px;overflow:auto;padding-bottom:3px}.chip{white-space:nowrap;border:1px solid var(--line2);background:var(--card);color:var(--muted);border-radius:99px;padding:6px 11px;font-size:12px;font-weight:700}.chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+    .timeline{border-left:2px solid var(--line);margin-left:7px;padding-left:14px}.tl{position:relative;padding:0 0 16px}.tl:before{content:"";position:absolute;left:-21px;top:4px;width:12px;height:12px;background:var(--accent);border:3px solid var(--bg);border-radius:50%}.tlDate{font-size:11px;color:var(--soft);font-family:ui-monospace,monospace}.tlText{margin-top:3px}.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:var(--bg2)}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:50;display:flex;align-items:flex-end;justify-content:center}.sheet{width:100%;max-width:520px;max-height:92vh;overflow:auto;background:var(--card);border-radius:20px 20px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -12px 28px rgba(0,0,0,.14)}.handle{width:42px;height:4px;background:var(--line2);border-radius:9px;margin:0 auto 13px}.sheetHead{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:11px;margin-bottom:10px}.sheetTitle{font-weight:800;font-size:16px}
+    .toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:#1f2937;color:#fff;border-radius:999px;padding:10px 14px;z-index:80;font-weight:700;font-size:13px;max-width:92%;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+    .loginWrap{min-height:100vh;max-width:520px;margin:0 auto;padding:28px 18px;display:flex;align-items:center;justify-content:center}.loginCard{width:100%;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:var(--shadow)}.logo{width:68px;height:68px;border-radius:22px;background:linear-gradient(135deg,#d8f3dc,#fff);display:grid;place-items:center;font-size:34px;border:1px solid var(--line);margin-bottom:12px}.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--bg2);border-radius:12px;padding:3px;margin:12px 0}.tab{border-radius:10px;padding:8px;font-weight:800;color:var(--muted)}.tab.active{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+    .empty{text-align:center;color:var(--soft);padding:34px 16px}.warning{border:1px solid #facc15;background:#fef9c3;color:#713f12;border-radius:14px;padding:11px 12px;font-size:12px}.code{background:#111827;color:#e5e7eb;border-radius:12px;padding:10px 12px;overflow:auto;font-size:12px}.fileList{font-size:12px;color:var(--muted);margin-top:7px}.link{color:var(--accent);font-weight:800;text-decoration:none}.hr{height:1px;background:var(--line);margin:14px 0}
+  </style>
+</head>
+<body>
+  <div id="login" class="loginWrap">
+    <div class="loginCard">
+      <div class="logo">🌱</div>
+      <h1 style="margin:0;font-size:24px">Tissue Me Chua</h1>
+      <div class="muted">Supabase + Storage edition v7</div>
+
+      <div id="configBox">
+        <div class="sectionTitle">Supabase Config</div>
+        <div class="warning">ใส่ Project URL และ anon/publishable key ครั้งเดียว ระบบจะเก็บไว้ในเครื่องนี้ ห้ามใส่ service_role key ในหน้าเว็บ</div>
+        <label>SUPABASE_URL</label>
+        <input id="cfgUrl" class="inp" placeholder="https://xxxx.supabase.co" />
+        <label>ANON / PUBLISHABLE KEY</label>
+        <textarea id="cfgKey" class="inp" placeholder="eyJ..." style="min-height:90px"></textarea>
+        <button id="saveConfigBtn" class="btn primary full" style="margin-top:12px">บันทึกการเชื่อมต่อ</button>
+        <div id="configStatus" class="soft smallText" style="margin-top:8px"></div>
+      </div>
+
+      <div id="authBox" class="hidden">
+        <div class="tabs"><button id="signinTab" class="tab active">เข้าสู่ระบบ</button><button id="signupTab" class="tab">สมัครบัญชี</button></div>
+        <label>อีเมล</label><input id="email" class="inp" type="email" autocomplete="email" />
+        <label>รหัสผ่าน</label><input id="password" class="inp" type="password" autocomplete="current-password" />
+        <button id="authBtn" class="btn primary full" style="margin-top:12px">เข้าสู่ระบบ</button>
+        <button id="editConfigBtn" class="btn secondary full" style="margin-top:8px">แก้ไข Supabase Config</button>
+        <p class="soft smallText">ครั้งแรกให้กด “สมัครบัญชี” ก่อน ถ้าเปิด email confirmation ไว้ ต้องยืนยันอีเมลก่อนเข้าใช้งาน</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <div class="topbar">
+      <div><div class="brand">Tissue Me Chua</div><div id="userSub" class="sub">Supabase connected</div></div>
+      <button id="logoutBtn" class="pill">ออกจากระบบ</button>
+    </div>
+
+    <section id="pageDash" class="page active">
+      <div class="grid2">
+        <div class="stat"><div id="statTotal" class="num ok">0</div><div class="label">Cultures ทั้งหมด</div></div>
+        <div class="stat"><div id="statActive" class="num">0</div><div class="label">กำลังเลี้ยง</div></div>
+        <div class="stat"><div id="statContam" class="num bad">0</div><div class="label">ปนเปื้อน/เสี่ยง</div></div>
+        <div class="stat"><div id="statUpdates" class="num warn">0</div><div class="label">อัปเดตทั้งหมด</div></div>
+      </div>
+      <div class="sectionTitle">รายการที่อัปเดตล่าสุด</div>
+      <div id="recentList"></div>
+    </section>
+
+    <section id="pageCultures" class="page">
+      <input id="search" class="inp" placeholder="ค้นหา Culture ID, พืช, batch, สูตร..." />
+      <div class="chips" style="margin:10px 0 12px">
+        <button class="chip active" data-filter="all">ทั้งหมด</button>
+        <button class="chip" data-filter="growing_normal">ปกติ</button>
+        <button class="chip" data-filter="slow_growth">โตช้า</button>
+        <button class="chip" data-filter="ready_subculture">พร้อมย้าย</button>
+        <button class="chip" data-filter="rooted">มีราก</button>
+        <button class="chip" data-filter="contaminated">ปนเปื้อน</button>
+        <button class="chip" data-filter="closed">ปิดงาน</button>
+      </div>
+      <div id="cultureList"></div>
+    </section>
+
+    <section id="pageAdd" class="page">
+      <div class="card">
+        <h2 style="margin:0 0 8px;font-size:18px">เพิ่ม Culture ใหม่</h2>
+        <div class="grid2">
+          <div><label>Culture ID</label><input id="cCode" class="inp" placeholder="เว้นว่างเพื่อรันอัตโนมัติ" /></div>
+          <div><label>วันที่เริ่ม</label><input id="cStart" class="inp" type="date" /></div>
+        </div>
+        <label>ชื่อพืช <span style="color:#b91c1c">*</span></label><input id="cPlant" class="inp" placeholder="เช่น กล้วยน้ำว้า / ฝรั่ง / อัญชัน" />
+        <div class="grid2">
+          <div><label>Batch</label><input id="cBatch" class="inp" list="batchOptions" /></div>
+          <div><label>สูตรอาหาร</label><input id="cFormula" class="inp" list="formulaOptions" /></div>
+        </div>
+        <label>ภาชนะ</label><input id="cContainer" class="inp" placeholder="เช่น แก้วฝาปิด / กล่อง micropore" />
+        <label>สถานะเริ่มต้น</label><select id="cStatus" class="inp"></select>
+        <label>หมายเหตุ</label><textarea id="cNote" class="inp" placeholder="ข้อมูลชุดทดลอง, สูตร, การฟอก, ฯลฯ"></textarea>
+        <button id="saveCultureBtn" class="btn primary full" style="margin-top:14px">บันทึก Culture</button>
+      </div>
+    </section>
+
+    <section id="pageLibrary" class="page">
+      <div class="card">
+        <h2 style="margin:0 0 8px;font-size:17px">สูตรอาหาร</h2>
+        <label>ชื่อสูตร</label><input id="fName" class="inp" placeholder="เช่น Low-cost Banana BA 2 mg/L" />
+        <label>ส่วนผสม 1 บรรทัดต่อ 1 รายการ</label><textarea id="fIng" class="inp" placeholder="20-20-20+TE 0.6 g/L&#10;Calcium nitrate 0.35 g/L&#10;BA 2 mg/L"></textarea>
+        <label>หมายเหตุ</label><textarea id="fNote" class="inp"></textarea>
+        <button id="saveFormulaBtn" class="btn primary full" style="margin-top:10px">บันทึกสูตร</button>
+        <div class="hr"></div><div id="formulaList"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h2 style="margin:0 0 8px;font-size:17px">Batch ทดลอง</h2>
+        <div class="grid2"><div><label>Batch Code</label><input id="bCode" class="inp" placeholder="B260520-01" /></div><div><label>วันที่เริ่ม</label><input id="bStart" class="inp" type="date" /></div></div>
+        <label>พืช</label><input id="bPlant" class="inp" />
+        <label>สูตรอาหาร</label><input id="bFormula" class="inp" list="formulaOptions" />
+        <label>หมายเหตุ</label><textarea id="bNote" class="inp"></textarea>
+        <button id="saveBatchBtn" class="btn primary full" style="margin-top:10px">บันทึก Batch</button>
+        <div class="hr"></div><div id="batchList"></div>
+      </div>
+    </section>
+
+    <section id="pageDetail" class="page">
+      <button id="backBtn" class="btn line small">← กลับ</button>
+      <div id="detailBox" style="margin-top:10px"></div>
+    </section>
+
+    <div class="bottom">
+      <button class="nav active" data-page="pageDash"><b>⌂</b>สรุป</button>
+      <button class="nav" data-page="pageCultures"><b>☰</b>รายการ</button>
+      <button class="nav" data-page="pageAdd"><b>＋</b>เพิ่ม</button>
+      <button class="nav" data-page="pageLibrary"><b>▣</b>คลัง</button>
+      <button id="refreshBtn" class="nav"><b>↻</b>รีเฟรช</button>
+    </div>
+  </div>
+
+  <div id="updateModal" class="modal hidden">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheetHead"><div class="sheetTitle">เพิ่มอัปเดตสถานะ</div><button id="closeUpdateBtn" class="btn line small">ปิด</button></div>
+      <div id="updateFor" class="muted smallText"></div>
+      <label>สถานะ</label><select id="uStatus" class="inp"></select>
+      <div class="grid2"><div><label>จำนวนยอด</label><input id="uShoots" class="inp" type="number" step="0.01" /></div><div><label>จำนวนราก</label><input id="uRoots" class="inp" type="number" step="0.01" /></div></div>
+      <div class="grid2"><div><label>ความยาวยอด (cm)</label><input id="uShootLen" class="inp" type="number" step="0.01" /></div><div><label>ความยาวราก (cm)</label><input id="uRootLen" class="inp" type="number" step="0.01" /></div></div>
+      <label>การเจริญ/สิ่งที่สังเกต</label><textarea id="uGrowth" class="inp" placeholder="เช่น แตกยอดเพิ่ม ใบเขียว รากเริ่มออก"></textarea>
+      <label>หมายเหตุ</label><textarea id="uNote" class="inp"></textarea>
+      <label>วันที่ปิดงาน ถ้ามี</label><input id="uClosed" class="inp" type="date" />
+      <label>รูปภาพ</label><input id="uPhotos" class="inp" type="file" accept="image/*" multiple />
+      <div id="photoFileList" class="fileList"></div>
+      <button id="saveUpdateBtn" class="btn primary full" style="margin-top:14px">บันทึกอัปเดต</button>
+    </div>
+  </div>
+
+  <datalist id="formulaOptions"></datalist>
+  <datalist id="batchOptions"></datalist>
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    // ถ้าต้องการฝัง config ลงไฟล์โดยตรง ให้ใส่ตรงนี้ได้ แต่แนะนำใช้หน้าตั้งค่าในแอปแทน
+    const DEFAULT_SUPABASE_URL = "";
+    const DEFAULT_SUPABASE_ANON_KEY = "";
+    const BUCKET = "culture-photos";
+
+    const $ = (id) => document.getElementById(id);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const esc = (s) => String(s ?? "").replace(/[&<>'"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[m]));
+    const today = () => new Date().toISOString().slice(0,10);
+    const fmt = (v) => v ? new Date(v).toLocaleString("th-TH", { dateStyle:"medium", timeStyle:"short" }) : "-";
+    const dateOnly = (v) => v ? new Date(v).toLocaleDateString("th-TH", { dateStyle:"medium" }) : "-";
+    const n = (v) => {
+      if(v === "" || v === null || v === undefined) return null;
+      const num = Number(String(v).replace(",", "."));
+      return Number.isFinite(num) ? num : null;
+    };
+
+    let supabase = null;
+    let user = null;
+    let mode = "signin";
+    let currentFilter = "all";
+    let currentCultureId = null;
+    let state = { cultures:[], updates:[], photos:[], formulas:[], batches:[] };
+
+    const statuses = [
+      ["growing_normal", "ปกติ/เจริญดี", "b-good"],
+      ["slow_growth", "โตช้า", "b-slow"],
+      ["ready_subculture", "พร้อมย้ายอาหาร", "b-sub"],
+      ["rooted", "มีราก", "b-info"],
+      ["contaminated", "ปนเปื้อน", "b-cont"],
+      ["closed", "ปิดงาน", "b-close"]
+    ];
+    const statusMap = Object.fromEntries(statuses.map(s => [s[0], { label:s[1], cls:s[2] }]));
+
+    function toast(msg){
+      const el = $("toast"); el.textContent = msg; el.classList.remove("hidden");
+      clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(() => el.classList.add("hidden"), 2600);
+    }
+
+    async function withTimeout(promise, ms=25000, label="request") {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`ขั้นตอน ${label} ใช้เวลานานเกินไป กรุณาเช็กอินเทอร์เน็ต / Supabase policies / console`)), ms);
+      });
+      try { return await Promise.race([promise, timeout]); }
+      finally { clearTimeout(timer); }
+    }
+
+
+    async function apiRequest(path, { method="GET", body=null, timeout=15000, prefer="" } = {}){
+      const cfg = getConfig();
+      const { data:{ session } } = await supabase.auth.getSession();
+      if(!session?.access_token) throw new Error("Session หมดอายุ กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่");
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+      try{
+        const headers = {
+          "apikey": cfg.key,
+          "Authorization": `Bearer ${session.access_token}`,
+          "Content-Type": "application/json"
+        };
+        if(prefer) headers["Prefer"] = prefer;
+        const res = await fetch(`${cfg.url}${path}`, {
+          method,
+          headers,
+          body: body == null ? undefined : JSON.stringify(body),
+          signal: controller.signal
+        });
+        const txt = await res.text();
+        let json = null;
+        if(txt){ try{ json = JSON.parse(txt); }catch{ json = txt; } }
+        if(!res.ok){
+          const msg = (json && (json.message || json.error || json.details)) || txt || `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+        return json;
+      }catch(err){
+        if(err.name === "AbortError") throw new Error("บันทึกใช้เวลานานเกินไป: request timeout");
+        throw err;
+      }finally{
+        clearTimeout(timer);
+      }
+    }
+
+    function setBtnLoading(btnId, isLoading, textLoading="กำลังบันทึก...", textNormal=null){
+      const btn = $(btnId);
+      if(!btn) return;
+      if(isLoading){ btn.dataset.oldText = btn.textContent; btn.textContent = textLoading; btn.disabled = true; }
+      else { btn.disabled = false; btn.textContent = textNormal || btn.dataset.oldText || btn.textContent; }
+    }
+
+    function statusOptions(){
+      return statuses.map(([v,l]) => `<option value="${v}">${l}</option>`).join("");
+    }
+    function badge(status){
+      const s = statusMap[status] || statusMap.growing_normal;
+      return `<span class="badge ${s.cls}">${esc(s.label)}</span>`;
+    }
+    function ageDays(start){
+      if(!start) return 0;
+      const a = new Date(start + "T00:00:00");
+      const b = new Date();
+      return Math.max(0, Math.floor((b - a) / 86400000));
+    }
+    function updateCount(cultureId){ return state.updates.filter(u => u.culture_id === cultureId).length; }
+    function photoCount(cultureId){ return state.photos.filter(p => p.culture_id === cultureId).length; }
+    function latestUpdate(cultureId){ return state.updates.filter(u => u.culture_id === cultureId).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0] || null; }
+
+    function getConfig(){
+      return {
+        url: (localStorage.getItem("tmc_supabase_url") || DEFAULT_SUPABASE_URL || "").replace(/\/+$/, ""),
+        key: localStorage.getItem("tmc_supabase_key") || DEFAULT_SUPABASE_ANON_KEY
+      };
+    }
+    function hasConfig(){ const c = getConfig(); return c.url && c.key; }
+    function setLoginMode(next){
+      mode = next;
+      $("signinTab").classList.toggle("active", mode === "signin");
+      $("signupTab").classList.toggle("active", mode === "signup");
+      $("authBtn").textContent = mode === "signin" ? "เข้าสู่ระบบ" : "สมัครบัญชี";
+    }
+
+    async function initClient(){
+      const cfg = getConfig();
+      $("cfgUrl").value = cfg.url || "";
+      $("cfgKey").value = cfg.key || "";
+
+      const configured = hasConfig();
+      $("configBox").classList.toggle("hidden", configured);
+      $("authBox").classList.toggle("hidden", !configured);
+      if(!configured) return;
+
+      try{
+        if($("configStatus")) $("configStatus").textContent = "กำลังตรวจการเชื่อมต่อ...";
+        supabase = createClient(cfg.url, cfg.key, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+        const { data } = await withTimeout(supabase.auth.getSession(), 8000, "ตรวจ session");
+        user = data.session?.user || null;
+
+        if(!window.__tmcAuthListenerSet){
+          window.__tmcAuthListenerSet = true;
+          supabase.auth.onAuthStateChange(async (_event, session) => {
+            user = session?.user || null;
+            await renderAuthState();
+          });
+        }
+
+        if($("configStatus")) $("configStatus").textContent = "เชื่อมต่อสำเร็จ";
+        await renderAuthState();
+      }catch(err){
+        console.error("initClient failed", err);
+        if($("configStatus")) $("configStatus").textContent = "เชื่อมต่อไม่สำเร็จ: " + (err.message || err);
+        $("configBox").classList.remove("hidden");
+        $("authBox").classList.add("hidden");
+        toast("เชื่อมต่อ Supabase ไม่สำเร็จ");
+      }
+    }
+
+    async function renderAuthState(){
+      if(user){
+        $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+        $("userSub").textContent = user.email || "logged in";
+        await loadAll();
+      } else {
+        $("login").classList.remove("hidden"); $("app").classList.add("hidden");
+      }
+    }
+
+    async function authAction(){
+      if(!supabase) return toast("ยังไม่ได้เชื่อมต่อ Supabase");
+      const email = $("email").value.trim();
+      const password = $("password").value;
+      if(!email || !password) return toast("กรอกอีเมลและรหัสผ่านก่อน");
+      $("authBtn").disabled = true;
+      try{
+        if(mode === "signup"){
+          const { data, error } = await supabase.auth.signUp({ email, password });
+          if(error) throw error;
+          if(data.session){ toast("สมัครและเข้าสู่ระบบสำเร็จ"); }
+          else toast("สมัครแล้ว กรุณายืนยันอีเมลก่อนเข้าใช้งาน");
+        }else{
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if(error) throw error;
+          toast("เข้าสู่ระบบสำเร็จ");
+        }
+      }catch(err){ console.error(err); toast(err.message || "เข้าสู่ระบบไม่สำเร็จ"); }
+      finally{ $("authBtn").disabled = false; }
+    }
+
+    async function loadAll(){
+      if(!supabase || !user) return;
+      const [cultures, updates, photos, formulas, batches] = await Promise.all([
+        supabase.from("cultures").select("*").order("updated_at", { ascending:false }),
+        supabase.from("culture_updates").select("*").order("created_at", { ascending:false }),
+        supabase.from("culture_photos").select("*").order("created_at", { ascending:false }),
+        supabase.from("formulas").select("*").order("updated_at", { ascending:false }),
+        supabase.from("batches").select("*").order("updated_at", { ascending:false })
+      ]);
+      for(const r of [cultures, updates, photos, formulas, batches]){ if(r.error){ console.error(r.error); toast(r.error.message); } }
+      state = {
+        cultures: cultures.data || [], updates: updates.data || [], photos: photos.data || [],
+        formulas: formulas.data || [], batches: batches.data || []
+      };
+      renderAll();
+    }
+
+    function renderAll(){
+      renderDash(); renderCultures(); renderLibrary(); renderDatalists();
+      if($("pageDetail").classList.contains("active") && currentCultureId) renderDetail(currentCultureId);
+    }
+    function renderDash(){
+      const cs = state.cultures;
+      $("statTotal").textContent = cs.length;
+      $("statActive").textContent = cs.filter(c => !["closed","contaminated"].includes(c.current_status)).length;
+      $("statContam").textContent = cs.filter(c => c.current_status === "contaminated").length;
+      $("statUpdates").textContent = state.updates.length;
+      const recent = cs.slice(0,8);
+      $("recentList").innerHTML = recent.length ? recent.map(cultureCard).join("") : empty("ยังไม่มี Culture — เริ่มจากเมนูเพิ่ม");
+    }
+    function cultureCard(c){
+      const last = latestUpdate(c.id);
+      return `<div class="culture" data-open="${c.id}">
+        <div class="spaced"><div><div class="mono soft smallText">${esc(c.culture_code)}</div><div class="cultureTitle">${esc(c.plant_name)}</div></div>${badge(c.current_status)}</div>
+        <div class="cultureMeta">Batch ${esc(c.batch_code || "-")} · ${esc(c.formula_name || "ไม่ระบุสูตร")} · อายุ ${ageDays(c.start_date)} วัน</div>
+        <div class="cultureMeta">อัปเดต ${updateCount(c.id)} ครั้ง · รูป ${photoCount(c.id)} รูป · ล่าสุด ${last ? fmt(last.created_at) : dateOnly(c.created_at)}</div>
+      </div>`;
+    }
+    function renderCultures(){
+      const q = ($("search").value || "").toLowerCase().trim();
+      const rows = state.cultures.filter(c => {
+        const hay = [c.culture_code,c.plant_name,c.batch_code,c.formula_name,c.container_type,c.note].join(" ").toLowerCase();
+        const okQ = !q || hay.includes(q);
+        const okF = currentFilter === "all" || c.current_status === currentFilter;
+        return okQ && okF;
+      });
+      $("cultureList").innerHTML = rows.length ? rows.map(cultureCard).join("") : empty("ไม่พบรายการที่ค้นหา");
+    }
+    function renderDatalists(){
+      $("formulaOptions").innerHTML = state.formulas.map(f => `<option value="${esc(f.formula_name)}"></option>`).join("");
+      $("batchOptions").innerHTML = state.batches.map(b => `<option value="${esc(b.batch_code)}"></option>`).join("");
+    }
+    function renderLibrary(){
+      $("formulaList").innerHTML = state.formulas.length ? state.formulas.map(f => `<div class="culture"><div class="cultureTitle">${esc(f.formula_name)}</div><div class="cultureMeta">${esc((f.ingredients||[]).map(x=>x.text||x).join(" · ") || f.note || "-")}</div></div>`).join("") : empty("ยังไม่มีสูตรอาหาร");
+      $("batchList").innerHTML = state.batches.length ? state.batches.map(b => `<div class="culture"><div class="cultureTitle">${esc(b.batch_code)}</div><div class="cultureMeta">${esc(b.plant_name||"-")} · ${esc(b.formula_name||"-")} · เริ่ม ${dateOnly(b.start_date)}</div></div>`).join("") : empty("ยังไม่มี Batch");
+    }
+    function empty(text){ return `<div class="empty">${esc(text)}</div>`; }
+
+    async function saveCulture(){
+      const plant = $("cPlant").value.trim();
+      if(!plant) return toast("กรอกชื่อพืชก่อน");
+      const code = $("cCode").value.trim() || autoCultureCode();
+      $("saveCultureBtn").disabled = true;
+      try{
+        const payload = {
+          owner_id: user.id,
+          culture_code: code,
+          plant_name: plant,
+          batch_code: $("cBatch").value.trim() || null,
+          formula_name: $("cFormula").value.trim() || null,
+          container_type: $("cContainer").value.trim() || null,
+          start_date: $("cStart").value || today(),
+          current_status: $("cStatus").value,
+          latest_update_at: new Date().toISOString(),
+          note: $("cNote").value.trim() || null
+        };
+        const { data, error } = await supabase.from("cultures").insert(payload).select().single();
+        if(error) throw error;
+        await supabase.from("culture_updates").insert({
+          owner_id: user.id, culture_id: data.id, status: payload.current_status,
+          growth: "สร้าง Culture ใหม่", note: payload.note || ""
+        });
+        clearAddForm(); await loadAll(); showPage("pageDetail"); renderDetail(data.id); toast("บันทึก Culture สำเร็จ");
+      }catch(err){ console.error(err); toast(err.message || "บันทึกไม่สำเร็จ"); }
+      finally{ $("saveCultureBtn").disabled = false; }
+    }
+    function autoCultureCode(){
+      const d = new Date();
+      const y = String(d.getFullYear()+543).slice(-2);
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      const rnd = String(Math.floor(Math.random()*900)+100);
+      return `TMC${y}${m}${day}-${rnd}`;
+    }
+    function clearAddForm(){
+      ["cCode","cPlant","cBatch","cFormula","cContainer","cNote"].forEach(id => $(id).value="");
+      $("cStart").value = today(); $("cStatus").value = "growing_normal";
+    }
+
+    function openUpdate(id){
+      currentCultureId = id;
+      const c = state.cultures.find(x => x.id === id);
+      if(!c) return;
+      $("updateFor").textContent = `${c.culture_code} — ${c.plant_name}`;
+      $("uStatus").value = c.current_status || "growing_normal";
+      ["uShoots","uRoots","uShootLen","uRootLen","uGrowth","uNote","uClosed"].forEach(x => $(x).value = "");
+      $("uPhotos").value = ""; $("photoFileList").textContent = "";
+      $("updateModal").classList.remove("hidden");
+    }
+    async function saveUpdate(){
+      const c = state.cultures.find(x => x.id === currentCultureId);
+      if(!c) return toast("ไม่พบ Culture");
+
+      const btn = $("saveUpdateBtn");
+      if(btn?.disabled) return;
+      setBtnLoading("saveUpdateBtn", true, "กำลังบันทึกอัปเดต...");
+
+      const status = $("uStatus").value;
+      const updateId = crypto.randomUUID();
+      const nowIso = new Date().toISOString();
+      const updatePayload = {
+        id: updateId,
+        owner_id: user.id,
+        culture_id: c.id,
+        status,
+        shoots: n($("uShoots").value),
+        roots: n($("uRoots").value),
+        shoot_len_cm: n($("uShootLen").value),
+        root_len_cm: n($("uRootLen").value),
+        growth: $("uGrowth").value.trim() || null,
+        note: $("uNote").value.trim() || null,
+        created_at: nowIso
+      };
+
+      // v7: ใช้ REST API + AbortController แทน supabase-js insert
+      // เหตุผล: ในบาง Safari/localhost supabase-js insert อาจรอนานหรือไม่ resolve เมื่อกดหลายรอบ
+      let insertedUpdate = null;
+      try{
+        toast("กำลังเพิ่มแถวใหม่ใน culture_updates...");
+        const inserted = await apiRequest("/rest/v1/culture_updates", {
+          method: "POST",
+          body: [updatePayload],
+          prefer: "return=representation",
+          timeout: 18000
+        });
+        insertedUpdate = Array.isArray(inserted) ? (inserted[0] || updatePayload) : (inserted || updatePayload);
+      }catch(insertErr){
+        console.error("REST insert culture_updates failed", insertErr);
+        toast(insertErr.message || "บันทึกอัปเดตไม่สำเร็จ");
+        alert(
+          "บันทึกอัปเดตไม่สำเร็จ:\n" +
+          (insertErr.message || insertErr) +
+          "\n\nเช็ก 3 จุดนี้:\n" +
+          "1) เปิดผ่าน http://localhost:5500 ไม่ใช่ file:///\n" +
+          "2) Supabase > Authentication > Users ยังมีบัญชีนี้อยู่\n" +
+          "3) Supabase > Table Editor > culture_updates ว่ามีแถวใหม่เข้าไหม"
+        );
+        setBtnLoading("saveUpdateBtn", false, null, "บันทึกอัปเดต");
+        return;
+      }
+
+      // บันทึกประวัติสำเร็จแล้ว: ปิด modal ทันที ไม่รอการอัปเดตงานรอง
+      const cultureUpdate = { current_status: status, latest_update_at: nowIso, updated_at: nowIso };
+      if($("uClosed").value || status === "closed") cultureUpdate.closed_date = $("uClosed").value || today();
+      state.updates.unshift(insertedUpdate);
+      Object.assign(c, cultureUpdate);
+      $("updateModal").classList.add("hidden");
+      setBtnLoading("saveUpdateBtn", false, null, "บันทึกอัปเดต");
+      showPage("pageDetail");
+      renderDetail(c.id);
+      renderDash();
+      renderCultures();
+      toast("บันทึกประวัติสำเร็จ");
+
+      // งานรอง: อัปเดต current status และรูปภาพแบบ background เท่านั้น
+      (async () => {
+        try{
+          await apiRequest(`/rest/v1/cultures?id=eq.${encodeURIComponent(c.id)}&owner_id=eq.${encodeURIComponent(user.id)}`, {
+            method: "PATCH",
+            body: cultureUpdate,
+            timeout: 12000
+          });
+
+          const files = Array.from($("uPhotos").files || []);
+          if(files.length){
+            toast("กำลังอัปโหลดรูปภาพ...");
+            for(const file of files){ await uploadPhoto(c.id, insertedUpdate.id || updateId, file); }
+            toast("อัปโหลดรูปภาพสำเร็จ");
+          }
+
+          try{ await withTimeout(loadAll(), 10000, "โหลดข้อมูลใหม่"); }catch(e){ console.warn("loadAll background failed", e); }
+        }catch(bgErr){
+          console.warn("Background culture/photo update failed", bgErr);
+          toast("ประวัติบันทึกแล้ว แต่สถานะล่าสุด/รูปอาจยังไม่อัปเดต");
+        }
+      })();
+    }
+
+    async function uploadPhoto(cultureId, updateId, file){
+      if(!file || !file.type.startsWith("image/")) return;
+
+      // v8: ใช้ REST Storage upload โดยตรง เพื่อหลีกเลี่ยงอาการค้างของ supabase-js ในบาง browser
+      const resized = await resizeImage(file, 1600, 0.82);
+      const safeUpdateId = updateId || crypto.randomUUID();
+      const filePath = `${user.id}/${cultureId}/${safeUpdateId}/${Date.now()}-${crypto.randomUUID()}.webp`;
+      const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
+      const cfg = getConfig();
+      const { data:{ session } } = await supabase.auth.getSession();
+      if(!session?.access_token) throw new Error("Session หมดอายุ กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่");
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 45000);
+      let uploadJson = null;
+      try{
+        const res = await fetch(`${cfg.url}/storage/v1/object/${BUCKET}/${encodedPath}`, {
+          method: "POST",
+          headers: {
+            "apikey": cfg.key,
+            "Authorization": `Bearer ${session.access_token}`,
+            "Content-Type": "image/webp",
+            "Cache-Control": "3600",
+            "x-upsert": "false"
+          },
+          body: resized,
+          signal: controller.signal
+        });
+        const txt = await res.text();
+        if(txt){ try{ uploadJson = JSON.parse(txt); }catch{ uploadJson = { message: txt }; } }
+        if(!res.ok){
+          const msg = uploadJson?.message || uploadJson?.error || txt || `HTTP ${res.status}`;
+          throw new Error(`อัปโหลดรูปเข้า Storage ไม่สำเร็จ (${res.status}): ${msg}`);
+        }
+      }catch(err){
+        if(err.name === "AbortError") throw new Error("อัปโหลดรูปใช้เวลานานเกินไป: ตรวจ Storage policy / bucket / ขนาดไฟล์");
+        throw err;
+      }finally{
+        clearTimeout(timer);
+      }
+
+      const publicUrl = `${cfg.url}/storage/v1/object/public/${BUCKET}/${encodedPath}`;
+      const photoRows = await apiRequest("/rest/v1/culture_photos", {
+        method: "POST",
+        body: {
+          owner_id: user.id,
+          culture_id: cultureId,
+          update_id: safeUpdateId,
+          file_path: filePath,
+          public_url: publicUrl
+        },
+        prefer: "return=representation",
+        timeout: 20000
+      });
+      if(Array.isArray(photoRows) && photoRows[0]) state.photos.unshift(photoRows[0]);
+    }
+    function resizeImage(file, maxSide=1600, quality=.82){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let { width, height } = img;
+          const scale = Math.min(1, maxSide / Math.max(width, height));
+          width = Math.round(width * scale); height = Math.round(height * scale);
+          const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("แปลงรูปไม่สำเร็จ")), "image/webp", quality);
+        };
+        img.onerror = reject; img.src = url;
+      });
+    }
+
+    async function saveFormula(){
+      const name = $("fName").value.trim(); if(!name) return toast("กรอกชื่อสูตรก่อน");
+      const ingredients = $("fIng").value.split("\n").map(x=>x.trim()).filter(Boolean).map(text => ({ text }));
+      try{
+        const { error } = await supabase.from("formulas").insert({ owner_id:user.id, formula_name:name, ingredients, note:$("fNote").value.trim() || null });
+        if(error) throw error;
+        ["fName","fIng","fNote"].forEach(id => $(id).value=""); await loadAll(); toast("บันทึกสูตรแล้ว");
+      }catch(err){ console.error(err); toast(err.message || "บันทึกสูตรไม่สำเร็จ"); }
+    }
+    async function saveBatch(){
+      const code = $("bCode").value.trim(); if(!code) return toast("กรอก Batch Code ก่อน");
+      try{
+        const { error } = await supabase.from("batches").insert({ owner_id:user.id, batch_code:code, plant_name:$("bPlant").value.trim() || null, formula_name:$("bFormula").value.trim() || null, start_date:$("bStart").value || today(), note:$("bNote").value.trim() || null });
+        if(error) throw error;
+        ["bCode","bPlant","bFormula","bNote"].forEach(id => $(id).value=""); $("bStart").value = today(); await loadAll(); toast("บันทึก Batch แล้ว");
+      }catch(err){ console.error(err); toast(err.message || "บันทึก Batch ไม่สำเร็จ"); }
+    }
+
+    function renderDetail(id){
+      currentCultureId = id;
+      const c = state.cultures.find(x => x.id === id);
+      if(!c){ $("detailBox").innerHTML = empty("ไม่พบ Culture"); return; }
+      const updates = state.updates.filter(u => u.culture_id === id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      const photos = state.photos.filter(p => p.culture_id === id);
+      $("detailBox").innerHTML = `<div class="card">
+        <div class="spaced"><div><div class="mono soft smallText">${esc(c.culture_code)}</div><h2 style="margin:2px 0 0;font-size:20px">${esc(c.plant_name)}</h2></div>${badge(c.current_status)}</div>
+        <div class="grid2" style="margin-top:12px">
+          <div class="stat"><div class="num ok">${ageDays(c.start_date)}</div><div class="label">อายุ / วัน</div></div>
+          <div class="stat"><div class="num warn">${updates.length}</div><div class="label">อัปเดต</div></div>
+        </div>
+        <div class="cultureMeta" style="margin-top:12px">Batch: ${esc(c.batch_code||"-")}<br>สูตร: ${esc(c.formula_name||"-")}<br>ภาชนะ: ${esc(c.container_type||"-")}<br>เริ่ม: ${dateOnly(c.start_date)} ${c.closed_date ? " · ปิดงาน: "+dateOnly(c.closed_date) : ""}</div>
+        ${c.note ? `<p class="muted">${esc(c.note)}</p>` : ""}
+        <div class="row" style="margin-top:12px"><button class="btn primary grow" data-update="${c.id}">+ เพิ่มอัปเดต</button><button class="btn danger" data-delete="${c.id}">ลบ</button></div>
+      </div>
+      <div class="sectionTitle">Timeline</div>
+      <div class="card"><div class="timeline">${updates.length ? updates.map(u => timelineItem(u, photos.filter(p=>p.update_id===u.id))).join("") : empty("ยังไม่มีประวัติ")}</div></div>`;
+    }
+    function timelineItem(u, photos){
+      const values = [
+        u.shoots !== null ? `ยอด ${u.shoots}` : "",
+        u.roots !== null ? `ราก ${u.roots}` : "",
+        u.shoot_len_cm !== null ? `ยอด ${u.shoot_len_cm} cm` : "",
+        u.root_len_cm !== null ? `ราก ${u.root_len_cm} cm` : ""
+      ].filter(Boolean).join(" · ");
+      return `<div class="tl"><div class="tlDate">${fmt(u.created_at)}</div><div class="tlText">${badge(u.status)} ${values ? `<span class="muted smallText">${esc(values)}</span>` : ""}</div>${u.growth ? `<div>${esc(u.growth)}</div>` : ""}${u.note ? `<div class="muted smallText">${esc(u.note)}</div>` : ""}${photos.length ? `<div class="photos">${photos.map(p=>`<a href="${esc(p.public_url)}" target="_blank" rel="noopener"><img src="${esc(p.public_url)}" loading="lazy" alt="culture photo"></a>`).join("")}</div>` : ""}</div>`;
+    }
+
+    async function deleteCulture(id){
+      const c = state.cultures.find(x => x.id === id);
+      if(!c || !confirm(`ลบ ${c.culture_code} ใช่ไหม? ข้อมูล update/photo record จะถูกลบด้วย แต่ไฟล์ใน Storage อาจยังอยู่`)) return;
+      try{
+        const { error } = await supabase.from("cultures").delete().eq("id", id);
+        if(error) throw error;
+        currentCultureId = null; await loadAll(); showPage("pageCultures"); toast("ลบแล้ว");
+      }catch(err){ console.error(err); toast(err.message || "ลบไม่สำเร็จ"); }
+    }
+
+    function showPage(id){
+      $$(".page").forEach(p => p.classList.toggle("active", p.id === id));
+      $$(".nav[data-page]").forEach(n => n.classList.toggle("active", n.dataset.page === id));
+      window.scrollTo({ top:0, behavior:"smooth" });
+    }
+
+    function wire(){
+      $("cStatus").innerHTML = statusOptions(); $("uStatus").innerHTML = statusOptions();
+      $("cStart").value = today(); $("bStart").value = today();
+      $("saveConfigBtn").onclick = async () => {
+        const url = $("cfgUrl").value.trim().replace(/\/+$/, "");
+        const key = $("cfgKey").value.trim().replace(/\s+/g, "");
+        if(!url || !key) return toast("กรอก URL และ Key ก่อน");
+        if(!/^https:\/\/[^/]+\.supabase\.co$/.test(url)){
+          toast("URL ต้องเป็น https://xxxx.supabase.co เท่านั้น");
+          if($("configStatus")) $("configStatus").textContent = "URL ไม่ถูกต้อง: ต้องไม่มี /rest/v1 หรือ path ต่อท้าย";
+          return;
+        }
+        localStorage.setItem("tmc_supabase_url", url);
+        localStorage.setItem("tmc_supabase_key", key);
+        $("configBox").classList.add("hidden");
+        $("authBox").classList.remove("hidden");
+        toast("บันทึก config แล้ว");
+        // ตรวจการเชื่อมต่อเบื้องหลัง ถ้าผิดจะเด้งกลับมาหน้า config พร้อมข้อความ
+        initClient();
+      };
+      $("editConfigBtn").onclick = () => { $("configBox").classList.remove("hidden"); $("authBox").classList.add("hidden"); };
+      $("signinTab").onclick = () => setLoginMode("signin"); $("signupTab").onclick = () => setLoginMode("signup"); $("authBtn").onclick = authAction;
+      $("logoutBtn").onclick = async () => { await supabase.auth.signOut(); toast("ออกจากระบบแล้ว"); };
+      $("refreshBtn").onclick = loadAll; $("saveCultureBtn").onclick = saveCulture; $("saveUpdateBtn").onclick = saveUpdate; $("saveFormulaBtn").onclick = saveFormula; $("saveBatchBtn").onclick = saveBatch;
+      $("closeUpdateBtn").onclick = () => $("updateModal").classList.add("hidden");
+      $("backBtn").onclick = () => showPage("pageCultures"); $("search").oninput = renderCultures;
+      $("uPhotos").onchange = () => { const files = Array.from($("uPhotos").files || []); $("photoFileList").textContent = files.length ? files.map(f => f.name).join(" · ") : ""; };
+      $$(".nav[data-page]").forEach(btn => btn.onclick = () => showPage(btn.dataset.page));
+      $$(".chip").forEach(btn => btn.onclick = () => { currentFilter = btn.dataset.filter; $$(".chip").forEach(x=>x.classList.remove("active")); btn.classList.add("active"); renderCultures(); });
+      document.body.addEventListener("click", (e) => {
+        const open = e.target.closest("[data-open]"); if(open) { showPage("pageDetail"); renderDetail(open.dataset.open); }
+        const up = e.target.closest("[data-update]"); if(up) openUpdate(up.dataset.update);
+        const del = e.target.closest("[data-delete]"); if(del) deleteCulture(del.dataset.delete);
+      });
+    }
+
+    wire();
+    initClient();
+  </script>
+</body>
+</html>
